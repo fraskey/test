@@ -13,11 +13,9 @@ input double MyLots          =0.1;
 
 input int Move_Av = 2;
 input int iBoll_B = 60;
-input int iBoll_S = 20;
+//input int iBoll_S = 20;
 
-//input double MACDOpenLevel =3;
-//input double MACDCloseLevel=2;
-//input int    MATrendPeriod =26;
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -126,6 +124,7 @@ bool OneMOrderCloseStatus(int MagicNumber)
 	if (OneMOrderKeepNumber >200)
 	{
 		Print("OneMOrderKeepNumber exceed 200");
+		return status;
 	}
 	
 	for (i = 0; i < OneMOrderKeepNumber; i++)
@@ -136,6 +135,7 @@ bool OneMOrderCloseStatus(int MagicNumber)
               {
               
                   status= true;
+                  break;
               
               }
                 
@@ -509,7 +509,7 @@ bool FiveMStrongTrendChangeDown()
 		}	
 
 		j++;
-		if ((5==j) &&(CrossValue[0] == -5))
+		if ((4==j) &&(CrossValue[0] == -5))
 		{
 			status = true;			
 			break;
@@ -536,7 +536,7 @@ bool FiveMStrongTrendChangeUp()
 		}	
 
 		j++;
-		if ((5==j) &&(CrossValue[0] == 5))
+		if ((4==j) &&(CrossValue[0] == 5))
 		{
 			status = true;			
 			break;
@@ -668,23 +668,6 @@ void OnTick(void)
    
    
    
-   
-   ma=iMA(NULL,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,0); 
-   // ma = Close[0];  
-   boll_up_B = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,0);   
-   boll_low_B = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,0);
-   boll_mid_B = (boll_up_B + boll_low_B )/2;
-   /*point*/
-   bool_length =(boll_up_B - boll_low_B )/2;
-   
-   
-   ma_pre = iMA(NULL,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,1); 
-   boll_up_B_pre = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);      
-   boll_low_B_pre = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
-   boll_mid_B_pre = (boll_up_B_pre + boll_low_B_pre )/2;
-
-   
-
 
 
 
@@ -728,6 +711,25 @@ void OnTick(void)
       return;
    }
    
+   
+      
+   ma=iMA(NULL,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,0); 
+   // ma = Close[0];  
+   boll_up_B = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,0);   
+   boll_low_B = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,0);
+   boll_mid_B = (boll_up_B + boll_low_B )/2;
+   /*point*/
+   bool_length =(boll_up_B - boll_low_B )/2;
+   
+   
+   ma_pre = iMA(NULL,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,1); 
+   boll_up_B_pre = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);      
+   boll_low_B_pre = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+   boll_mid_B_pre = (boll_up_B_pre + boll_low_B_pre )/2;
+
+   
+
+
        
 		/*本周期突破高点，观察如小周期未衰竭可追高买入，或者等待回调买入*/
 		/*原则上突破bool线属于偏离价值方向太大，是要回归价值中枢的*/
@@ -870,32 +872,20 @@ void OnTick(void)
   {		
   		/*三十分钟脱离上轨或者脱离下轨在五分钟线上寻找机会反向下单*/
   		GlobalVariableSet("g_ThirtyM_Direction",CrossValue[0]);
-  	  if(GlobalVariableCheck("g_ThirtyM_Direction") == FALSE)
-  	  {
-      	SendNotification("ticket False due to g_ThirtyM_Direction set false!");  
-      	return ;     		      	  
-  	  }		 
+ 
   	  
   		/*将30分钟线的bool_distance传递给1分钟线,作为止盈参考值*/
   		GlobalVariableSet("g_ThirtyM_BoolDistance",bool_length);
-  	  if(GlobalVariableCheck("g_ThirtyM_BoolDistance") == FALSE)
-  	  {
-      	SendNotification("ticket False due to g_ThirtyM_BoolDistance set false!");  
-      	return ;     		      	  
-  	  }		   	  
+   	  
   
     	/*将30分钟线的g_ThirtyM_BoolMidLine传递给1分钟线,作为止盈参考值*/
   		GlobalVariableSet("g_ThirtyM_BoolMidLine",boll_mid_B);
-  	  if(GlobalVariableCheck("g_ThirtyM_BoolMidLine") == FALSE)
-  	  {
-      	SendNotification("ticket False due to g_ThirtyM_BoolMidLine set false!");  
-      	return ;     		      	  
-  	  }		 	  
+ 	  
   	  
 	}
 		
 		
-	/*5M确定买卖机会点*/	
+	/*5M确定买卖机会点的区域*/	
 	if (5 == Period() )
    {
    /*获取必要参数*/
@@ -1043,7 +1033,8 @@ void OnTick(void)
 		 	
 		 	 		 	 
    	    ticket = OrderSend(Symbol(),OP_BUYSTOP,NormalizeDouble(MyLots*0.2,2),NormalizeDouble((FiveM_BoolDistance +FiveM_BoolMidLine),Digits),
-   	    4,NormalizeDouble(TypeOneStopLess,Digits),0,"MagicNumberOne",MagicNumberOne,OneMCrossTime,Blue);
+   	    4,NormalizeDouble(TypeOneStopLess,Digits),
+   	     NormalizeDouble((FiveM_BoolMidLine + 2*FiveM_BoolDistance),Digits),"MagicNumberOne",MagicNumberOne,OneMCrossTime,Blue);
          if(ticket <0)
          {
             Print("OrderSend MagicNumberOne failed with error #",GetLastError());
@@ -1116,7 +1107,7 @@ void OnTick(void)
 		 	   }
 
 
-	   	    ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*FourH_StrongWeak,2),Ask,3,
+	   	    ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*(1-FourH_StrongWeak),2),Ask,3,
 	   	   	NormalizeDouble(MaxValue1,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
 	   	   	"MagicNumberThree",MagicNumberThree,0,Blue);
 	         if(ticket <0)
@@ -1149,7 +1140,7 @@ void OnTick(void)
            }
 
   		 	 
-					ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*FourH_StrongWeak,2),Ask,3,
+					ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*(1-FourH_StrongWeak),2),Ask,3,
 					NormalizeDouble(MaxValue2,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
 					"MagicNumberThree",MagicNumberThree,0,Blue);
 					
@@ -1238,6 +1229,7 @@ void OnTick(void)
 	for (i = 0; i < OrdersTotal(); i++)
 	{
 	
+		//OrderType()??
    	if(OrderMagicNumber() == MagicNumberOne)
    	{
    	
