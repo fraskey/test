@@ -117,33 +117,33 @@ void OneMSaveOrder()
 
 }
 
+
 bool OneMOrderCloseStatus(int MagicNumber)
 {
-   bool status = false;
+	   bool status = true;
 	int i;
-	if (OneMOrderKeepNumber >200)
+	if ( OrdersTotal() > 200)
 	{
 		Print("OneMOrderKeepNumber exceed 200");
-		return status;
+		return false;
 	}
 	
-	for (i = 0; i < OneMOrderKeepNumber; i++)
+	for (i = 0; i < OrdersTotal(); i++)
 	{
-       if (OrderSelect(OneMOrderKeepValue[i].myTicket,SELECT_BY_TICKET,MODE_TRADES))
-       {
-              if((OrderCloseTime() != 0)&&(OrderMagicNumber()== MagicNumber))
-              {
-              
-                  status= true;
-                  break;
-              
-              }
-                
-       }
+	       if (OrderSelect(OneMOrderKeepValue[i].myTicket,SELECT_BY_TICKET,MODE_TRADES))
+	       {
+	              if((OrderCloseTime() == 0)&&(OrderMagicNumber()== MagicNumber))
+	              {
+	              
+	                  status= false;
+	                  break;
+	              
+	              }
+	                
+	       }
 	}
-   return status;
+	   return status;
 }
-
 
 
 int CheckCrossPointValue()
