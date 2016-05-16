@@ -146,23 +146,24 @@ bool OneMOrderCloseStatus(int MagicNumber)
 
 
 
-int CheckCrossPointValue()
+int  InitcrossValue()
 {	
    double myma,myboll_up_B,myboll_low_B,myboll_mid_B;
    double myma_pre,myboll_up_B_pre,myboll_low_B_pre,myboll_mid_B_pre;
    
    int crossflag = 0;
+   int j = 0;
    int i;
-   if(iBars(NULL,0) <100)
+   if(iBars(NULL,0) <500)
    {
-      Print("Bar Number less than 100");
-      return 0;
+      Print("Bar Number less than 500");
+      return -1;
    }
    
-	for (i = 1; i< 100;i++)
+	for (i = 1; i< 500;i++)
 	{
-
-      
+		
+     crossflag = 0;     
 	   myma=iMA(NULL,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,i-1);  
 	   myboll_up_B = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,i-1);   
 	   myboll_low_B = iBands(NULL,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,i-1);
@@ -204,14 +205,17 @@ int CheckCrossPointValue()
 		
 		if(0 != 	crossflag)		
 		{
-				ChangeCrossValue(crossflag);		
-				break;		
-
+				CrossValue[j] = crossflag;
+				j++;
+				if (j >= 9)
+				{
+					break;
+				}
 		}
 
 	}
 	
-	return crossflag;
+	return 0;
 
 }
 
@@ -225,6 +229,8 @@ int init()
 
       string MailTitlle ="";
       int i;
+      
+			InitcrossValue();
 
 			if(240 == Period() )
 			{
@@ -260,14 +266,14 @@ int init()
       
 		      if(GlobalVariableCheck("g_ThirtyM_Direction") == TRUE)
 		      {    
-		      	 GlobalVariableSet("g_ThirtyM_Direction",CheckCrossPointValue());		        
+		      	 GlobalVariableSet("g_ThirtyM_Direction",CrossValue[0]);		        
 		          ThirtyM_Direction = GlobalVariableGet("g_ThirtyM_Direction");    
 		          Print("g_ThirtyM_Direction already exist  = "+DoubleToString(ThirtyM_Direction));        
 		      }
 		      else
 		      {
 
-		      	  GlobalVariableSet("g_ThirtyM_Direction",CheckCrossPointValue());
+		      	  GlobalVariableSet("g_ThirtyM_Direction",CrossValue[0]);
 		      	  if(GlobalVariableCheck("g_ThirtyM_Direction") == FALSE)
 		      	  {
 		          	Print("init False due to g_ThirtyM_Direction set false!");  
@@ -545,6 +551,10 @@ void ChangeCrossValue( int mvalue)
 
 	int i;
 
+	if (mvalue == CrossValue[0])
+	{
+		return;
+	}
 	for (i = 0 ; i <9; i++)
 	{
 		CrossValue[9-i] = CrossValue[8-i];
@@ -582,7 +592,8 @@ bool FiveMStrongTrendChangeDown()
 		}	
 
 		j++;
-		if ((3==j) &&(CrossValue[0] == -5))
+		
+		if ((4==j)&&((CrossValue[0] == -5)||(CrossValue[0] == -1)))
 		{
 			status = true;			
 			break;
@@ -609,7 +620,7 @@ bool FiveMStrongTrendChangeUp()
 		}	
 
 		j++;
-		if ((3==j) &&(CrossValue[0] == 5))
+		if ((4==j)&&((CrossValue[0] == 5)||(CrossValue[0] == 1)))
 		{
 			status = true;			
 			break;
@@ -684,14 +695,14 @@ bool FiveMWeakTrendChangeUp()
 }
 
 
-
+/*确保不是1分钟上涨中继*/
 bool OneMFastUp()
 {
 
 	bool status = false;
 
-	if ((CrossValue[0] == 5) &&((CrossValue[1] == 1)||(CrossValue[1] == -1)) &&  ((CrossValue[2] == 1)||(CrossValue[2] == -1))
-	 &&  ((CrossValue[3] == 1)||(CrossValue[3] == -1)))
+	if ((CrossValue[0] == 5) &&((CrossValue[1] != 4)||(CrossValue[1] != 5)) &&  ((CrossValue[2] != 4)||(CrossValue[2] != 5))
+	 &&  ((CrossValue[3] != 4)||(CrossValue[3] != 5)))
 	{
 		status = true;
 	}
@@ -699,13 +710,13 @@ bool OneMFastUp()
 	return status;
 }
 
-
+/*确保不是1分钟下跌中继*/
 bool OneMFastDown()
 {
 	bool status = false;
 
-	if ((CrossValue[0] == -5) &&((CrossValue[1] == 1)||(CrossValue[1] == -1)) &&  ((CrossValue[2] == 1)||(CrossValue[2] == -1))
-	 &&  ((CrossValue[3] == 1)||(CrossValue[3] == -1)))
+	if ((CrossValue[0] == -5) &&((CrossValue[1] != -4)||(CrossValue[1] != -5)) &&  ((CrossValue[2] != -4)||(CrossValue[2] != -5))
+	 &&  ((CrossValue[3] != -4)||(CrossValue[3] != -5)))
 	{
 		status = true;
 	}
@@ -734,9 +745,9 @@ void OnTick(void)
 // on a chart of less than 100 bars
 //---
 
-   if(iBars(NULL,0) <100)
+   if(iBars(NULL,0) <500)
    {
-      Print("Bar Number less than 100");
+      Print("Bar Number less than 500");
       return;
    }
    
@@ -978,7 +989,7 @@ void OnTick(void)
    	 if(5==ThirtyM_Direction)
    	 {
    	 		/*5分钟转为下跌，在1分钟线上寻找下单机会*/
-	   	 	if (true == FiveMWeakTrendChangeDown())
+	   	 	if (true == FiveMStrongTrendChangeDown())
 	   	 	{
 	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",-2);
 	   	 	}
@@ -989,7 +1000,7 @@ void OnTick(void)
    	 else if(-5==ThirtyM_Direction)
    	 {
    	 		/*5分钟转为上升，在1分钟线上寻找下单机会*/
-	   	 	if (true == FiveMWeakTrendChangeUp())
+	   	 	if (true == FiveMStrongTrendChangeUp())
 	   	 	{
 	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",2);
 	   	 	}
@@ -997,7 +1008,7 @@ void OnTick(void)
    	 }
 	   	 
 	   /*落回上轨内且在上半带*/
-	   else if ((4==ThirtyM_Direction)&&(Ask >(ThirtyM_BoolMidLine+ThirtyM_BoolDistance*0.6)))
+	   else if ((4==ThirtyM_Direction)&&(Ask >(ThirtyM_BoolMidLine+ThirtyM_BoolDistance*0.5)))
 	   {
 	   	   	if (true == FiveMStrongTrendChangeDown())
 		   	 	{
@@ -1007,7 +1018,7 @@ void OnTick(void)
 	   }
 	   
 	    /*落回下轨内且在下半带*/
-	   else if ((-4==ThirtyM_Direction)&&(Bid <(ThirtyM_BoolMidLine-ThirtyM_BoolDistance*0.6)))
+	   else if ((-4==ThirtyM_Direction)&&(Bid <(ThirtyM_BoolMidLine-ThirtyM_BoolDistance*0.5)))
 	   {
 	   	   	if (true == FiveMStrongTrendChangeUp())
 		   	 	{
@@ -1169,7 +1180,7 @@ void OnTick(void)
 	  FiveM_BuySellFlag = GlobalVariableGet("g_FiveM_BuySellFlag");
 
 		/*30M线突破上轨后背驰，5分钟盘整或者下跌，一分钟向下，下卖单*/				
-		if (FiveM_BuySellFlag >1.5)
+		if (FiveM_BuySellFlag <-1.5)
 		{
 		
 			if (((crossflag == -5 )||(crossflag == -1 ))&&(OneMOrderCloseStatus(MagicNumberThree)==true))
@@ -1203,7 +1214,7 @@ void OnTick(void)
 	
 	
    		/*30M线突破上轨后回落到上轨内的上半带，5分钟盘整或者下跌，一分钟向下，下卖单*/				
-   		if ((FiveM_BuySellFlag >0.5)&&(FiveM_BuySellFlag <1.5))
+   		if ((FiveM_BuySellFlag <-0.5)&&(FiveM_BuySellFlag >-1.5))
    		{
    		
    			if (((crossflag == -5 )||(crossflag == -1 ))&&(OneMOrderCloseStatus(MagicNumberThree)==true))
@@ -1236,7 +1247,7 @@ void OnTick(void)
    		
    
    		/*30M线突破下轨后背驰，5分钟盘整或者上升，一分钟向上，下买单*/				
-   		if (FiveM_BuySellFlag <-1.5)
+   		if (FiveM_BuySellFlag > 1.5)
    		{
    		
    			if (((crossflag == 5 )||(crossflag == 1 ))&&(OneMOrderCloseStatus(MagicNumberFour)==true))
@@ -1269,7 +1280,7 @@ void OnTick(void)
    		}
 			
    		/*30M线突破下轨后回落到下轨内的下半带，5分钟盘整或者上升，一分钟向上，下买单*/				
-   		if ((FiveM_BuySellFlag <-0.5)&&(FiveM_BuySellFlag >-1.5))
+   		if ((FiveM_BuySellFlag >0.5)&&(FiveM_BuySellFlag <1.5))
    		{
    		
    			if (((crossflag == 5 )||(crossflag == 1 ))&&(OneMOrderCloseStatus(MagicNumberFour)==true))
@@ -1554,7 +1565,6 @@ void OnTick(void)
 /////////////////////////////////////////////////////////
 	
 			
-
    OneMSaveOrder();
    PrintFlag = true;
    ChartEvent = iBars(NULL,0);
@@ -1563,3 +1573,4 @@ void OnTick(void)
 
   }
 //+------------------------------------------------------------------+
+
