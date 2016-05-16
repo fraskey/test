@@ -117,33 +117,44 @@ void OneMSaveOrder()
 
 }
 
-
 bool OneMOrderCloseStatus(int MagicNumber)
 {
-	   bool status = true;
+<<<<<<< HEAD
+   bool status = false;
+=======
+   bool status = true;
+>>>>>>> origin/master
 	int i;
-	if ( OrdersTotal() > 200)
+	if (OneMOrderKeepNumber >200)
 	{
 		Print("OneMOrderKeepNumber exceed 200");
-		return false;
+		return status;
 	}
 	
-	for (i = 0; i < OrdersTotal(); i++)
+	for (i = 0; i < OneMOrderKeepNumber; i++)
 	{
-	       if (OrderSelect(OneMOrderKeepValue[i].myTicket,SELECT_BY_TICKET,MODE_TRADES))
-	       {
-	              if((OrderCloseTime() == 0)&&(OrderMagicNumber()== MagicNumber))
-	              {
-	              
-	                  status= false;
-	                  break;
-	              
-	              }
-	                
-	       }
+       if (OrderSelect(OneMOrderKeepValue[i].myTicket,SELECT_BY_TICKET,MODE_TRADES))
+       {
+<<<<<<< HEAD
+              if((OrderCloseTime() != 0)&&(OrderMagicNumber()== MagicNumber))
+              {
+              
+                  status= true;
+=======
+              if((OrderCloseTime() == 0)&&(OrderMagicNumber()== MagicNumber))
+              {
+              
+                  status= false;
+>>>>>>> origin/master
+                  break;
+              
+              }
+                
+       }
 	}
-	   return status;
+   return status;
 }
+
 
 
 int CheckCrossPointValue()
@@ -724,6 +735,7 @@ void OnTick(void)
    string mMailTitlle = "";
    int crossflag = 0;
    int i;
+   double stoplessvalue = 0;
 //---
 // initial data checks
 // it is important to make sure that the expert works with a normal
@@ -1178,15 +1190,15 @@ void OnTick(void)
    	     ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
       		FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
 		 	 
-		 	   
+		 	   stoplessvalue =MaxValue1; 
 		 	   if((Ask + FiveM_BoolDistance)< MaxValue1)
 		 	   {
-		 	      MaxValue1 = Ask + FiveM_BoolDistance;
+		 	      stoplessvalue = Ask + FiveM_BoolDistance;
 		 	   }
 
 
 	   	    ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*(1-FourH_StrongWeak),2),Ask,3,
-	   	   	NormalizeDouble(MaxValue1,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
+	   	   	NormalizeDouble(stoplessvalue,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
 	   	   	"MagicNumberThree",MagicNumberThree,0,Blue);
 	         if(ticket <0)
 	         {
@@ -1211,15 +1223,15 @@ void OnTick(void)
    				 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
    		 	   ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
        		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
-  				 
+  				 stoplessvalue = MaxValue2;
            if((Ask + FiveM_BoolDistance)< MaxValue2)
            {
-              MaxValue2 = Ask + FiveM_BoolDistance;
+              stoplessvalue = Ask + FiveM_BoolDistance;
            }
 
   		 	 
 					ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*(1-FourH_StrongWeak),2),Ask,3,
-					NormalizeDouble(MaxValue2,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
+					NormalizeDouble(stoplessvalue,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
 					"MagicNumberThree",MagicNumberThree,0,Blue);
 					
  	         if(ticket <0)
@@ -1245,14 +1257,15 @@ void OnTick(void)
    	       ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
        		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
    		 	 
+   		 	 stoplessvalue = MinValue1;
 			 	   if((Bid - FiveM_BoolDistance)> MinValue1)
 			 	   {
-			 	      MinValue1 = Bid - FiveM_BoolDistance;
+			 	      stoplessvalue = Bid - FiveM_BoolDistance;
 			 	   }
    		 	 
   		 	 
    	   	    ticket = OrderSend(Symbol(),OP_BUY,NormalizeDouble(MyLots*FourH_StrongWeak,2),Bid,3,
-   	   	   	NormalizeDouble(MinValue1,Digits) ,NormalizeDouble(Bid+ThirtyM_BoolDistance,Digits),
+   	   	   	NormalizeDouble(stoplessvalue,Digits) ,NormalizeDouble(Bid+ThirtyM_BoolDistance,Digits),
    	   	   	"MagicNumberFour",MagicNumberFour,0,Blue);
    	         if(ticket <0)
    	         {
@@ -1276,15 +1289,16 @@ void OnTick(void)
    				 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
        		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
    		 	 
+   		 	   stoplessvalue = MinValue2;
      		 	   if((Bid - FiveM_BoolDistance)> MinValue2)
    		 	   {
-   		 	      MinValue2 = Bid - FiveM_BoolDistance;
+   		 	      stoplessvalue = Bid - FiveM_BoolDistance;
    		 	   }
    
       	      ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
      		 	 
    	   	    ticket = OrderSend(Symbol(),OP_BUY,NormalizeDouble(MyLots*FourH_StrongWeak,2),Bid,3,
-   	   	   	NormalizeDouble(MinValue2,Digits) ,NormalizeDouble(Bid+ThirtyM_BoolDistance,Digits),
+   	   	   	NormalizeDouble(stoplessvalue,Digits) ,NormalizeDouble(Bid+ThirtyM_BoolDistance,Digits),
    	   	   	"MagicNumberFour",MagicNumberFour,0,Blue);
    	         if(ticket <0)
    	         {
@@ -1560,3 +1574,4 @@ void OnTick(void)
 
   }
 //+------------------------------------------------------------------+
+
