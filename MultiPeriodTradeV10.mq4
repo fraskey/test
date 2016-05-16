@@ -119,33 +119,23 @@ void OneMSaveOrder()
 
 bool OneMOrderCloseStatus(int MagicNumber)
 {
-<<<<<<< HEAD
-   bool status = false;
-=======
+
    bool status = true;
->>>>>>> origin/master
 	int i;
-	if (OneMOrderKeepNumber >200)
+	if ( OrdersTotal() > 200)
 	{
 		Print("OneMOrderKeepNumber exceed 200");
-		return status;
+		return false;
 	}
 	
-	for (i = 0; i < OneMOrderKeepNumber; i++)
+	for (i = 0; i < OrdersTotal(); i++)
 	{
        if (OrderSelect(OneMOrderKeepValue[i].myTicket,SELECT_BY_TICKET,MODE_TRADES))
        {
-<<<<<<< HEAD
-              if((OrderCloseTime() != 0)&&(OrderMagicNumber()== MagicNumber))
-              {
-              
-                  status= true;
-=======
               if((OrderCloseTime() == 0)&&(OrderMagicNumber()== MagicNumber))
               {
               
                   status= false;
->>>>>>> origin/master
                   break;
               
               }
@@ -153,6 +143,7 @@ bool OneMOrderCloseStatus(int MagicNumber)
        }
 	}
    return status;
+
 }
 
 
