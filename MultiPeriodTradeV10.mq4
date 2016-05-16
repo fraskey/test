@@ -119,7 +119,6 @@ void OneMSaveOrder()
 
 bool OneMOrderCloseStatus(int MagicNumber)
 {
-
    bool status = true;
 	int i;
 	if ( OrdersTotal() > 200)
@@ -143,7 +142,6 @@ bool OneMOrderCloseStatus(int MagicNumber)
        }
 	}
    return status;
-
 }
 
 
@@ -1565,4 +1563,3 @@ void OnTick(void)
 
   }
 //+------------------------------------------------------------------+
-
