@@ -1,4 +1,5 @@
 
+
 //+------------------------------------------------------------------+
 //|                                             Ibond.mq4 |
 //|                   Copyright 2005-2014, MetaQuotes Software Corp. |
@@ -593,7 +594,7 @@ bool FiveMStrongTrendChangeDown()
 
 		j++;
 		
-		if ((4==j)&&((CrossValue[0] == -5)||(CrossValue[0] == -1)))
+		if ((3==j)&&((CrossValue[0] == -5)||(CrossValue[0] == -1)))
 		{
 			status = true;			
 			break;
@@ -620,7 +621,7 @@ bool FiveMStrongTrendChangeUp()
 		}	
 
 		j++;
-		if ((4==j)&&((CrossValue[0] == 5)||(CrossValue[0] == 1)))
+		if ((3==j)&&((CrossValue[0] == 5)||(CrossValue[0] == 1)))
 		{
 			status = true;			
 			break;
@@ -701,8 +702,7 @@ bool OneMFastUp()
 
 	bool status = false;
 
-	if ((CrossValue[0] == 5) &&((CrossValue[1] != 4)||(CrossValue[1] != 5)) &&  ((CrossValue[2] != 4)||(CrossValue[2] != 5))
-	 &&  ((CrossValue[3] != 4)||(CrossValue[3] != 5)))
+	if ((CrossValue[0] == 5) &&((CrossValue[1] != 4)&&(CrossValue[1] != 5)) &&  ((CrossValue[2] != 4)&&(CrossValue[2] != 5)))
 	{
 		status = true;
 	}
@@ -715,8 +715,7 @@ bool OneMFastDown()
 {
 	bool status = false;
 
-	if ((CrossValue[0] == -5) &&((CrossValue[1] != -4)||(CrossValue[1] != -5)) &&  ((CrossValue[2] != -4)||(CrossValue[2] != -5))
-	 &&  ((CrossValue[3] != -4)||(CrossValue[3] != -5)))
+	if ((CrossValue[0] == -5) &&((CrossValue[1] != -4)&&(CrossValue[1] != -5)) &&  ((CrossValue[2] != -4)&&(CrossValue[2] != -5)))
 	{
 		status = true;
 	}
@@ -863,31 +862,29 @@ void OnTick(void)
 
 		}
 
-		/*一分钟周期太短*/
-  // if (1 != Period() )
-   {
-   			
-				/*本周期上穿中线，表明本周期趋势开始发生变化为上升，在下降大趋势下也可能是回调杀入机会*/
-				if((ma > boll_mid_B) && (ma_pre < boll_mid_B_pre ))
-				{
-				
-						crossflag = 1;				
-						ChangeCrossValue(crossflag);				
-			      Print(mMailTitlle + Symbol() + "::本周期上穿中线变化为上升，大周期下降大趋势下可能是回调做空机会："
-			      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
-            PrintFlag = true;
 
-				}	
-				/*本周期下穿中线，表明趋势开始发生变化，在上升大趋势下也可能是回调杀入机会*/
-				if( (ma < boll_mid_B) && (ma_pre > boll_mid_B_pre ))
-				{
-						crossflag = -1;								
-						ChangeCrossValue(crossflag);				
-			      Print(mMailTitlle + Symbol() + "::本周期下穿中线变化为下降，大周期上升大趋势下可能是回调做多机会："
-			      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
-            PrintFlag = true;
-				}							
-		}
+ 			
+			/*本周期上穿中线，表明本周期趋势开始发生变化为上升，在下降大趋势下也可能是回调杀入机会*/
+			if((ma > boll_mid_B) && (ma_pre < boll_mid_B_pre ))
+			{
+			
+					crossflag = 1;				
+					ChangeCrossValue(crossflag);				
+		      Print(mMailTitlle + Symbol() + "::本周期上穿中线变化为上升，大周期下降大趋势下可能是回调做空机会："
+		      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+          PrintFlag = true;
+
+			}	
+			/*本周期下穿中线，表明趋势开始发生变化，在上升大趋势下也可能是回调杀入机会*/
+			if( (ma < boll_mid_B) && (ma_pre > boll_mid_B_pre ))
+			{
+					crossflag = -1;								
+					ChangeCrossValue(crossflag);				
+		      Print(mMailTitlle + Symbol() + "::本周期下穿中线变化为下降，大周期上升大趋势下可能是回调做多机会："
+		      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+          PrintFlag = true;
+			}							
+
 	
 	
 	/*传递4H最大周期的上升下降趋势评估值，该值用来优化买单卖单的手数、获利预期*/
@@ -942,9 +939,7 @@ void OnTick(void)
 
   	}
   
-    GlobalVariableSet("g_FourH_StrongWeak",FourH_StrongWeak);  
-  
-  
+    GlobalVariableSet("g_FourH_StrongWeak",FourH_StrongWeak);   
   
   }
 	
@@ -978,56 +973,90 @@ void OnTick(void)
    	 ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
    	 ThirtyM_BoolMidLine = GlobalVariableGet("g_ThirtyM_BoolMidLine");
 
-	//	if (0 != crossflag )
-		{
+
 		
- 			GlobalVariableSet("g_FiveM_BoolMidLine",boll_mid_B);
- 			GlobalVariableSet("g_FiveM_BoolDistance",bool_length);			
-		}   	 
+			GlobalVariableSet("g_FiveM_BoolMidLine",boll_mid_B);
+			GlobalVariableSet("g_FiveM_BoolDistance",bool_length);			
+	 	 
    	  	 
    	 /*30M上升阶段，突破上轨，通过5分钟寻找背驰状态*/
    	 if(5==ThirtyM_Direction)
    	 {
+   	 		Print("5==ThirtyM_Direction");
    	 		/*5分钟转为下跌，在1分钟线上寻找下单机会*/
 	   	 	if (true == FiveMStrongTrendChangeDown())
 	   	 	{
+   	 				Print("0true == FiveMStrongTrendChangeDown()");
 	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",-2);
 	   	 	}
+				else
+				{
+	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",0);
+				}
    	 
    	 }
    
      /*30M 突破下轨，通过5分钟寻找背驰状态*/
    	 else if(-5==ThirtyM_Direction)
    	 {
+   	 		Print("-5==ThirtyM_Direction");
+   	 
    	 		/*5分钟转为上升，在1分钟线上寻找下单机会*/
 	   	 	if (true == FiveMStrongTrendChangeUp())
 	   	 	{
+   	 				Print("1true == FiveMStrongTrendChangeUp()");
+	   	 	
 	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",2);
 	   	 	}
+				else
+				{
+	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",0);
+				}
+	   	 	
    	 
    	 }
 	   	 
 	   /*落回上轨内且在上半带*/
 	   else if ((4==ThirtyM_Direction)&&(Ask >(ThirtyM_BoolMidLine+ThirtyM_BoolDistance*0.5)))
 	   {
+   	 		Print("4==ThirtyM_Direction");
+	   
 	   	   	if (true == FiveMStrongTrendChangeDown())
 		   	 	{
+   	 				Print("2true == FiveMStrongTrendChangeDown()");
+		   	 	
 		   	 			GlobalVariableSet("g_FiveM_BuySellFlag",-1);
 		   	 	}
+				else
+				{
+	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",0);
+				}
+		   	 	
+		   	 	
 	      
 	   }
 	   
 	    /*落回下轨内且在下半带*/
 	   else if ((-4==ThirtyM_Direction)&&(Bid <(ThirtyM_BoolMidLine-ThirtyM_BoolDistance*0.5)))
 	   {
+   	 		Print("-4==ThirtyM_Direction");
+	   
 	   	   	if (true == FiveMStrongTrendChangeUp())
 		   	 	{
+   	 				Print("3true == FiveMStrongTrendChangeUp()");
+		   	 	
 		   	 			GlobalVariableSet("g_FiveM_BuySellFlag",1);
 		   	 	}
+				else
+				{
+	   	 			GlobalVariableSet("g_FiveM_BuySellFlag",0);
+				}
 	      
 	   }
 	   else
 	   {
+   	 			Print("4GlobalVariableSet(g_FiveM_BuySellFlag,0)");
+	   
 	   	   	GlobalVariableSet("g_FiveM_BuySellFlag",0);
 	   }
       
@@ -1564,7 +1593,7 @@ void OnTick(void)
 			
 /////////////////////////////////////////////////////////
 	
-			
+
    OneMSaveOrder();
    PrintFlag = true;
    ChartEvent = iBars(NULL,0);
