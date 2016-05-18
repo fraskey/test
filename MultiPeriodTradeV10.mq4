@@ -1,5 +1,4 @@
 
-
 //+------------------------------------------------------------------+
 //|                                             Ibond.mq4 |
 //|                   Copyright 2005-2014, MetaQuotes Software Corp. |
@@ -9,7 +8,7 @@
 #property link        "http://www.mql14.com"
 
 //input double TakeProfit    =50;
-input double MyLots          =0.1;
+double MyLots          =0.1;
 //input double TrailingStop  =30;
 
 input int Move_Av = 2;
@@ -29,14 +28,13 @@ double boll_up_S_pre,boll_low_S_pre,boll_mid_S_pre;
 
 
 
-double TypeOneStopLess = 0;
 
-int MagicNumberOne = 100;
-int MagicNumberTwo = 200;
-int MagicNumberThree = 300;
-int MagicNumberFour = 400;
-int MagicNumberFive = 500;
-int MagicNumberSix = 600;
+int MagicNumberOne = 10000;
+int MagicNumberTwo = 20000;
+int MagicNumberThree = 30000;
+int MagicNumberFour = 40000;
+int MagicNumberFive = 50000;
+int MagicNumberSix = 60000;
 
 
 
@@ -75,9 +73,15 @@ struct  OrderTradesRecord           //持仓单信息结构体
          int        myMagicNumber;  //程序识别码
          double     myAsk;          //买入报价
          double     myBid;          //卖出报价
+         bool       myPreOrderFlag;   //定义开仓标志
         };
 
 OrderTradesRecord OneMOrderKeepValue[200]; //定义持仓单变量
+
+OrderTradesRecord OneMPreOrderMagicOne;
+OrderTradesRecord OneMPreOrderMagicTwo;
+
+
 int OneMOrderKeepNumber = 0;
 
 ////////////////////////////////////////////////
@@ -109,9 +113,9 @@ void OneMSaveOrder()
         OneMOrderKeepValue[i].myComment=OrderComment();             //注释
         OneMOrderKeepValue[i].myMagicNumber=OrderMagicNumber();     //程序识别码
         
-        Print(i+" "+OneMOrderKeepValue[i].myTicket+" "+OneMOrderKeepValue[i].myOpenTime+" "+OneMOrderKeepValue[i].myType+" "+OneMOrderKeepValue[i].myLots+" "+OneMOrderKeepValue[i].mySymbol+
-        " "+OneMOrderKeepValue[i].myOpenPrice+" "+OneMOrderKeepValue[i].myStopLoss+" "+OneMOrderKeepValue[i].myTakeProfit+" "+OneMOrderKeepValue[i].myCommission+" "+OneMOrderKeepValue[i].mySwap+
-        " "+OneMOrderKeepValue[i].myProfit+" "+OneMOrderKeepValue[i].myComment+" "+OneMOrderKeepValue[i].myMagicNumber);
+ //       Print(i+" "+OneMOrderKeepValue[i].myTicket+" "+OneMOrderKeepValue[i].myOpenTime+" "+OneMOrderKeepValue[i].myType+" "+OneMOrderKeepValue[i].myLots+" "+OneMOrderKeepValue[i].mySymbol+
+ //       " "+OneMOrderKeepValue[i].myOpenPrice+" "+OneMOrderKeepValue[i].myStopLoss+" "+OneMOrderKeepValue[i].myTakeProfit+" "+OneMOrderKeepValue[i].myCommission+" "+OneMOrderKeepValue[i].mySwap+
+ //       " "+OneMOrderKeepValue[i].myProfit+" "+OneMOrderKeepValue[i].myComment+" "+OneMOrderKeepValue[i].myMagicNumber);
     }
 
 	}
@@ -130,7 +134,7 @@ bool OneMOrderCloseStatus(int MagicNumber)
 	
 	for (i = 0; i < OrdersTotal(); i++)
 	{
-       if (OrderSelect(OneMOrderKeepValue[i].myTicket,SELECT_BY_TICKET,MODE_TRADES))
+       if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
        {
               if((OrderCloseTime() == 0)&&(OrderMagicNumber()== MagicNumber))
               {
@@ -425,6 +429,8 @@ int init()
       else if (1 == Period() )
       {
       
+					OneMPreOrderMagicOne.myPreOrderFlag = false;
+					OneMPreOrderMagicTwo.myPreOrderFlag = false;
 
 	   
          MailTitlle = MailTitlle +"1M";
@@ -726,6 +732,7 @@ bool OneMFastDown()
 
 datetime OneMCrossTime;
 
+
 void OnTick(void)
 {
 	int ticket;
@@ -734,7 +741,16 @@ void OnTick(void)
    string mMailTitlle = "";
    int crossflag = 0;
    int i;
-   double stoplessvalue = 0;
+   
+   double orderStopLevel=0;
+   double orderLots = 0;   
+   double orderStopless = 0;
+   double orderTakeProfit = 0;
+   double orderPrice = 0;
+   
+   
+   
+
 //---
 // initial data checks
 // it is important to make sure that the expert works with a normal
@@ -748,6 +764,152 @@ void OnTick(void)
    {
       Print("Bar Number less than 500");
       return;
+   }
+   
+   
+   else if (1 == Period() )
+   {
+   
+      if((OneMPreOrderMagicOne.myPreOrderFlag == true)
+      &&(Ask >= OneMPreOrderMagicOne.myOpenPrice))
+      {
+         if ((TimeCurrent()-OneMPreOrderMagicOne.myOpenTime)<130)
+         {
+ 
+             orderLots = OneMPreOrderMagicOne.myLots;
+             orderPrice = Ask;
+             orderStopless = Ask -(OneMPreOrderMagicOne.myOpenPrice - OneMPreOrderMagicOne.myStopLoss);
+             orderTakeProfit = Ask + (OneMPreOrderMagicOne.myTakeProfit - OneMPreOrderMagicOne.myOpenPrice);
+ 
+ 
+  	         orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+            orderStopLevel = orderStopLevel +30;
+ 		 	 
+   		 	 /*参数修正*/
+   		 	 if(orderStopLevel > 31) 
+   		 	 {
+        		 	 if ((orderPrice - orderStopless) < orderStopLevel*Point)
+      		 	 {
+      		 	 		orderStopless = orderPrice - orderStopLevel*Point;
+      		 	 }
+      		 	 if ((orderTakeProfit - orderPrice) < orderStopLevel*Point)
+      		 	 {
+      		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
+      		 	 }
+   		 	 }			
+             
+            orderLots = NormalizeDouble(orderLots,2);          
+            orderPrice = NormalizeDouble(orderPrice,Digits);		 	
+            orderStopless = NormalizeDouble(orderStopless,Digits);		 	
+            orderTakeProfit = NormalizeDouble(orderTakeProfit,Digits);	 			 	 		 			 	 		 			 			 	 		 				 
+      
+   		 	   
+   			Print("MagicNumberOne OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   							+"orderTakeProfit="+orderTakeProfit);	
+   										 		 	 
+ 				Print("MagicNumberOne OrderSend:" + "OneMCrossTime=" + TimeToString(OneMPreOrderMagicOne.myOpenTime,TIME_SECONDS)
+				 +"orderDatetime=" + TimeToString(TimeCurrent(),TIME_SECONDS));
+  								 		 	 
+
+   				 		 	 
+      	    ticket = OrderSend(Symbol(),OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+      	                       "MagicNumberOne",MagicNumberOne,0,CLR_NONE);
+      	                       
+      	    OneMPreOrderMagicOne.myPreOrderFlag = false;  
+      	                     
+            if(ticket <0)
+            {
+               Print("OrderSend MagicNumberOne failed with error #",GetLastError());
+            }
+            else
+            {            
+               Print("OrderSend MagicNumberOne  successfully");
+            }
+            Sleep(1000);
+         }
+         else
+         {
+      	    OneMPreOrderMagicOne.myPreOrderFlag = false;  
+         
+         }
+      }
+   
+   
+      if((OneMPreOrderMagicTwo.myPreOrderFlag == true)
+      &&(Bid <= OneMPreOrderMagicTwo.myOpenPrice))
+      {
+         if ((TimeCurrent()-OneMPreOrderMagicTwo.myOpenTime)<130)
+         {
+           
+             orderLots = OneMPreOrderMagicTwo.myLots;
+             orderPrice = Bid;
+             orderStopless = Bid -(OneMPreOrderMagicTwo.myOpenPrice - OneMPreOrderMagicTwo.myStopLoss);
+             orderTakeProfit = Bid + (OneMPreOrderMagicTwo.myTakeProfit - OneMPreOrderMagicTwo.myOpenPrice);
+ 
+ 	         orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+ 	 		 	 orderStopLevel= orderStopLevel +30;
+		 	 	
+		 	  /*参数修正*/
+		 	 if(orderStopLevel > 31) 
+		 	 {
+   		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
+   		 	 {
+   		 	 		orderStopless = orderPrice + orderStopLevel*Point;
+   		 	 }
+   		 	 if ((orderPrice-orderTakeProfit) < orderStopLevel*Point)
+   		 	 {
+   		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
+   		 	 }
+		 	 }			
+		 	 	
+		 	 	
+             
+            orderLots = NormalizeDouble(orderLots,2);          
+            orderPrice = NormalizeDouble(orderPrice,Digits);		 	
+            orderStopless = NormalizeDouble(orderStopless,Digits);		 	
+            orderTakeProfit = NormalizeDouble(orderTakeProfit,Digits);	 			 	 		 			 	 		 			 			 	 		 				 
+      
+   		 	   
+   			Print("MagicNumberTwo OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   							+"orderTakeProfit="+orderTakeProfit);			
+   							
+ 				Print("MagicNumberTwo OrderSend:" + "OneMCrossTime=" + TimeToString(OneMPreOrderMagicTwo.myOpenTime,TIME_SECONDS)
+				 +"orderDatetime=" + TimeToString(TimeCurrent(),TIME_SECONDS));
+  								 		 	 
+   				 		 	 
+      	    ticket = OrderSend(Symbol(),OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+      	                       "MagicNumberTwo",MagicNumberTwo,0,CLR_NONE);
+      	                       
+      	    OneMPreOrderMagicTwo.myPreOrderFlag = false;  
+      	                     
+            if(ticket <0)
+            {
+               Print("OrderSend MagicNumberTwo failed with error #",GetLastError());
+            }
+            else
+            {            
+               Print("OrderSend MagicNumberTwo  successfully");
+            }		
+            Sleep(1000);
+
+         }
+         else
+         {
+      	    OneMPreOrderMagicTwo.myPreOrderFlag = false;  
+         
+         }
+         
+         
+         
+         
+         
+      }
+   
+   
+   
+   
+   
+   
    }
    
    
@@ -821,8 +983,8 @@ void OnTick(void)
 		
 				crossflag = 5;		
 			  ChangeCrossValue(crossflag);
-	      Print(mMailTitlle + Symbol()+"::本周期突破高点，除(1M、5M周期bool口收窄且快速突破追高，移动止损），其他情况择机反向做空:"
-	      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
+	    //  Print(mMailTitlle + Symbol()+"::本周期突破高点，除(1M、5M周期bool口收窄且快速突破追高，移动止损），其他情况择机反向做空:"
+	    //  + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
          PrintFlag = true;
 		}
 		
@@ -831,8 +993,8 @@ void OnTick(void)
 		{
 				crossflag = 4;
 				ChangeCrossValue(crossflag);
-	      Print(mMailTitlle + Symbol()+"::本周期突破高点后回调，观察小周期如长时间筑顶，寻机做空:"
-	      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
+	   //   Print(mMailTitlle + Symbol()+"::本周期突破高点后回调，观察小周期如长时间筑顶，寻机做空:"
+	   //   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
          PrintFlag = true;
 
 		}
@@ -845,8 +1007,8 @@ void OnTick(void)
 			
 				crossflag = -5;
 				ChangeCrossValue(crossflag);	
-	      Print(mMailTitlle + Symbol() + "::本周期突破低点，除(条件：1M、5M周期bool口收窄且快速突破追低，移动止损），其他情况择机反向做多:"
-	      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+	   //   Print(mMailTitlle + Symbol() + "::本周期突破低点，除(条件：1M、5M周期bool口收窄且快速突破追低，移动止损），其他情况择机反向做多:"
+	   //   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
          PrintFlag = true;
 
 		}
@@ -856,8 +1018,8 @@ void OnTick(void)
 		{
 				crossflag = -4;	
 				ChangeCrossValue(crossflag);		
-	      Print(mMailTitlle + Symbol() + "::本周期突破低点后回调，观察如小周期长时间筑底，寻机买入:"
-	      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+	   //   Print(mMailTitlle + Symbol() + "::本周期突破低点后回调，观察如小周期长时间筑底，寻机买入:"
+	   //   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
          PrintFlag = true;
 
 		}
@@ -870,8 +1032,8 @@ void OnTick(void)
 			
 					crossflag = 1;				
 					ChangeCrossValue(crossflag);				
-		      Print(mMailTitlle + Symbol() + "::本周期上穿中线变化为上升，大周期下降大趋势下可能是回调做空机会："
-		      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+		  //    Print(mMailTitlle + Symbol() + "::本周期上穿中线变化为上升，大周期下降大趋势下可能是回调做空机会："
+		  //    + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
           PrintFlag = true;
 
 			}	
@@ -880,8 +1042,8 @@ void OnTick(void)
 			{
 					crossflag = -1;								
 					ChangeCrossValue(crossflag);				
-		      Print(mMailTitlle + Symbol() + "::本周期下穿中线变化为下降，大周期上升大趋势下可能是回调做多机会："
-		      + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+		 //     Print(mMailTitlle + Symbol() + "::本周期下穿中线变化为下降，大周期上升大趋势下可能是回调做多机会："
+		 //     + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
           PrintFlag = true;
 			}							
 
@@ -1017,7 +1179,7 @@ void OnTick(void)
    	 }
 	   	 
 	   /*落回上轨内且在上半带*/
-	   else if ((4==ThirtyM_Direction)&&(Ask >(ThirtyM_BoolMidLine+ThirtyM_BoolDistance*0.5)))
+	   else if ((4==ThirtyM_Direction)&&(Bid >(ThirtyM_BoolMidLine+ThirtyM_BoolDistance*0.5)))
 	   {
    	 		Print("4==ThirtyM_Direction");
 	   
@@ -1037,7 +1199,7 @@ void OnTick(void)
 	   }
 	   
 	    /*落回下轨内且在下半带*/
-	   else if ((-4==ThirtyM_Direction)&&(Bid <(ThirtyM_BoolMidLine-ThirtyM_BoolDistance*0.5)))
+	   else if ((-4==ThirtyM_Direction)&&(Ask <(ThirtyM_BoolMidLine-ThirtyM_BoolDistance*0.5)))
 	   {
    	 		Print("-4==ThirtyM_Direction");
 	   
@@ -1055,7 +1217,6 @@ void OnTick(void)
 	   }
 	   else
 	   {
-   	 			Print("4GlobalVariableSet(g_FiveM_BuySellFlag,0)");
 	   
 	   	   	GlobalVariableSet("g_FiveM_BuySellFlag",0);
 	   }
@@ -1066,6 +1227,9 @@ void OnTick(void)
 	/*1M下单买卖*/	
 	if (1 == Period() )
 	{
+	
+	
+	
 	/*获取必要参数*/
 
 	 ThirtyM_Direction = GlobalVariableGet("g_ThirtyM_Direction");
@@ -1130,39 +1294,40 @@ void OnTick(void)
 		/*1M线快速上升，短期内突破五分钟上轨认为是小转大的行为，挂限时BuyStop买单，买单成交后，通过移动止损和5分钟线优化订单*/	
 		if ((OneMFastUp() ==true) &&(crossflag == 5)&&(OneMOrderCloseStatus(MagicNumberOne)==true))
 		{
+		
+   
+		
 			 FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
 			 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
-			 TypeOneStopLess = Ask;
-			 OneMCrossTime = TimeCurrent();
-			 /*挂单必须在5分钟内成交，否则挂单撤销*/
-		 	 OneMCrossTime = OneMCrossTime +300;
-		 	 
+
+				orderLots = MyLots*0.2;
+				
+				orderPrice =  FiveM_BoolMidLine + FiveM_BoolDistance;
+						
+			   orderStopless = Ask;
+			   
 		 	 /*防止止损点位太大，保证止损和止盈比小于1：1；*/
-		 	 if(((FiveM_BoolMidLine +FiveM_BoolDistance)-TypeOneStopLess )>FiveM_BoolDistance)
+		 	 if((orderPrice-orderStopless )>FiveM_BoolDistance)
 		 	 {
-		 	   TypeOneStopLess = FiveM_BoolMidLine;
+		 	   orderStopless = FiveM_BoolMidLine;
+		 	 }		 	 
+		 	 /*还有一种思路就是以1分钟的bool_lenth和5分钟的bool_lenth作为止损和止盈比*/
+		 	 if(2*bool_length < FiveM_BoolDistance)
+		 	 {
+		 	   orderStopless = FiveM_BoolMidLine+FiveM_BoolDistance-2*bool_length;		 	 
 		 	 }
 		 	 
-		 	 /*还有一种思路就是以1分钟的bool_lenth和5分钟的bool_lenth作为止损和止盈比*/
-		 	 if(bool_length < FiveM_BoolDistance)
-		 	 {
-		 	   TypeOneStopLess = FiveM_BoolMidLine+FiveM_BoolDistance-bool_length;		 	 
-		 	 }
-		 	 		 	 
-		 	
-		 	 		 	 
-   	    ticket = OrderSend(Symbol(),OP_BUYSTOP,NormalizeDouble(MyLots*0.2,2),NormalizeDouble((FiveM_BoolDistance +FiveM_BoolMidLine),Digits),
-   	    4,NormalizeDouble(TypeOneStopLess,Digits),
-   	     NormalizeDouble((FiveM_BoolMidLine + 2*FiveM_BoolDistance),Digits),"MagicNumberOne",MagicNumberOne,OneMCrossTime,Blue);
-         if(ticket <0)
-         {
-            Print("OrderSend MagicNumberOne failed with error #",GetLastError());
-         }
-         else
-         {            
-            Print("OrderSend MagicNumberOne  successfully");
-         }
-					 	 			 	 
+		 	 orderTakeProfit = FiveM_BoolMidLine + 2*FiveM_BoolDistance;	
+ 	  			 	 		 			 	 		 	
+			 OneMCrossTime = TimeCurrent();
+			 
+			OneMPreOrderMagicOne.myLots = orderLots;
+			OneMPreOrderMagicOne.myOpenPrice = orderPrice;
+			OneMPreOrderMagicOne.myStopLoss = orderStopless;
+			OneMPreOrderMagicOne.myTakeProfit = orderTakeProfit;
+			OneMPreOrderMagicOne.myOpenTime = OneMCrossTime;
+			OneMPreOrderMagicOne.myPreOrderFlag = true;
+		 		 					 	 			 	 
 		}
 			   		  
 	 	/* 下单思想是小周期快速变化的过程中会出现跨周期的极度不平衡
@@ -1173,37 +1338,41 @@ void OnTick(void)
 		{
 			 FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
 			 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
-			 TypeOneStopLess = Bid;
-			 OneMCrossTime = TimeCurrent();
 			 
-			 /*挂单必须在5分钟内成交，否则挂单撤销*/
-		 	 OneMCrossTime = OneMCrossTime +300;
-		 	 
+	
+	          orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+				orderStopLevel = orderStopLevel + 10;
+
+				orderLots = MyLots*0.2;
+				
+				orderPrice = FiveM_BoolMidLine-FiveM_BoolDistance;
+
+		 	   orderTakeProfit = FiveM_BoolMidLine -2*FiveM_BoolDistance;
+						
+			   orderStopless = Bid;
 		 	 /*防止止损点位太大，保证止损和止盈比小于1：1；*/
-		 	 if((TypeOneStopLess -(FiveM_BoolMidLine -FiveM_BoolDistance))>FiveM_BoolDistance)
+		 	 if((orderStopless -(FiveM_BoolMidLine -FiveM_BoolDistance))>FiveM_BoolDistance)
 		 	 {
-		 	   TypeOneStopLess = FiveM_BoolMidLine;
+		 	   orderStopless = FiveM_BoolMidLine;
 		 	 }
 		 	 /*还有一种思路就是以1分钟的bool_lenth和5分钟的bool_lenth作为止损和止盈比*/
-		 	 if(bool_length < FiveM_BoolDistance)
+		 	 if(2*bool_length < FiveM_BoolDistance)
 		 	 {
-		 	   TypeOneStopLess = FiveM_BoolMidLine - FiveM_BoolDistance + bool_length;		 	 
-		 	 }
+		 	   orderStopless = FiveM_BoolMidLine - FiveM_BoolDistance + 2*bool_length;		 	 
+		 	 }			   			   	 	 		 	 
+		 	 	 	  			 	 		 			 	 		 	
+		 	 OneMCrossTime = TimeCurrent();
 		 	 
-		 	 		 	   
-		 	 
-   	    ticket = OrderSend(Symbol(),OP_SELLSTOP,NormalizeDouble(MyLots*0.2,2),NormalizeDouble((FiveM_BoolMidLine -FiveM_BoolDistance),Digits),
-   	    4,NormalizeDouble(TypeOneStopLess,Digits),
-   	    NormalizeDouble((FiveM_BoolMidLine -2*FiveM_BoolDistance),Digits),"MagicNumberTwo",MagicNumberTwo,OneMCrossTime,Blue);
-         if(ticket <0)
-         {
-            Print("OrderSend MagicNumberTwo failed with error #",GetLastError());
-         }
-         else
-         {            
-            Print("OrderSend MagicNumberTwo  successfully");
-         }					 	 			 	 
+			OneMPreOrderMagicTwo.myLots = orderLots;
+			OneMPreOrderMagicTwo.myOpenPrice = orderPrice;
+			OneMPreOrderMagicTwo.myStopLoss = orderStopless;
+			OneMPreOrderMagicTwo.myTakeProfit = orderTakeProfit;
+			OneMPreOrderMagicTwo.myOpenTime = OneMCrossTime;
+			OneMPreOrderMagicTwo.myPreOrderFlag = true;
+			 	 		 
+			 	 			 	 
 		}
+	
 	
 
 	  FiveM_BuySellFlag = GlobalVariableGet("g_FiveM_BuySellFlag");
@@ -1216,19 +1385,52 @@ void OnTick(void)
 			{
 				 FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
 				 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
-   	     ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
-      		FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
+   	       ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
+      		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
 		 	 
-		 	   stoplessvalue =MaxValue1; 
-		 	   if((Ask + FiveM_BoolDistance)< MaxValue1)
+	          orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+             orderStopLevel = orderStopLevel + 30;
+
+				 orderLots = NormalizeDouble(MyLots*(1-FourH_StrongWeak),2);
+				 
+				orderPrice = Bid;				 
+			 	orderStopless =MaxValue1; 
+		 	   if((orderPrice + 2*FiveM_BoolDistance)< orderStopless)
 		 	   {
-		 	      stoplessvalue = Ask + FiveM_BoolDistance;
-		 	   }
+		 	      orderStopless = orderPrice + 2*FiveM_BoolDistance;
+		 	   }		
+		 	   else
+		 	   {
+		 	      orderStopless = orderStopless + 30*Point;
+		 	   }		 
+				 orderTakeProfit = orderPrice-ThirtyM_BoolDistance;
+	
+	
+			 	 /*参数修正*/
+		 	 if(orderStopLevel > 31) 
+		 	 {
+   		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
+   		 	 {
+   		 	 		orderStopless = orderPrice + orderStopLevel*Point;
+   		 	 }
+   		 	 if ((orderPrice-orderTakeProfit) < orderStopLevel*Point)
+   		 	 {
+   		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
+   		 	 }
+		 	 }				 	 		 	 
+		 	 	 	  			 	 		 			 	 		 	
+		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
+		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
+		 	 orderTakeProfit = NormalizeDouble(orderTakeProfit,Digits);	 
 
-
-	   	    ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*(1-FourH_StrongWeak),2),Ask,3,
-	   	   	NormalizeDouble(stoplessvalue,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
-	   	   	"MagicNumberThree",MagicNumberThree,0,Blue);
+	
+	
+	
+					Print("MagicNumberThree1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+								+"orderTakeProfit="+orderTakeProfit);
+					 		 	 				 		 	 
+   	      ticket = OrderSend(Symbol(),OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+   	                       "MagicNumberThree1",MagicNumberThree,0,Blue);
 	         if(ticket <0)
 	         {
 	            Print("OrderSend MagicNumberThree 1 failed with error #",GetLastError());
@@ -1237,6 +1439,8 @@ void OnTick(void)
 	         {            
 	            Print("OrderSend MagicNumberThree 1  successfully");
 	         }
+	         Sleep(1000);
+
        }
 					 	 			 	 
 		}
@@ -1251,19 +1455,56 @@ void OnTick(void)
    				 FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
    				 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
    		 	   ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
-       		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
-  				 stoplessvalue = MaxValue2;
-           if((Ask + FiveM_BoolDistance)< MaxValue2)
-           {
-              stoplessvalue = Ask + FiveM_BoolDistance;
-           }
+       		   FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
 
-  		 	 
-					ticket = OrderSend(Symbol(),OP_SELL,NormalizeDouble(MyLots*(1-FourH_StrongWeak),2),Ask,3,
-					NormalizeDouble(stoplessvalue,Digits),NormalizeDouble(Ask-ThirtyM_BoolDistance,Digits),
-					"MagicNumberThree",MagicNumberThree,0,Blue);
+	          orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+
+
+
+             orderStopLevel = orderStopLevel + 30;
+
+				 orderLots = NormalizeDouble(MyLots*(1-FourH_StrongWeak),2);
+				 
+				orderPrice = Bid;				 
+			 	orderStopless =MaxValue2; 
+		 	   if((orderPrice + 2*FiveM_BoolDistance)< orderStopless)
+		 	   {
+		 	      orderStopless = orderPrice + 2*FiveM_BoolDistance;
+		 	   }		
+		 	   else
+		 	   {
+		 	      orderStopless = orderStopless + 30*Point;
+		 	   }		 
+				 orderTakeProfit = orderPrice-ThirtyM_BoolDistance;
+	
+   		
+   			 	 /*参数修正*/
+   		 	 if(orderStopLevel > 31) 
+   		 	 {
+      		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
+      		 	 {
+      		 	 		orderStopless = orderPrice + orderStopLevel*Point;
+      		 	 }
+      		 	 if ((orderPrice-orderTakeProfit) < orderStopLevel*Point)
+      		 	 {
+      		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
+      		 	 }
+   		 	 }				 	 		 	 
+   		 	 	 	  			 	 		 			 	 		 	
+   		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
+   		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
+   		 	 orderTakeProfit = NormalizeDouble(orderTakeProfit,Digits);	 
+   
+   	
+
+					Print("MagicNumberThree2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+								+"orderTakeProfit="+orderTakeProfit);
+					 		 	 				 		 	 
+   	         ticket = OrderSend(Symbol(),OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+   	                       "MagicNumberThree2",MagicNumberThree,0,Blue);
+	
 					
- 	         if(ticket <0)
+ 	            if(ticket <0)
    	         {
    	            Print("OrderSend MagicNumberThree 2 failed with error #",GetLastError());
    	         }
@@ -1271,6 +1512,8 @@ void OnTick(void)
    	         {            
    	            Print("OrderSend MagicNumberThree 2  successfully");
    	         }
+   	         Sleep(1000);
+
           }						 	 			 	 
    		}
    		
@@ -1281,30 +1524,61 @@ void OnTick(void)
    		
    			if (((crossflag == 5 )||(crossflag == 1 ))&&(OneMOrderCloseStatus(MagicNumberFour)==true))
    			{
-   				 FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
-   				 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
-   	       ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
-       		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
-   		 	 
-   		 	 stoplessvalue = MinValue1;
-			 	   if((Bid - FiveM_BoolDistance)> MinValue1)
-			 	   {
-			 	      stoplessvalue = Bid - FiveM_BoolDistance;
-			 	   }
-   		 	 
-  		 	 
-   	   	    ticket = OrderSend(Symbol(),OP_BUY,NormalizeDouble(MyLots*FourH_StrongWeak,2),Bid,3,
-   	   	   	NormalizeDouble(stoplessvalue,Digits) ,NormalizeDouble(Bid+ThirtyM_BoolDistance,Digits),
-   	   	   	"MagicNumberFour",MagicNumberFour,0,Blue);
-   	         if(ticket <0)
-   	         {
-   	            Print("OrderSend MagicNumberFour 1 failed with error #",GetLastError());
-   	         }
-   	         else
-   	         {            
-   	            Print("OrderSend MagicNumberFour 1  successfully");
-   	         }
-          }
+               FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
+               FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
+               ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
+               FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
+               orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+               orderStopLevel = orderStopLevel + 30;
+    				orderLots = NormalizeDouble(MyLots*FourH_StrongWeak,2);
+               orderPrice = Ask;				 
+               orderStopless =MinValue1; 
+   		 	   if((orderPrice - 2*FiveM_BoolDistance)> orderStopless)
+   		 	   {
+   		 	      orderStopless = orderPrice - 2*FiveM_BoolDistance;
+   		 	   }		
+   		 	   else
+   		 	   {
+   		 	      orderStopless = orderStopless - 30*Point;
+   		 	   }		 
+   				 orderTakeProfit = orderPrice+ThirtyM_BoolDistance;
+   	
+    
+	
+      			 	 /*参数修正*/
+      		 	 if(orderStopLevel > 31) 
+      		 	 {
+       		 	    if ((orderPrice - orderStopless) < orderStopLevel*Point)
+         		 	 {
+         		 	 		orderStopless = orderPrice - orderStopLevel*Point;
+         		 	 }
+         		 	 if ((orderTakeProfit - orderPrice) < orderStopLevel*Point)
+         		 	 {
+         		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
+         		 	 }
+      		 	 }				 	 		 	 
+      		 	 	 	  			 	 		 			 	 		 	
+      		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
+      		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
+      		 	 orderTakeProfit = NormalizeDouble(orderTakeProfit,Digits);	 			 	 		 			 	 		 			 	
+
+	
+   					Print("MagicNumberFour1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   								+"orderTakeProfit="+orderTakeProfit);
+   					 		 	 				 		 	 
+      	      ticket = OrderSend(Symbol(),OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+      	                       "MagicNumberFour",MagicNumberFour,0,Blue);
+   	
+      	         if(ticket <0)
+      	         {
+      	            Print("OrderSend MagicNumberFour 1 failed with error #",GetLastError());
+      	         }
+      	         else
+      	         {            
+      	            Print("OrderSend MagicNumberFour 1  successfully");
+      	         }
+      	         Sleep(1000);
+             }
    					 	 			 	 
    		}
 			
@@ -1316,19 +1590,52 @@ void OnTick(void)
    			{
    				 FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
    				 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
-       		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
-   		 	 
-   		 	   stoplessvalue = MinValue2;
-     		 	   if((Bid - FiveM_BoolDistance)> MinValue2)
+       		   FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
+       	      ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
+ 	            orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+
+
+
+               orderStopLevel = orderStopLevel + 30;
+    				orderLots = NormalizeDouble(MyLots*FourH_StrongWeak,2);
+               orderPrice = Ask;				 
+               orderStopless =MinValue2; 
+   		 	   if((orderPrice - 2*FiveM_BoolDistance)> orderStopless)
    		 	   {
-   		 	      stoplessvalue = Bid - FiveM_BoolDistance;
-   		 	   }
-   
-      	      ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
+   		 	      orderStopless = orderPrice - 2*FiveM_BoolDistance;
+   		 	   }		
+   		 	   else
+   		 	   {
+   		 	      orderStopless = orderStopless - 30*Point;
+   		 	   }		 
+   				 orderTakeProfit = orderPrice+ThirtyM_BoolDistance;
+   	
+       			 	 /*参数修正*/
+      		 	 if(orderStopLevel > 31) 
+      		 	 {
+       		 	    if ((orderPrice - orderStopless) < orderStopLevel*Point)
+         		 	 {
+         		 	 		orderStopless = orderPrice - orderStopLevel*Point;
+         		 	 }
+         		 	 if ((orderTakeProfit - orderPrice) < orderStopLevel*Point)
+         		 	 {
+         		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
+         		 	 }
+      		 	 }				 	 		 	 
+      		 	 	 	  			 	 		 			 	 		 	
+      		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
+      		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
+      		 	 orderTakeProfit = NormalizeDouble(orderTakeProfit,Digits);	 			 	 		 			 	 		 			 	
+      
+   	  	
+   	   		 	 
+ 					Print("MagicNumberFour2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+								+"orderTakeProfit="+orderTakeProfit);
+					 		 	 				 		 	 
+      	      ticket = OrderSend(Symbol(),OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+      	                       "MagicNumberFour2",MagicNumberFour,0,Blue);
+   		 	 
      		 	 
-   	   	    ticket = OrderSend(Symbol(),OP_BUY,NormalizeDouble(MyLots*FourH_StrongWeak,2),Bid,3,
-   	   	   	NormalizeDouble(stoplessvalue,Digits) ,NormalizeDouble(Bid+ThirtyM_BoolDistance,Digits),
-   	   	   	"MagicNumberFour",MagicNumberFour,0,Blue);
    	         if(ticket <0)
    	         {
    	            Print("OrderSend MagicNumberFour 2 failed with error #",GetLastError());
@@ -1337,6 +1644,7 @@ void OnTick(void)
    	         {            
    	            Print("OrderSend MagicNumberFour 2  successfully");
    	         }
+   	         Sleep(1000);
           }						 	 			 	 
 	   }
 
@@ -1359,7 +1667,7 @@ void OnTick(void)
       	   /*五分钟16个周期，理论上应该走完了,时间控制*/
       	   if((TimeCurrent()-OrderOpenTime())>4800)
       	   {
-      	      ticket =OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
+      	      ticket =OrderClose(OrderTicket(),OrderLots(),Bid,5,Red);
       	      
    	         if(ticket <0)
    	         {
@@ -1368,14 +1676,15 @@ void OnTick(void)
    	         else
    	         {            
    	            Print("OrderClose MagicNumberOne 1  successfully");
-   	         }      	   
+   	         }    
+   	         Sleep(1000);  	   
    	       }
       	   
       	   else if((TimeCurrent()-OrderOpenTime())>3600)
       	   {   	   
       	      if( OrderProfit()> 0)
       	      {
-      	           ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
+      	           ticket = OrderClose(OrderTicket(),OrderLots(),Bid,5,Red);
       	         if(ticket <0)
       	         {
       	            Print("OrderClose MagicNumberOne 2 failed with error #",GetLastError());
@@ -1383,7 +1692,8 @@ void OnTick(void)
       	         else
       	         {            
       	            Print("OrderClose MagicNumberOne 2  successfully");
-      	         }         	           
+      	         }    
+      	         Sleep(1000);     	           
       	      }   	   
       	   }  	
       	
@@ -1394,7 +1704,7 @@ void OnTick(void)
       	   if(((crossflag ==-1 )||(crossflag ==-5))
       	   	&&((CrossValue[1]!=4)&&(CrossValue[1]!=5)))
       	   {
-	      	      ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
+	      	      ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
 	      	      
 	    	        if(ticket <0)
 	   	         {
@@ -1403,7 +1713,8 @@ void OnTick(void)
 	   	         else
 	   	         {            
 	   	            Print("OrderClose MagicNumberOne 3  successfully");
-	   	         }        	      
+	   	         }   
+	   	         Sleep(1000);     	      
       	   }
       	    	
       	}  	  		
@@ -1418,7 +1729,7 @@ void OnTick(void)
       	   /*五分钟16个周期，理论上应该走完了,时间控制*/
       	   if((TimeCurrent()-OrderOpenTime())>4800)
       	   {
-      	      ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
+      	      ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
    	         if(ticket <0)
    	         {
    	            Print("OrderClose MagicNumberTwo 1  failed with error #",GetLastError());
@@ -1426,7 +1737,8 @@ void OnTick(void)
    	         else
    	         {            
    	            Print("OrderClose MagicNumberTwo 1   successfully");
-   	         }         	      
+   	         }   
+   	         Sleep(1000);      	      
       	      
       	   }
       	   
@@ -1434,7 +1746,7 @@ void OnTick(void)
       	   {   	   
       	      if( OrderProfit()> 0)
       	      {
-      	          ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
+      	          ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
 	      	           
 	      	         if(ticket <0)
 	      	         {
@@ -1443,7 +1755,8 @@ void OnTick(void)
 	      	         else
 	      	         {            
 	      	            Print("OrderClose MagicNumberTwo 2   successfully");
-	      	         }         	           
+	      	         }       
+	      	         Sleep(1000);  	           
       	      }   	   
       	   }  	
       	
@@ -1455,7 +1768,7 @@ void OnTick(void)
       	   	&&((CrossValue[1]!=-4)&&(CrossValue[1]!=-5)))
       	   
       	   {
-	      	     ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
+	      	     ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
     	         if(ticket <0)
 	   	         {
 	   	            Print("OrderClose MagicNumberTwo 3 failed with error #",GetLastError());
@@ -1463,7 +1776,8 @@ void OnTick(void)
 	   	         else
 	   	         {            
 	   	            Print("OrderClose MagicNumberTwo 3  successfully");
-	   	         }        	      
+	   	         }       
+	   	         Sleep(1000); 	      
       	      
       	   }
       	    	
@@ -1479,7 +1793,7 @@ void OnTick(void)
       	   /*30分钟16个周期，理论上应该走完了,时间控制*/
       	   if((TimeCurrent()-OrderOpenTime())>28800)
       	   {
-      	      ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
+      	      ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
    	         if(ticket <0)
    	         {
    	            Print("OrderClose MagicNumberThree 1 failed with error #",GetLastError());
@@ -1487,7 +1801,8 @@ void OnTick(void)
    	         else
    	         {            
    	            Print("OrderClose MagicNumberThree 1  successfully");
-   	         }         	      
+   	         }         
+   	         Sleep(1000);	      
       	      
       	   }
       	   
@@ -1495,7 +1810,7 @@ void OnTick(void)
       	   {   	   
       	      if( OrderProfit()> 0)
       	      {
-      	           ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
+      	           ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
       	           
           	         if(ticket <0)
          	         {
@@ -1504,7 +1819,8 @@ void OnTick(void)
          	         else
          	         {            
          	            Print("OrderClose MagicNumberThree 2  successfully");
-         	         }        	           
+         	         }    
+         	         Sleep(1000);    	           
          	    }   	   
       	   }  	
       	
@@ -1513,7 +1829,7 @@ void OnTick(void)
       	{   	   
       	   if((crossflag ==1 )||(crossflag ==5))
       	   {
-      	      ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
+      	      ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
       	      
    	         if(ticket <0)
    	         {
@@ -1522,7 +1838,8 @@ void OnTick(void)
    	         else
    	         {            
    	            Print("OrderClose MagicNumberThree 2  successfully");
-   	         }         	      
+   	         }    
+   	         Sleep(1000);     	      
       	   }
       	    	
       	}  	  		
@@ -1537,7 +1854,7 @@ void OnTick(void)
       	   /*30分钟16个周期，理论上应该走完了,时间控制*/
       	   if((TimeCurrent()-OrderOpenTime())>28800)
       	   {
-      	      ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
+      	      ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
    	         if(ticket <0)
    	         {
    	            Print("OrderClose MagicNumberFour 1 failed with error #",GetLastError());
@@ -1545,7 +1862,8 @@ void OnTick(void)
    	         else
    	         {            
    	            Print("OrderClose MagicNumberFour 1  successfully");
-   	         }         	      
+   	         }   
+   	         Sleep(1000);      	      
       	      
       	   }
       	   
@@ -1553,7 +1871,7 @@ void OnTick(void)
       	   {   	   
       	      if( OrderProfit()> 0)
       	      {
-      	           ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
+      	           ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
       	           
       	         if(ticket <0)
       	         {
@@ -1562,7 +1880,8 @@ void OnTick(void)
       	         else
       	         {            
       	            Print("OrderClose MagicNumberFour 2  successfully");
-      	         }          	           
+      	         }   
+      	         Sleep(1000);       	           
       	      }   	   
       	   }  	
       	
@@ -1571,7 +1890,7 @@ void OnTick(void)
       	{   	   
       	   if((crossflag ==-1 )||(crossflag ==-5))
       	   {
-      	      ticket = OrderClose(OrderTicket(),OrderLots(),Ask,3,Red);
+      	      ticket = OrderClose(OrderTicket(),OrderLots(),Bid,3,Red);
       	      
    	         if(ticket <0)
    	         {
@@ -1580,7 +1899,8 @@ void OnTick(void)
    	         else
    	         {            
    	            Print("OrderClose MagicNumberFour 3  successfully");
-   	         }          	      
+   	         }   
+   	         Sleep(1000);       	      
       	   }
       	    	
       	}  	  		
@@ -1602,4 +1922,3 @@ void OnTick(void)
 
   }
 //+------------------------------------------------------------------+
-
