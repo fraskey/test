@@ -1,5 +1,4 @@
 
-
 //+------------------------------------------------------------------+
 //|                                             Ibond.mq4 |
 //|                   Copyright 2005-2014, MetaQuotes Software Corp. |
@@ -30,12 +29,12 @@ double boll_up_S_pre,boll_low_S_pre,boll_mid_S_pre;
 
 
 
-int MagicNumberOne = 10000;
-int MagicNumberTwo = 20000;
-int MagicNumberThree = 30000;
-int MagicNumberFour = 40000;
-int MagicNumberFive = 50000;
-int MagicNumberSix = 60000;
+int MagicNumberOne = 100;
+int MagicNumberTwo = 200;
+int MagicNumberThree = 300;
+int MagicNumberFour = 400;
+int MagicNumberFive = 500;
+int MagicNumberSix = 600;
 
 
 
@@ -232,11 +231,51 @@ int  InitcrossValue()
 int init()
 {
 
+      int symbolvalue = 0;
 
       string MailTitlle ="";
       int i;
       
 			InitcrossValue();
+
+
+         if(Symbol() == "EURUSD")
+         {
+            symbolvalue = 100000;
+         }
+         else if (Symbol() == "AUSUSD")
+         {
+            symbolvalue = 200000;
+         
+         }
+         else if (Symbol() == "USDJPY")
+         {
+            symbolvalue = 300000;
+         
+         }       
+         else if (Symbol() == "XAUUSD")
+         {
+            symbolvalue = 400000;
+         
+         }      
+         else if (Symbol() == "GOLD")
+         {
+            symbolvalue = 500000;
+         
+         }                     
+         else
+         {
+            symbolvalue = 0;
+         
+         }
+         Print("symbolvalue:="+ symbolvalue);
+         MagicNumberOne = MagicNumberOne + symbolvalue;
+         MagicNumberTwo = MagicNumberTwo + symbolvalue;
+         MagicNumberThree = MagicNumberThree + symbolvalue;
+         MagicNumberFour = MagicNumberFour + symbolvalue;
+         MagicNumberFive = MagicNumberFive + symbolvalue;
+         MagicNumberSix = MagicNumberSix + symbolvalue;
+
 
 			if(240 == Period() )
 			{
@@ -817,7 +856,7 @@ void OnTick(void)
 
    				 		 	 
       	    ticket = OrderSend(Symbol(),OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-      	                       "MagicNumberOne",MagicNumberOne,0,CLR_NONE);
+      	                       Symbol()+"MagicNumberOne",MagicNumberOne,0,CLR_NONE);
       	                       
       	    OneMPreOrderMagicOne.myPreOrderFlag = false;  
       	                     
@@ -883,7 +922,7 @@ void OnTick(void)
   								 		 	 
    				 		 	 
       	    ticket = OrderSend(Symbol(),OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-      	                       "MagicNumberTwo",MagicNumberTwo,0,CLR_NONE);
+      	                       Symbol()+"MagicNumberTwo",MagicNumberTwo,0,CLR_NONE);
       	                       
       	    OneMPreOrderMagicTwo.myPreOrderFlag = false;  
       	                     
@@ -1438,7 +1477,7 @@ void OnTick(void)
 								+"orderTakeProfit="+orderTakeProfit);
 					 		 	 				 		 	 
    	      ticket = OrderSend(Symbol(),OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-   	                       "MagicNumberThree1",MagicNumberThree,0,Blue);
+   	                       Symbol()+"MagicNumberThree1",MagicNumberThree,0,Blue);
 	         if(ticket <0)
 	         {
 	            Print("OrderSend MagicNumberThree 1 failed with error #",GetLastError());
@@ -1515,7 +1554,7 @@ void OnTick(void)
 								+"orderTakeProfit="+orderTakeProfit);
 					 		 	 				 		 	 
    	         ticket = OrderSend(Symbol(),OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-   	                       "MagicNumberThree2",MagicNumberThree,0,Blue);
+   	                       Symbol()+"MagicNumberThree2",MagicNumberThree,0,Blue);
 	
 					
  	            if(ticket <0)
@@ -1584,7 +1623,7 @@ void OnTick(void)
    								+"orderTakeProfit="+orderTakeProfit);
    					 		 	 				 		 	 
       	      ticket = OrderSend(Symbol(),OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-      	                       "MagicNumberFour",MagicNumberFour,0,Blue);
+      	                       Symbol()+"MagicNumberFour",MagicNumberFour,0,Blue);
    	
       	         if(ticket <0)
       	         {
@@ -1651,7 +1690,7 @@ void OnTick(void)
 								+"orderTakeProfit="+orderTakeProfit);
 					 		 	 				 		 	 
       	      ticket = OrderSend(Symbol(),OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-      	                       "MagicNumberFour2",MagicNumberFour,0,Blue);
+      	                       Symbol() + "MagicNumberFour2",MagicNumberFour,0,Blue);
    		 	 
      		 	 
    	         if(ticket <0)
@@ -1940,3 +1979,5 @@ void OnTick(void)
 
   }
 //+------------------------------------------------------------------+
+
+
