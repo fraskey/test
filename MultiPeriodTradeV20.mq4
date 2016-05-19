@@ -1270,7 +1270,8 @@ void OnTick(void)
 
 
 		 if((-5==crossflag)&&(MarketInfo(Symbol(),MODE_STOPLEVEL)*Point < bool_length)
-		 	&&(OneMOrderCloseStatus(MagicNumberFive)==true)&&(CrossValue[1]==-1))
+		 	&&(OneMOrderCloseStatus(MagicNumberFive)==true)&&(CrossValue[1]==-1)
+		 	&&(OneMOrderCloseStatus(MagicNumberTwo)==true))
    	 {
 
 					ThirtyM_StrongWeak = GlobalVariableGet("g_ThirtyM_StrongWeak");
@@ -1305,11 +1306,12 @@ void OnTick(void)
 
 
 		 if((5==crossflag)&&(MarketInfo(Symbol(),MODE_STOPLEVEL)*Point < bool_length)
-		 	&&(OneMOrderCloseStatus(MagicNumberFive)==true)&&(CrossValue[1]==1))
+		 	&&(OneMOrderCloseStatus(MagicNumberFive)==true)&&(CrossValue[1]==1)
+		  &&(OneMOrderCloseStatus(MagicNumberOne)==true))
    	 {
 
 					ThirtyM_StrongWeak = GlobalVariableGet("g_ThirtyM_StrongWeak");
-					orderLots = NormalizeDouble(MyLots*ThirtyM_StrongWeak,2);
+					orderLots = NormalizeDouble(MyLots*(1-ThirtyM_StrongWeak),2);
 					orderPrice = Bid;				 
 					orderStopless =orderPrice + bool_length; 
    				orderTakeProfit = orderPrice - bool_length;
