@@ -1,4 +1,5 @@
 
+
 //+------------------------------------------------------------------+
 //|                                             Ibond.mq4 |
 //|                   Copyright 2005-2014, MetaQuotes Software Corp. |
@@ -773,7 +774,7 @@ void OnTick(void)
       if((OneMPreOrderMagicOne.myPreOrderFlag == true)
       &&(Ask >= OneMPreOrderMagicOne.myOpenPrice))
       {
-         if ((TimeCurrent()-OneMPreOrderMagicOne.myOpenTime)<130)
+         if ((TimeCurrent()-OneMPreOrderMagicOne.myOpenTime)<80)
          {
  
              orderLots = OneMPreOrderMagicOne.myLots;
@@ -781,14 +782,15 @@ void OnTick(void)
              orderStopless = Ask -(OneMPreOrderMagicOne.myOpenPrice - OneMPreOrderMagicOne.myStopLoss);
              orderTakeProfit = Ask + (OneMPreOrderMagicOne.myTakeProfit - OneMPreOrderMagicOne.myOpenPrice);
  
- 
+   		 	    /*参数修正*/ 
   	         orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
-            orderStopLevel = orderStopLevel +30;
+             orderStopLevel = 2*orderStopLevel;
+             if(orderStopLevel < 1)
+             {
+             		orderStopLevel = 100;
+             }
  		 	 
-   		 	 /*参数修正*/
-   		 	 if(orderStopLevel > 31) 
-   		 	 {
-        		 	 if ((orderPrice - orderStopless) < orderStopLevel*Point)
+        		 if ((orderPrice - orderStopless) < orderStopLevel*Point)
       		 	 {
       		 	 		orderStopless = orderPrice - orderStopLevel*Point;
       		 	 }
@@ -796,7 +798,9 @@ void OnTick(void)
       		 	 {
       		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
       		 	 }
-   		 	 }			
+
+   		 	 
+   		 	 
              
             orderLots = NormalizeDouble(orderLots,2);          
             orderPrice = NormalizeDouble(orderPrice,Digits);		 	
@@ -838,30 +842,31 @@ void OnTick(void)
       if((OneMPreOrderMagicTwo.myPreOrderFlag == true)
       &&(Bid <= OneMPreOrderMagicTwo.myOpenPrice))
       {
-         if ((TimeCurrent()-OneMPreOrderMagicTwo.myOpenTime)<130)
+         if ((TimeCurrent()-OneMPreOrderMagicTwo.myOpenTime)<80)
          {
            
              orderLots = OneMPreOrderMagicTwo.myLots;
              orderPrice = Bid;
              orderStopless = Bid -(OneMPreOrderMagicTwo.myOpenPrice - OneMPreOrderMagicTwo.myStopLoss);
              orderTakeProfit = Bid + (OneMPreOrderMagicTwo.myTakeProfit - OneMPreOrderMagicTwo.myOpenPrice);
- 
- 	         orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
- 	 		 	 orderStopLevel= orderStopLevel +30;
-		 	 	
-		 	  /*参数修正*/
-		 	 if(orderStopLevel > 31) 
-		 	 {
-   		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
-   		 	 {
-   		 	 		orderStopless = orderPrice + orderStopLevel*Point;
-   		 	 }
-   		 	 if ((orderPrice-orderTakeProfit) < orderStopLevel*Point)
-   		 	 {
-   		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
-   		 	 }
-		 	 }			
-		 	 	
+             
+			 	  /*参数修正*/ 
+	 	       orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+	 	 		 	 orderStopLevel= orderStopLevel*2;
+					if(orderStopLevel < 1)
+					{
+						orderStopLevel = 100;
+					}
+
+	   		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
+	   		 	 {
+	   		 	 		orderStopless = orderPrice + orderStopLevel*Point;
+	   		 	 }
+	   		 	 if ((orderPrice-orderTakeProfit) < orderStopLevel*Point)
+	   		 	 {
+	   		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
+	   		 	 }
+
 		 	 	
              
             orderLots = NormalizeDouble(orderLots,2);          
@@ -1144,7 +1149,7 @@ void OnTick(void)
    	 /*30M上升阶段，突破上轨，通过5分钟寻找背驰状态*/
    	 if(5==ThirtyM_Direction)
    	 {
-   	 		Print("5==ThirtyM_Direction");
+   	 		//Print("5==ThirtyM_Direction");
    	 		/*5分钟转为下跌，在1分钟线上寻找下单机会*/
 	   	 	if (true == FiveMStrongTrendChangeDown())
 	   	 	{
@@ -1161,7 +1166,7 @@ void OnTick(void)
      /*30M 突破下轨，通过5分钟寻找背驰状态*/
    	 else if(-5==ThirtyM_Direction)
    	 {
-   	 		Print("-5==ThirtyM_Direction");
+   	 	//	Print("-5==ThirtyM_Direction");
    	 
    	 		/*5分钟转为上升，在1分钟线上寻找下单机会*/
 	   	 	if (true == FiveMStrongTrendChangeUp())
@@ -1179,9 +1184,9 @@ void OnTick(void)
    	 }
 	   	 
 	   /*落回上轨内且在上半带*/
-	   else if ((4==ThirtyM_Direction)&&(Bid >(ThirtyM_BoolMidLine+ThirtyM_BoolDistance*0.5)))
+	   else if ((4==ThirtyM_Direction)&&(Bid >(ThirtyM_BoolMidLine+ThirtyM_BoolDistance*0.4)))
 	   {
-   	 		Print("4==ThirtyM_Direction");
+   	 	//	Print("4==ThirtyM_Direction");
 	   
 	   	   	if (true == FiveMStrongTrendChangeDown())
 		   	 	{
@@ -1199,9 +1204,9 @@ void OnTick(void)
 	   }
 	   
 	    /*落回下轨内且在下半带*/
-	   else if ((-4==ThirtyM_Direction)&&(Ask <(ThirtyM_BoolMidLine-ThirtyM_BoolDistance*0.5)))
+	   else if ((-4==ThirtyM_Direction)&&(Ask <(ThirtyM_BoolMidLine-ThirtyM_BoolDistance*0.4)))
 	   {
-   	 		Print("-4==ThirtyM_Direction");
+   	 	//	Print("-4==ThirtyM_Direction");
 	   
 	   	   	if (true == FiveMStrongTrendChangeUp())
 		   	 	{
@@ -1339,17 +1344,15 @@ void OnTick(void)
 			 FiveM_BoolDistance = GlobalVariableGet("g_FiveM_BoolDistance");
 			 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
 			 
-	
-	          orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
-				orderStopLevel = orderStopLevel + 10;
 
 				orderLots = MyLots*0.2;
-				
+
 				orderPrice = FiveM_BoolMidLine-FiveM_BoolDistance;
 
-		 	   orderTakeProfit = FiveM_BoolMidLine -2*FiveM_BoolDistance;
-						
-			   orderStopless = Bid;
+				orderTakeProfit = FiveM_BoolMidLine -2*FiveM_BoolDistance;
+					
+				orderStopless = Bid;
+				
 		 	 /*防止止损点位太大，保证止损和止盈比小于1：1；*/
 		 	 if((orderStopless -(FiveM_BoolMidLine -FiveM_BoolDistance))>FiveM_BoolDistance)
 		 	 {
@@ -1388,8 +1391,6 @@ void OnTick(void)
    	       ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
       		 FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
 		 	 
-	          orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
-             orderStopLevel = orderStopLevel + 30;
 
 				 orderLots = NormalizeDouble(MyLots*(1-FourH_StrongWeak),2);
 				 
@@ -1404,11 +1405,18 @@ void OnTick(void)
 		 	      orderStopless = orderStopless + 30*Point;
 		 	   }		 
 				 orderTakeProfit = orderPrice-ThirtyM_BoolDistance;
+
 	
-	
-			 	 /*参数修正*/
-		 	 if(orderStopLevel > 31) 
-		 	 {
+			 	 /*参数修正*/	
+	        orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+          orderStopLevel = orderStopLevel*2;	
+					if(orderStopLevel < 1)
+					{
+						orderStopLevel = 100;
+					}	
+					
+					orderStopless = orderStopless + orderStopLevel*Point;
+
    		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
    		 	 {
    		 	 		orderStopless = orderPrice + orderStopLevel*Point;
@@ -1417,7 +1425,7 @@ void OnTick(void)
    		 	 {
    		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
    		 	 }
-		 	 }				 	 		 	 
+		 	 			 	 		 	 
 		 	 	 	  			 	 		 			 	 		 	
 		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
 		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
@@ -1461,7 +1469,6 @@ void OnTick(void)
 
 
 
-             orderStopLevel = orderStopLevel + 30;
 
 				 orderLots = NormalizeDouble(MyLots*(1-FourH_StrongWeak),2);
 				 
@@ -1478,18 +1485,25 @@ void OnTick(void)
 				 orderTakeProfit = orderPrice-ThirtyM_BoolDistance;
 	
    		
-   			 	 /*参数修正*/
-   		 	 if(orderStopLevel > 31) 
-   		 	 {
-      		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
-      		 	 {
-      		 	 		orderStopless = orderPrice + orderStopLevel*Point;
-      		 	 }
-      		 	 if ((orderPrice-orderTakeProfit) < orderStopLevel*Point)
-      		 	 {
-      		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
-      		 	 }
-   		 	 }				 	 		 	 
+			 	 /*参数修正*/	
+	        orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+          orderStopLevel = orderStopLevel*2;	
+ 
+					if(orderStopLevel < 1)
+					{
+						orderStopLevel = 100;
+					}	
+   			 	 
+					orderStopless = orderStopless + orderStopLevel*Point;
+   			 	 
+    		 	 if ((orderStopless-orderPrice ) < orderStopLevel*Point)
+    		 	 {
+    		 	 		orderStopless = orderPrice + orderStopLevel*Point;
+    		 	 }
+    		 	 if ((orderPrice-orderTakeProfit) < orderStopLevel*Point)
+    		 	 {
+    		 	 		orderTakeProfit = orderPrice - orderStopLevel*Point;
+    		 	 }
    		 	 	 	  			 	 		 			 	 		 	
    		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
    		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
@@ -1528,8 +1542,6 @@ void OnTick(void)
                FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
                ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
                FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
-               orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
-               orderStopLevel = orderStopLevel + 30;
     				orderLots = NormalizeDouble(MyLots*FourH_StrongWeak,2);
                orderPrice = Ask;				 
                orderStopless =MinValue1; 
@@ -1544,19 +1556,24 @@ void OnTick(void)
    				 orderTakeProfit = orderPrice+ThirtyM_BoolDistance;
    	
     
-	
-      			 	 /*参数修正*/
-      		 	 if(orderStopLevel > 31) 
-      		 	 {
-       		 	    if ((orderPrice - orderStopless) < orderStopLevel*Point)
-         		 	 {
-         		 	 		orderStopless = orderPrice - orderStopLevel*Point;
-         		 	 }
-         		 	 if ((orderTakeProfit - orderPrice) < orderStopLevel*Point)
-         		 	 {
-         		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
-         		 	 }
-      		 	 }				 	 		 	 
+			 	 /*参数修正*/	
+	        orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+          orderStopLevel = orderStopLevel*2;	
+					if(orderStopLevel < 1)
+					{
+						orderStopLevel = 100;
+					}		
+					orderStopless = orderStopless - orderStopLevel*Point;
+
+   		 	   if ((orderPrice - orderStopless) < orderStopLevel*Point)
+     		 	 {
+     		 	 		orderStopless = orderPrice - orderStopLevel*Point;
+     		 	 }
+     		 	 if ((orderTakeProfit - orderPrice) < orderStopLevel*Point)
+     		 	 {
+     		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
+     		 	 }
+	 	 		 	 
       		 	 	 	  			 	 		 			 	 		 	
       		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
       		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
@@ -1592,11 +1609,6 @@ void OnTick(void)
    				 FiveM_BoolMidLine = GlobalVariableGet("g_FiveM_BoolMidLine");
        		   FourH_StrongWeak = GlobalVariableGet("g_FourH_StrongWeak");    
        	      ThirtyM_BoolDistance = GlobalVariableGet("g_ThirtyM_BoolDistance");
- 	            orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
-
-
-
-               orderStopLevel = orderStopLevel + 30;
     				orderLots = NormalizeDouble(MyLots*FourH_StrongWeak,2);
                orderPrice = Ask;				 
                orderStopless =MinValue2; 
@@ -1609,20 +1621,26 @@ void OnTick(void)
    		 	      orderStopless = orderStopless - 30*Point;
    		 	   }		 
    				 orderTakeProfit = orderPrice+ThirtyM_BoolDistance;
+
+			 	 /*参数修正*/	
+	        orderStopLevel =MarketInfo(Symbol(),MODE_STOPLEVEL);			 	 		 			 	 		 	
+          orderStopLevel = orderStopLevel*2;	
+					if(orderStopLevel < 1)
+					{
+						orderStopLevel = 100;
+					}	
+					
+					orderStopless = orderStopless - orderStopLevel*Point;
    	
-       			 	 /*参数修正*/
-      		 	 if(orderStopLevel > 31) 
-      		 	 {
-       		 	    if ((orderPrice - orderStopless) < orderStopLevel*Point)
-         		 	 {
-         		 	 		orderStopless = orderPrice - orderStopLevel*Point;
-         		 	 }
-         		 	 if ((orderTakeProfit - orderPrice) < orderStopLevel*Point)
-         		 	 {
-         		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
-         		 	 }
-      		 	 }				 	 		 	 
-      		 	 	 	  			 	 		 			 	 		 	
+   		 	    if ((orderPrice - orderStopless) < orderStopLevel*Point)
+     		 	 {
+     		 	 		orderStopless = orderPrice - orderStopLevel*Point;
+     		 	 }
+     		 	 if ((orderTakeProfit - orderPrice) < orderStopLevel*Point)
+     		 	 {
+     		 	 		orderTakeProfit = orderPrice + orderStopLevel*Point;
+     		 	 }
+  		 	 	 	  			 	 		 			 	 		 	
       		 	 orderPrice = NormalizeDouble(orderPrice,Digits);		 	
       		 	 orderStopless = NormalizeDouble(orderStopless,Digits);		 	
       		 	 orderTakeProfit = NormalizeDouble(orderTakeProfit,Digits);	 			 	 		 			 	 		 			 	
