@@ -8,8 +8,8 @@
 #property link        "http://www.mql14.com"
 
 //input double TakeProfit    =50;
-double MyLotsH          =0.1;
-double MyLotsL          =0.02; 
+double MyLotsH          =0.01;
+double MyLotsL          =0.01; 
 //input double TrailingStop  =30;
 
 int Move_Av = 3;
@@ -68,7 +68,7 @@ void initsymbol()
 	MySymbol[0] = "EURUSD";
 	MySymbol[1] = "AUDUSD";
 	MySymbol[2] = "USDJPY";         
-	MySymbol[3] = "GOLD";    //  XAUUSD   
+	MySymbol[3] = "XAUUSD";    //  XAUUSD   
 	MySymbol[4] = "GBPUSD";         
 	MySymbol[5] = "CADCHF"; 
 	MySymbol[6] = "EURCAD"; 	
@@ -95,7 +95,7 @@ int MakeMagic(int SymPos,int Magic)
       symbolvalue = 2000;
    
    }           
-   else if (MySymbol[SymPos] == "GOLD")
+   else if (MySymbol[SymPos] == "XAUUSD")
    {
       symbolvalue = 3000;
    
@@ -240,6 +240,90 @@ int  InitcrossValue(int SymPos)
 
 }
 
+void InitMA(int SymPos)
+{
+
+	double MAThird,MATen,MAThentyOne;
+	double MAThirdPre,MATenPre,MAThentyOnePre;
+	double StrongWeak;
+
+	g_symbol = MySymbol[SymPos];
+	MAThird=iMA(g_symbol,0,5,0,MODE_SMA,PRICE_CLOSE,0); 
+	MATen=iMA(g_symbol,0,21,0,MODE_SMA,PRICE_CLOSE,0); 
+	MAThentyOne=iMA(g_symbol,0,60,0,MODE_SMA,PRICE_CLOSE,0); 
+ 
+	MAThirdPre=iMA(g_symbol,0,5,0,MODE_SMA,PRICE_CLOSE,1); 
+	MATenPre=iMA(g_symbol,0,21,0,MODE_SMA,PRICE_CLOSE,1); 
+	MAThentyOnePre=iMA(g_symbol,0,60,0,MODE_SMA,PRICE_CLOSE,1); 
+ 
+	 StrongWeak =0.5;
+
+	if(MAThird > MATen)
+	{
+			
+		/*多均线多头向上*/
+		if((MAThentyOne < MATen)&&(MATen>MATenPre)&&(MAThentyOne>MAThentyOnePre))
+		{
+			 StrongWeak =0.9;
+		}
+		else if ((MAThentyOne >= MATen) &&(MAThentyOne <MAThird))
+		{
+			 StrongWeak =0.6;
+		}
+		else
+		{
+			 StrongWeak =0.5;
+		}
+	
+	}
+	else if (MAThird < MATen)
+	{
+		/*多均线多头向下*/
+		if((MAThentyOne > MATen)&&(MATen<MATenPre)&&(MAThentyOne<MAThentyOnePre))
+		{
+			 StrongWeak =0.1;
+		}
+		else if ((MAThentyOne <= MATen) &&(MAThentyOne > MAThird))
+		{
+			 StrongWeak =0.4;
+		}
+		else
+		{
+			 StrongWeak =0.5;
+		}  	
+	
+	}
+	else
+	{
+		StrongWeak =0.5;
+
+	}
+
+ 
+  if (240 == Period() )
+  {
+	GlobalVariableSet("g_FourH_SW"+g_symbol,StrongWeak);   
+	 
+  }
+  else if (30 == Period() )
+  {
+	GlobalVariableSet("g_ThirtyM_SW"+g_symbol,StrongWeak);   
+	 
+  }
+   else if (5 == Period() )
+  {
+	GlobalVariableSet("g_FiveM_SW"+g_symbol,StrongWeak);   
+  
+  }
+  else
+  {
+	;   
+  }  
+   			
+	
+	
+	
+}
 void ChangeCrossValue( int mvalue,int SymPos)
 {
 
@@ -382,7 +466,8 @@ int init()
 			Print(MailTitlle); 
 			return -1;
 		 }
-		 //MailTitlle = "Init:" + MailTitlle +  +MySymbol[i];         
+		 //MailTitlle = "Init:" + MailTitlle +  +MySymbol[i];   
+		InitMA(i);
 	}
 	 
 
@@ -544,7 +629,9 @@ void OnTick(void)
 
 	if ( PrintFlag == true)
 	{
-	  return;
+	 // return;
+	 ;
+	 
 	}
 
    //后面的代码只在每个周期开始阶段执行。
