@@ -68,7 +68,7 @@ void initsymbol()
 	MySymbol[0] = "EURUSD";
 	MySymbol[1] = "AUDUSD";
 	MySymbol[2] = "USDJPY";         
-	MySymbol[3] = "XAUUSD";    //  XAUUSD   
+	MySymbol[3] = "XAUUSD";    //  GOLD   
 	MySymbol[4] = "GBPUSD";         
 	MySymbol[5] = "CADCHF"; 
 	MySymbol[6] = "EURCAD"; 	
@@ -329,8 +329,8 @@ void ChangeCrossValue( int mvalue,int SymPos)
 {
 
 	int i;
-   string symbol = MySymbol[SymPos];
-
+	string symbol;
+    symbol = MySymbol[SymPos];
 	if (mvalue == BoolCrossRecord[SymPos].CrossFlag[0])
 	{
 		return;
@@ -470,10 +470,25 @@ int init()
 		 //MailTitlle = "Init:" + MailTitlle +  +MySymbol[i];   
 		InitMA(i);
 	}
-	 
 
+	/*test*/
+	 for(i = 0; i < symbolNum;i++)
+	 {
+		Print(MySymbol[i]+"BoolCrossRecord["+i+"]:" + BoolCrossRecord[i].CrossFlag[0]+":" 
+		+ BoolCrossRecord[i].CrossFlag[1]+":"+ BoolCrossRecord[i].CrossFlag[2]+":"
+		+ BoolCrossRecord[i].CrossFlag[3]+":"+ BoolCrossRecord[i].CrossFlag[4]+":"
+		+ BoolCrossRecord[i].CrossFlag[5]+":"+ BoolCrossRecord[i].CrossFlag[6]+":"
+		+ BoolCrossRecord[i].CrossFlag[7]+":"+ BoolCrossRecord[i].CrossFlag[8]+":"
+		+ BoolCrossRecord[i].CrossFlag[9]);
+
+	}
+	 
    	 
       
+	  
+	  
+	  
+	  
       //等待所有周期的全局参数起来
       
       for (i = 0; i < 100; i++)
@@ -580,6 +595,7 @@ double MaxValue4=-1;
 
 string g_symbol;
 
+//int start()
 void OnTick(void)
 {
 	int ticket;
@@ -668,18 +684,17 @@ void OnTick(void)
    
       g_symbol =   MySymbol[SymPos];
 	  
-       ma=iMA(g_symbol,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,0); 
+       ma=iMA(g_symbol,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,1); 
       // ma = Close[0];  
-      boll_up_B = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,0);   
-      boll_low_B = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,0);
+      boll_up_B = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+      boll_low_B = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
       boll_mid_B = (boll_up_B + boll_low_B )/2;
       /*point*/
       bool_length =(boll_up_B - boll_low_B )/2;
-      
-      
-      ma_pre = iMA(g_symbol,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,1); 
-      boll_up_B_pre = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);      
-      boll_low_B_pre = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+            
+      ma_pre = iMA(g_symbol,0,Move_Av,0,MODE_SMA,PRICE_CLOSE,2); 
+      boll_up_B_pre = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,2);      
+      boll_low_B_pre = iBands(g_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,2);
       boll_mid_B_pre = (boll_up_B_pre + boll_low_B_pre )/2;
    
    
@@ -844,7 +859,7 @@ void OnTick(void)
    		//大周期处于多头市场，本周期在下跌背驰阶段买入，目的是为了找到比较好的入场点，和止损点
    		if((FourH_StrongWeak>0.8)&&(ThirtyM_StrongWeak>0.8)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberOne))==true))
    		{
-   			if(-4 == crossflag)
+   			if((-4 == crossflag)&&(-5==BoolCrossRecord[SymPos].CrossFlag[1]))
    			{
 
 				vask    = MarketInfo(g_symbol,MODE_ASK);
@@ -867,7 +882,13 @@ void OnTick(void)
    				}										    		 	 	 	  			 	 		 			 	 		 	
    				orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-    			 	 		 			 	 		 			 	
+
+				Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+				+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[9]);				
    
    				Print(g_symbol+" MagicNumberOne1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
@@ -914,6 +935,13 @@ void OnTick(void)
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
     			 	 		 			 	 		 			 	
    
+   				Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+				+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[9]);	
+				
    				Print(g_symbol+"MagicNumberOne2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
    														 
@@ -942,7 +970,7 @@ void OnTick(void)
    		//大周期处于空头市场，本周期在上涨背驰阶段买入，，目的是为了找到比较好的入场点，和止损点
    		if((FourH_StrongWeak<0.2)&&(ThirtyM_StrongWeak<0.2)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwo))==true))
    		{
-   			if(4 == crossflag)
+   			if((4 == crossflag)&&(5==BoolCrossRecord[SymPos].CrossFlag[1]))
    			{
 					vbid    = MarketInfo(g_symbol,MODE_BID);	
 					vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
@@ -968,7 +996,14 @@ void OnTick(void)
    													    		 	 	 	  			 	 		 			 	 		 	
    					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    					orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
-   
+
+					Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+					+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[9]);						
+					
    					Print(g_symbol+"MagicNumberTwo1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    								+"orderTakeProfit="+orderTakeProfit);
    															 
@@ -1016,7 +1051,14 @@ void OnTick(void)
    																															
    				orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
-   
+
+				Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+				+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[9]);	
+				
    				Print(g_symbol+"MagicNumberTwo2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit="+orderTakeProfit);
    														 
@@ -1056,7 +1098,7 @@ void OnTick(void)
    		//大周期处于多头市场，本周期在下跌背驰阶段买入，目的是为了找到比较好的入场点，和止损点
    		if((ThirtyM_StrongWeak>0.8)&&(FiveM_StrongWeak>0.8)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberThree))==true))
    		{
-   			if(-4 == crossflag)
+   			if((-4 == crossflag)&&(-5==BoolCrossRecord[SymPos].CrossFlag[1]))
    			{
 				vask    = MarketInfo(g_symbol,MODE_ASK);
 				vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
@@ -1077,8 +1119,14 @@ void OnTick(void)
    					orderStopless = orderPrice - 2*bool_length;
    				}										    		 	 	 	  			 	 		 			 	 		 	
    				orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
-   				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-    			 	 		 			 	 		 			 	
+   				orderStopless = NormalizeDouble(orderStopless,vdigits);	
+				
+				Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+				+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[9]);	    			 	 		 			 	 		 			 	
    
    				Print(g_symbol+"MagicNumberThree1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
@@ -1124,7 +1172,13 @@ void OnTick(void)
    				orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
     			 	 		 			 	 		 			 	
-   
+				Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+				+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[9]);	
+																	
    				Print(g_symbol+"MagicNumberThree2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
    														 
@@ -1155,7 +1209,7 @@ void OnTick(void)
    		//大周期处于空头市场，本周期在上涨背驰阶段买入，，目的是为了找到比较好的入场点，和止损点
    		if((ThirtyM_StrongWeak<0.2)&&(FiveM_StrongWeak<0.2)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFour))==true))
    		{
-   			if(4 == crossflag)
+   			if((4 == crossflag)&&(5==BoolCrossRecord[SymPos].CrossFlag[1]))
    			{
    					vbid    = MarketInfo(g_symbol,MODE_BID);	
    					vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
@@ -1182,7 +1236,14 @@ void OnTick(void)
    													    		 	 	 	  			 	 		 			 	 		 	
    					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    					orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
-   
+
+					Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+					+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+					+ BoolCrossRecord[SymPos].CrossFlag[9]);	
+						
    					Print(g_symbol+"MagicNumberFour1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    								+"orderTakeProfit="+orderTakeProfit);
    															 
@@ -1230,7 +1291,14 @@ void OnTick(void)
    																															
    				orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
-   
+
+				Print(MySymbol[SymPos]+"BoolCrossRecord["+SymPos+"]:" + BoolCrossRecord[SymPos].CrossFlag[0]+":" 
+				+ BoolCrossRecord[SymPos].CrossFlag[1]+":"+ BoolCrossRecord[SymPos].CrossFlag[2]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[3]+":"+ BoolCrossRecord[SymPos].CrossFlag[4]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[5]+":"+ BoolCrossRecord[SymPos].CrossFlag[6]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[7]+":"+ BoolCrossRecord[SymPos].CrossFlag[8]+":"
+				+ BoolCrossRecord[SymPos].CrossFlag[9]);	
+				
    				Print(g_symbol+"MagicNumberFour2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit="+orderTakeProfit);
    														 
