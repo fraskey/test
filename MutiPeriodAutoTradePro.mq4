@@ -168,11 +168,12 @@ int  InitcrossValue(int SymPos)
 {	
    double myma,myboll_up_B,myboll_low_B,myboll_mid_B;
    double myma_pre,myboll_up_B_pre,myboll_low_B_pre,myboll_mid_B_pre;
-   string symbol = MySymbol[SymPos];
+   string symbol;
    
    int crossflag = 0;
    int j = 0;
    int i;
+   symbol = MySymbol[SymPos];   
    if(iBars(symbol,0) <500)
    {
       Print(symbol + "Bar Number less than 500");
@@ -868,7 +869,7 @@ void OnTick(void)
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
     			 	 		 			 	 		 			 	
    
-   				Print("MagicNumberOne1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   				Print(g_symbol+" MagicNumberOne1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
    														 
    				ticket = OrderSend(g_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,0,
@@ -894,7 +895,7 @@ void OnTick(void)
 				vask    = MarketInfo(g_symbol,MODE_ASK);
 				vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
    				MinValue3 = 100000;
-   				for (i= 0;i < (iBars(g_symbol,0) -BoolCrossRecord[SymPos].CrossBoolPos[5]);i++)
+   				for (i= 0;i < (iBars(g_symbol,0) -BoolCrossRecord[SymPos].CrossBoolPos[1]);i++)
    				{
    					if(MinValue3 > iLow(g_symbol,0,i))
    					{
@@ -913,7 +914,7 @@ void OnTick(void)
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
     			 	 		 			 	 		 			 	
    
-   				Print("MagicNumberOne2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   				Print(g_symbol+"MagicNumberOne2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
    														 
    				ticket = OrderSend(g_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,0,
@@ -968,7 +969,7 @@ void OnTick(void)
    					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    					orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
    
-   					Print("MagicNumberTwo1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   					Print(g_symbol+"MagicNumberTwo1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    								+"orderTakeProfit="+orderTakeProfit);
    															 
    					  ticket = OrderSend(g_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
@@ -994,7 +995,7 @@ void OnTick(void)
 				vbid    = MarketInfo(g_symbol,MODE_BID);	
 				vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
    				MaxValue4 = -1;
-   				for (i= 0;i < (iBars(g_symbol,0) -BoolCrossRecord[SymPos].CrossBoolPos[5]);i++)
+   				for (i= 0;i < (iBars(g_symbol,0) -BoolCrossRecord[SymPos].CrossBoolPos[1]);i++)
    				{
    					if(MaxValue4 < iHigh(g_symbol,0,i))
    					{
@@ -1016,7 +1017,7 @@ void OnTick(void)
    				orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
    
-   				Print("MagicNumberTwo2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   				Print(g_symbol+"MagicNumberTwo2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit="+orderTakeProfit);
    														 
    				  ticket = OrderSend(g_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
@@ -1079,7 +1080,7 @@ void OnTick(void)
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
     			 	 		 			 	 		 			 	
    
-   				Print("MagicNumberThree1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   				Print(g_symbol+"MagicNumberThree1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
    														 
    				ticket = OrderSend(g_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,0,
@@ -1102,10 +1103,10 @@ void OnTick(void)
    			((4==BoolCrossRecord[SymPos].CrossFlag[4])||(BoolCrossRecord[SymPos].CrossFlag[4]==5))&&
    			((4==BoolCrossRecord[SymPos].CrossFlag[5])||(BoolCrossRecord[SymPos].CrossFlag[5]==5)))		
    			{
-				vask    = MarketInfo(g_symbol,MODE_ASK);	
-				vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
+   				vask    = MarketInfo(g_symbol,MODE_ASK);	
+   				vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
    				MinValue3 = 100000;
-   				for (i= 0;i < (iBars(g_symbol,0) -BoolCrossRecord[SymPos].CrossBoolPos[5]);i++)
+   				for (i= 0;i < (iBars(g_symbol,0) -BoolCrossRecord[SymPos].CrossBoolPos[1]);i++)
    				{
    					if(MinValue3 > iLow(g_symbol,0,i))
    					{
@@ -1124,7 +1125,7 @@ void OnTick(void)
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
     			 	 		 			 	 		 			 	
    
-   				Print("MagicNumberThree2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   				Print(g_symbol+"MagicNumberThree2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit=0");
    														 
    				ticket = OrderSend(g_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,0,
@@ -1156,9 +1157,9 @@ void OnTick(void)
    		{
    			if(4 == crossflag)
    			{
-					vbid    = MarketInfo(g_symbol,MODE_BID);	
-					vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
-					
+   					vbid    = MarketInfo(g_symbol,MODE_BID);	
+   					vdigits = (int)MarketInfo(g_symbol,MODE_DIGITS);
+   					
    					MaxValue4 = -1;
    					for (i= 0;i < (iBars(g_symbol,0) -BoolCrossRecord[SymPos].CrossBoolPos[1]);i++)
    					{
@@ -1182,7 +1183,7 @@ void OnTick(void)
    					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    					orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
    
-   					Print("MagicNumberFour1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   					Print(g_symbol+"MagicNumberFour1 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    								+"orderTakeProfit="+orderTakeProfit);
    															 
    					  ticket = OrderSend(g_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
@@ -1230,7 +1231,7 @@ void OnTick(void)
    				orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
    				orderStopless = NormalizeDouble(orderStopless,vdigits);		 		 			 	 		 			 	 		 			 	
    
-   				Print("MagicNumberFour2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
+   				Print(g_symbol+"MagicNumberFour2 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
    							+"orderTakeProfit="+orderTakeProfit);
    														 
    				  ticket = OrderSend(g_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
@@ -1265,14 +1266,14 @@ void OnTick(void)
 	for (i = 0; i < OrdersTotal(); i++)
 	{
 
-	   NowSymPos = ((int)OrderMagicNumber()) /1000;
-       NowMagicNumber = OrderMagicNumber() - NowSymPos *1000;
-	   
-	   if((NowSymPos<0)||(NowSymPos>=symbolNum))
-	   {
-	      Print("NowSymPos error 0");
-	   }
-  
+      NowSymPos = ((int)OrderMagicNumber()) /1000;
+      NowMagicNumber = OrderMagicNumber() - NowSymPos *1000;
+      
+      if((NowSymPos<0)||(NowSymPos>=symbolNum))
+      {
+         Print("NowSymPos error 0");
+      }
+
 		if(NowMagicNumber == MagicNumberOne)
 		{
 		
