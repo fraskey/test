@@ -2602,7 +2602,7 @@ void OnTick(void)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = vask;				 
 			//orderStopless =MinValue3- bool_length*4; 	
-			orderStopless = boll_low_B;		
+			orderStopless = boll_low_B-bool_length;		
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -3007,7 +3007,7 @@ void OnTick(void)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = vbid;						 
 			//orderStopless =MaxValue4 + bool_length*4; 
-			orderStopless = boll_up_B;
+			orderStopless = boll_up_B + bool_length;
 			
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
@@ -3426,7 +3426,7 @@ void OnTick(void)
 			orderLots = NormalizeDouble(MyLotsL,2);
 			orderPrice = vask;				 
 			//orderStopless =MinValue3- bool_length*4; 
-			orderStopless = boll_low_B;
+			orderStopless = boll_low_B - bool_length;
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -3827,7 +3827,7 @@ void OnTick(void)
 			orderLots = NormalizeDouble(MyLotsL,2);
 			orderPrice = vbid;						 
 			//orderStopless =MaxValue4 + bool_length*4; 
-			orderStopless = boll_up_B;
+			orderStopless = boll_up_B + bool_length;
 			
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
@@ -4242,7 +4242,7 @@ void OnTick(void)
 			orderLots = NormalizeDouble(MyLotsL,2);
 			orderPrice = vask;				 
 			//orderStopless =MinValue3- bool_length*4;
-			orderStopless = boll_low_B;			
+			orderStopless = boll_low_B - bool_length;			
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -4640,7 +4640,7 @@ void OnTick(void)
 			orderLots = NormalizeDouble(MyLotsL,2);
 			orderPrice = vbid;						 
 			//orderStopless =MaxValue4 + bool_length*4; 
-			orderStopless = boll_up_B;
+			orderStopless = boll_up_B + bool_length;
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
 			{
@@ -5616,6 +5616,29 @@ void OnTick(void)
 					  Print("SymPos error 3");
 				   }		
 
+					if(4 == BoolCrossRecord[SymPos].CrossFlag[0])
+					{
+						
+						orderLots = OrderLots()/2;
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = 0.01;
+							orderLots = NormalizeDouble(orderLots,2);
+						}
+						
+						 ticket = OrderClose(OrderTicket(),orderLots,vbid,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberThree00 888 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberThree00 888  with profit successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}					   
 				   
 					if((iBars(my_symbol,0)-BuySellPosRecord[SymPos].NextModifyPos[2]) > 0)
 					{
@@ -5909,7 +5932,28 @@ void OnTick(void)
 					  Print("SymPos error 4");
 				   }	
 
-
+					if(-4 == BoolCrossRecord[SymPos].CrossFlag[0])
+					{
+						orderLots = OrderLots()/2;
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = 0.01;
+							orderLots = NormalizeDouble(orderLots,2);
+						}
+												
+						 ticket = OrderClose(OrderTicket(),orderLots,vask,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberFour00 888 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberFour00 888  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}	
 				   
 					if((iBars(my_symbol,0)-BuySellPosRecord[SymPos].NextModifyPos[3]) > 0)
 					{
@@ -6745,7 +6789,28 @@ void OnTick(void)
 					  Print("SymPos error 7");
 				   }		
 
-				   
+					if(4 == BoolCrossRecord[SymPos].CrossFlag[0])
+					{
+						orderLots = OrderLots()/2;
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = 0.01;
+							orderLots = NormalizeDouble(orderLots,2);
+						}
+												
+						  ticket = OrderClose(OrderTicket(),orderLots,vbid,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberSeven00 888 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberSeven00 888  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}					   
 					if((iBars(my_symbol,0)-BuySellPosRecord[SymPos].NextModifyPos[6]) > 0)
 					{
 						
@@ -7038,7 +7103,28 @@ void OnTick(void)
 				   {
 					  Print("SymPos error 8");
 				   }	
-
+					if(-4 == BoolCrossRecord[SymPos].CrossFlag[0])
+					{
+						orderLots = OrderLots()/2;
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = 0.01;
+							orderLots = NormalizeDouble(orderLots,2);
+						}						
+						  ticket = OrderClose(OrderTicket(),orderLots,vask,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberEight00 888 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberEight00 888  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}	
+				   
 
 				   
 					if((iBars(my_symbol,0)-BuySellPosRecord[SymPos].NextModifyPos[7]) > 0)
@@ -7856,6 +7942,27 @@ void OnTick(void)
 				   {
 					  Print("SymPos error 11");
 				   }		
+					if(4 == BoolCrossRecord[SymPos].CrossFlag[0])
+					{
+						orderLots = OrderLots()/2;
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = 0.01;
+							orderLots = NormalizeDouble(orderLots,2);
+						}							
+						  ticket = OrderClose(OrderTicket(),orderLots,vbid,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberEleven00 888 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberEleven00 888  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}						
 
 				   
 					if((iBars(my_symbol,0)-BuySellPosRecord[SymPos].NextModifyPos[10]) > 0)
@@ -8134,8 +8241,28 @@ void OnTick(void)
 				   {
 					  Print("SymPos error 12");
 				   }	
-
-
+					if(-4 == BoolCrossRecord[SymPos].CrossFlag[0])
+					{
+						orderLots = OrderLots()/2;
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = 0.01;
+							orderLots = NormalizeDouble(orderLots,2);
+						}								
+						  ticket = OrderClose(OrderTicket(),orderLots,vask,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberTwelve00 888 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberTwelve00 888  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}	
+	
 				   
 					if((iBars(my_symbol,0)-BuySellPosRecord[SymPos].NextModifyPos[11]) > 0)
 					{
@@ -8407,7 +8534,7 @@ void OnTick(void)
 
 	
 	/*短线获利清盘，长线后面再考虑*/
-	if((0)
+	if((1)
 		&&(1 == Period()))
 	{
 			
