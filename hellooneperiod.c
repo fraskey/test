@@ -8,7 +8,7 @@
 
 //input double TakeProfit    =50;
 double MyLotsH          =1;
-double MyLotsL          =0.1; 
+double MyLotsL          =1; 
 //input double TrailingStop  =30;
 
 int Move_Av = 3;
@@ -3558,6 +3558,51 @@ void checkbuysellordertypeone()
 			vbid    = MarketInfo(my_symbol,MODE_BID);		
 			vask    = MarketInfo(my_symbol,MODE_ASK);												
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+			
+			/*直接止损！*/
+			if(OrderProfit()<-400*OrderLots())				
+			{
+								
+				if(OrderType()==OP_BUY)
+				{
+					ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+					  
+					 if(ticket <0)
+					 {
+						Print("OrderClose buy stopless encought  failed with error #",GetLastError());
+					 }
+					 else
+					 {            
+						Print("OrderClose buy stopless encought   successfully");
+					 }    	
+					Sleep(1000); 
+			
+				}
+				
+
+				if(OrderType()==OP_SELL)
+				{
+					ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+					  
+					 if(ticket <0)
+					 {
+						Print("OrderClose sell stopless encoutht  failed with error #",GetLastError());
+					 }
+					 else
+					 {            
+						Print("OrderClose sell stopless encoutht   successfully");
+					 }  
+					Sleep(1000);				 
+			
+				}
+											
+				
+			}
+
+
+
+
 			
 		  
 			if(NowMagicNumber == MagicNumberOne)
@@ -3696,8 +3741,8 @@ void checkbuysellordertypeone()
 					
 
 					
-				   /*在非多头向上的情况下，一分钟120个周期，理论上应该走完了,90周期开始监控时间控制*/
-				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[0])>120)
+				   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[0])>400)
 				   {
 					ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
 					  
@@ -3712,7 +3757,7 @@ void checkbuysellordertypeone()
 					 Sleep(1000);  	   
 				   }
 				   
-				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[0])>90)
+				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[0])>360)
 				   {   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -3916,7 +3961,8 @@ void checkbuysellordertypeone()
 			   
 		   
 			   
-				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+					||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
 				{
 					
 	
@@ -3967,8 +4013,8 @@ void checkbuysellordertypeone()
 					}
 					
 
-					/*在非多头向下的情况下一分钟120个周期，理论上应该走完了,90分钟开始监控时间控制*/
-					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[1])>120)
+					/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,90分钟开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[1])>400)
 					{
 					  ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
 					  
@@ -3983,7 +4029,7 @@ void checkbuysellordertypeone()
 					 Sleep(1000);  	   
 					}
 
-					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[1])>90)
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[1])>360)
 					{   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -4996,8 +5042,8 @@ void checkbuysellordertypetwo()
 					}
 					
 					
-				   /*在非多头向上的情况下，一分钟120个周期，理论上应该走完了,90周期开始监控时间控制*/
-				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[4])>120)
+				   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[4])>400)
 				   {
 					ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
 					  
@@ -5012,7 +5058,7 @@ void checkbuysellordertypetwo()
 					 Sleep(1000);  	   
 				   }
 				   
-				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[4])>90)
+				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[4])>360)
 				   {   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -5313,8 +5359,8 @@ void checkbuysellordertypetwo()
 					}
 					
 
-					/*在非多头向下的情况下一分钟120个周期，理论上应该走完了,90分钟开始监控时间控制*/
-					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[5])>120)
+					/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[5])>400)
 					{
 					  ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
 					  
@@ -5329,7 +5375,7 @@ void checkbuysellordertypetwo()
 					 Sleep(1000);  	   
 					}
 
-					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[5])>90)
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[5])>360)
 					{   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -6272,8 +6318,8 @@ void checkbuysellordertypetwo()
 					}
 					
 					
-				   /*在非多头向上的情况下，一分钟120个周期，理论上应该走完了,90周期开始监控时间控制*/
-				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[12])>120)
+				   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[12])>400)
 				   {
 					ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
 					  
@@ -6288,7 +6334,7 @@ void checkbuysellordertypetwo()
 					 Sleep(1000);  	   
 				   }
 				   
-				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[12])>90)
+				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[12])>360)
 				   {   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -6605,8 +6651,8 @@ void checkbuysellordertypetwo()
 					}
 					
 
-					/*在非多头向下的情况下一分钟120个周期，理论上应该走完了,90分钟开始监控时间控制*/
-					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[13])>120)
+					/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[13])>400)
 					{
 					  ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
 					  
@@ -6621,7 +6667,7 @@ void checkbuysellordertypetwo()
 					 Sleep(1000);  	   
 					}
 
-					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[13])>90)
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[13])>360)
 					{   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -6990,8 +7036,8 @@ void checkbuysellordertypethree()
 					}
 					
 					
-				   /*在非多头向上的情况下，一分钟120个周期，理论上应该走完了,90周期开始监控时间控制*/
-				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>120)
+				   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>400)
 				   {
 					ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
 					  
@@ -7006,7 +7052,7 @@ void checkbuysellordertypethree()
 					 Sleep(1000);  	   
 				   }
 				   
-				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>90)
+				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>360)
 				   {   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -7313,8 +7359,8 @@ void checkbuysellordertypethree()
 					}
 					
 
-					/*在非多头向下的情况下一分钟120个周期，理论上应该走完了,90分钟开始监控时间控制*/
-					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>120)
+					/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>400)
 					{
 					  ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
 					  
@@ -7329,7 +7375,7 @@ void checkbuysellordertypethree()
 					 Sleep(1000);  	   
 					}
 
-					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>90)
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>360)
 					{   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -8248,8 +8294,8 @@ void checkbuysellordertypethree()
 					}
 					
 					
-				   /*在非多头向上的情况下，一分钟120个周期，理论上应该走完了,90周期开始监控时间控制*/
-				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[14])>120)
+				   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[14])>400)
 				   {
 					ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
 					  
@@ -8264,7 +8310,7 @@ void checkbuysellordertypethree()
 					 Sleep(1000);  	   
 				   }
 				   
-				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[14])>90)
+				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[14])>360)
 				   {   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -8569,8 +8615,8 @@ void checkbuysellordertypethree()
 					}
 					
 
-					/*在非多头向下的情况下一分钟120个周期，理论上应该走完了,90分钟开始监控时间控制*/
-					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[15])>120)
+					/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[15])>400)
 					{
 					  ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
 					  
@@ -8585,7 +8631,7 @@ void checkbuysellordertypethree()
 					 Sleep(1000);  	   
 					}
 
-					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[15])>90)
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[15])>360)
 					{   	   
 					  if( OrderProfit()> 0)
 					  {
@@ -9091,7 +9137,49 @@ int  InitcrossValue(int SymPos,int timeperiodnum)
 }
 
 
+void InitBuySellPos()
+{
+	int SymPos;
+	int i ;
+	string my_symbol;
+	int my_timeperiod;
+	for(SymPos = 0; SymPos < symbolNum;SymPos++)
+	{
+		
+		my_symbol =   MySymbol[SymPos];
+		
+		for(i = 0; i < 20;i++)
+		{			
+			BuySellPosRecord[SymPos].NextModifyPos[i] = 1000000000;
+			
+		}
 
+		my_timeperiod = timeperiod[0];				
+		BuySellPosRecord[SymPos].TradeTimePos[0] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[1] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod);			
+		
+		my_timeperiod = timeperiod[1];				
+		BuySellPosRecord[SymPos].TradeTimePos[4] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[5] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);			
+		BuySellPosRecord[SymPos].TradeTimePos[12] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[13] = iBars(my_symbol,my_timeperiod);			
+				
+		my_timeperiod = timeperiod[2];				
+		BuySellPosRecord[SymPos].TradeTimePos[8] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[9] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);			
+		BuySellPosRecord[SymPos].TradeTimePos[14] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[15] = iBars(my_symbol,my_timeperiod);			
+										
+		
+	}
+		
+}
 
 
 void InitMA(int SymPos,int timeperiodnum)
@@ -9852,7 +9940,8 @@ int init()
 	initsymbol();    
 	initmagicnumber();
 	inittiimeperiod();
-
+	
+	InitBuySellPos();
 	
 	Freq_Count = 0;
 	TwentyS_Freq = 0;
