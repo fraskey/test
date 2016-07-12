@@ -71,22 +71,6 @@ string MySymbol[50];
 int symbolNum;
 
 
-double OneW_StrongWeak;
-double OneD_StrongWeak;
-double FourH_StrongWeak;
-double ThirtyM_StrongWeak;
-double FiveM_StrongWeak;
-double FourH_Trend;
-double OneD_Trend;
-double FiveM_BoolIndex;
-double ThirtyM_BoolIndex;
-double ThirtyM_BoolFlag;
-double FiveM_BoolFlag;
-double FourH_BoolFlag;
-double OneM_BoolFlag;
-
-double FourH_BoolIndex;
-
 
 
 int Freq_Count = 0;
@@ -4037,7 +4021,8 @@ void checkbuysellordertypeone()
 				}
 				
 				
-				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)&&(ThirtyM_StrongWeak<0.2))	
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)
+				   &&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
 				{
 					
 					BuySellPosRecord[SymPos].TradeTimePos[1] = iBars(my_symbol,my_timeperiod);												
@@ -4219,7 +4204,7 @@ void checkbuysellordertypeone()
 					
 				}						
 
-				if((-4.5 >FiveM_BoolFlag )
+				if((-4.5 >BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag )
 					&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
 					&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[2]) < -1000))
 				{
@@ -4529,7 +4514,7 @@ void checkbuysellordertypeone()
 				}											   
 													   
 				
-				if((4.5 <FiveM_BoolFlag)
+				if((4.5 <BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
 					&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
 					&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[3]) < -1000))					
 				{
@@ -4693,7 +4678,7 @@ void checkbuysellordertypeone()
 					}																		
 					
 				}
-				if(FiveM_StrongWeak > 0.8)
+				if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)
 				{
 					
 					//非激进处理
@@ -4796,7 +4781,7 @@ void checkbuysellordertypetwo()
  
 	int    vdigits ;
 	
-	timeperiodnum = 0;	
+	timeperiodnum = 1;	
 
 	orderStopLevel=0;
 	orderLots = 0;   
@@ -6787,7 +6772,7 @@ void checkbuysellordertypethree()
  
 	int    vdigits ;
 	
-	timeperiodnum = 0;	
+	timeperiodnum = 2;	
 
 	orderStopLevel=0;
 	orderLots = 0;   
@@ -8776,18 +8761,13 @@ void initsymbol()
 	MySymbol[23] = "AUDNZD"; 	
 	MySymbol[24] = "CHFJPY"; 	
 	MySymbol[25] = "EURNZD"; 	
-	//MySymbol[26] = "OIL-AUG16"; 	
-	//MySymbol[27] = "SILVER"; 	
-	//MySymbol[28] = "SUGAR-OCT16"; 	
+	
 	MySymbol[26] = "GBPCAD"; 	
 	MySymbol[27] = "GBPNZD"; 	
-	//MySymbol[31] = "US500Cash"; 	
+	
 	MySymbol[28] = "USDSGD"; 	
 	MySymbol[29] = "USDZAR"; 	
-	//MySymbol[34] = "EU50Cash"; 	
-	//MySymbol[35] = "EURSGD"; 
-	//MySymbol[36] = "EURZAR"; 
-	//MySymbol[37] = "USDHKD"; 
+
 		
 	symbolNum = 30;
 	
@@ -8985,23 +8965,8 @@ int MakeMagic(int SymPos,int Magic)
       return symbolvalue;
    
    }
-  	//MySymbol[26] = "OIL-AUG16"; 	
-	//MySymbol[27] = "SILVER"; 	
-	//MySymbol[28] = "SUGAR-OCT16"; 	
-	MySymbol[29] = "GBPCAD"; 	
-	MySymbol[30] = "GBPNZD"; 	
-	//MySymbol[31] = "US500Cash"; 	
-	MySymbol[32] = "USDSGD"; 	
-	MySymbol[33] = "USDZAR"; 	
-	//MySymbol[34] = "EU50Cash"; 	
-	//MySymbol[35] = "EURSGD"; 
-	//MySymbol[36] = "EURZAR"; 
-	//MySymbol[37] = "USDHKD";  
-   
-   
-   
-   
-   
+
+     
    
    symbolvalue = symbolvalue + Magic;
    return symbolvalue;
@@ -9309,7 +9274,7 @@ void ChangeCrossValue( int mvalue,double  mstrongweak,int SymPos,int timeperiodn
 	//BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[0] = TimeCurrent();
 	BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[0] = iBars(symbol,my_timeperiod);
 	
-	BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[0] = OneW_StrongWeak;
+	BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[0] = mstrongweak;
 
 	return;
 }
@@ -9860,6 +9825,19 @@ bool importantdatatimeoptall(datetime idtime,int offset,int type)
 int init()
 {
 
+
+	double OneW_StrongWeak;
+	double OneD_StrongWeak;
+	double FourH_StrongWeak;
+	double ThirtyM_StrongWeak;
+	double FourH_Trend;
+	double OneD_Trend;
+	double ThirtyM_BoolFlag;
+	double FiveM_BoolFlag;
+	double FourH_BoolFlag;
+	double OneM_BoolFlag;
+
+
 	int SymPos;
 	int timeperiodnum;
 	int my_timeperiod;
@@ -9914,7 +9892,7 @@ int init()
 					  else
 					  {
 						OneW_StrongWeak = GlobalVariableGet("g_OneW_SW"+my_symbol);  
-							Print("init g_OneW_SW is OK  = "+my_symbol+DoubleToString(OneW_StrongWeak));  		          			      	  
+							//Print("init g_OneW_SW is OK  = "+my_symbol+DoubleToString(OneW_StrongWeak));  		          			      	  
 					  }  
 
 				  }
@@ -9941,7 +9919,7 @@ int init()
 				  else
 				  {
 					OneD_Trend = GlobalVariableGet("g_OneD_Trend"+my_symbol);  
-						Print("init g_OneD_Trend is OK  = "+my_symbol+DoubleToString(OneD_Trend));  		          			      	  
+						//Print("init g_OneD_Trend is OK  = "+my_symbol+DoubleToString(OneD_Trend));  		          			      	  
 				  }  
 
 			  }
@@ -9966,7 +9944,7 @@ int init()
 				  else
 				  {
 					OneD_StrongWeak = GlobalVariableGet("g_OneD_SW"+my_symbol);  
-						Print("init g_OneD_SW is OK  = "+my_symbol+DoubleToString(OneD_StrongWeak));  		          			      	  
+						//Print("init g_OneD_SW is OK  = "+my_symbol+DoubleToString(OneD_StrongWeak));  		          			      	  
 				  }  
 
 			  }
@@ -10000,7 +9978,7 @@ int init()
 				  else
 				  {
 					FourH_StrongWeak = GlobalVariableGet("g_FourH_SW"+my_symbol);  
-						Print("init g_FourH_StrongWeak is OK  = "+my_symbol+DoubleToString(FourH_StrongWeak));  		          			      	  
+						//Print("init g_FourH_StrongWeak is OK  = "+my_symbol+DoubleToString(FourH_StrongWeak));  		          			      	  
 				  }  
 
 			  }
@@ -10023,7 +10001,7 @@ int init()
 				  else
 				  {
 					FourH_Trend = GlobalVariableGet("g_FourH_Trend"+my_symbol);  
-						Print("init g_FourH_Trend is OK  = "+my_symbol+DoubleToString(FourH_Trend));  		          			      	  
+					//	Print("init g_FourH_Trend is OK  = "+my_symbol+DoubleToString(FourH_Trend));  		          			      	  
 				  }  
 
 			  }
@@ -10044,7 +10022,7 @@ int init()
 						  }		    
 						  else
 						  {
-								Print("init g_FourH_BoolIndex is OK  "+my_symbol);  		          			      	  
+							//	Print("init g_FourH_BoolIndex is OK  "+my_symbol);  		          			      	  
 						  }  
 
 				  } 	
@@ -10068,7 +10046,7 @@ int init()
 					  else
 					  {
 						FourH_BoolFlag = GlobalVariableGet("g_FourH_BF"+my_symbol);  
-							Print("init g_g_FourH_BF is OK  = "+my_symbol+DoubleToString(FourH_BoolFlag));  		          			      	  
+							//Print("init g_g_FourH_BF is OK  = "+my_symbol+DoubleToString(FourH_BoolFlag));  		          			      	  
 					  }  
 
 				  }
@@ -10099,7 +10077,7 @@ int init()
 					  else
 					  {
 						ThirtyM_StrongWeak = GlobalVariableGet("g_ThirtyM_SW"+my_symbol);  
-							Print("init g_ThirtyM_StrongWeak is OK  = "+my_symbol+DoubleToString(ThirtyM_StrongWeak));  		          			      	  
+							//Print("init g_ThirtyM_StrongWeak is OK  = "+my_symbol+DoubleToString(ThirtyM_StrongWeak));  		          			      	  
 					  }  
 
 				  }
@@ -10123,7 +10101,7 @@ int init()
 					  else
 					  {
 						ThirtyM_BoolFlag = GlobalVariableGet("g_ThirtyM_BF"+my_symbol);  
-							Print("init g_ThirtyM_BoolFlag is OK  = "+my_symbol+DoubleToString(ThirtyM_BoolFlag));  		          			      	  
+						//	Print("init g_ThirtyM_BoolFlag is OK  = "+my_symbol+DoubleToString(ThirtyM_BoolFlag));  		          			      	  
 					  }  
 
 				  }
@@ -10143,7 +10121,7 @@ int init()
 						  }		    
 						  else
 						  {
-								Print("init g_ThirtyM_BoolIndex is OK  "+my_symbol);  		          			      	  
+							//	Print("init g_ThirtyM_BoolIndex is OK  "+my_symbol);  		          			      	  
 						  }  
 
 				  } 	
@@ -10175,7 +10153,7 @@ int init()
 					  else
 					  {
 						FiveM_BoolFlag = GlobalVariableGet("g_FiveM_BF"+my_symbol);  
-							Print("init g_FiveM_BoolFlag is OK  = "+my_symbol+DoubleToString(FiveM_BoolFlag));  		          			      	  
+							//Print("init g_FiveM_BoolFlag is OK  = "+my_symbol+DoubleToString(FiveM_BoolFlag));  		          			      	  
 					  }  
 
 				  }
@@ -10196,7 +10174,7 @@ int init()
 						  }		    
 						  else
 						  {
-								Print("init g_FiveM_BoolIndex is OK  "+my_symbol);  		          			      	  
+							//	Print("init g_FiveM_BoolIndex is OK  "+my_symbol);  		          			      	  
 						  }  
 
 				  } 	
@@ -10218,7 +10196,7 @@ int init()
 					  }		    
 					  else
 					  {
-							Print("init g_FiveM_StrongWeak is OK  "+my_symbol);  		          			      	  
+							//Print("init g_FiveM_StrongWeak is OK  "+my_symbol);  		          			      	  
 					  }  
 
 				  } 	
@@ -10248,7 +10226,7 @@ int init()
 					  else
 					  {
 						OneM_BoolFlag = GlobalVariableGet("g_OneM_BF"+my_symbol);  
-							Print("init g_OneM_BoolFlag is OK  = "+my_symbol+DoubleToString(OneM_BoolFlag));  		          			      	  
+						//	Print("init g_OneM_BoolFlag is OK  = "+my_symbol+DoubleToString(OneM_BoolFlag));  		          			      	  
 					  }  
 
 				  }
@@ -10370,6 +10348,7 @@ int deinit()
 		{   
 
 			my_symbol =   MySymbol[SymPos];
+			
 			my_timeperiod = timeperiod[timeperiodnum];	
 			
 			if(10080 == my_timeperiod )
@@ -10836,10 +10815,10 @@ void OnTick(void)
 	
 	double MinValue3 = 100000;
 	double MaxValue4=-1;
-///////////
-int my_timeperiod = 0;
-int timeperiodnum = 0;
-///////////
+	///////////
+	int my_timeperiod = 0;
+	int timeperiodnum = 0;
+	///////////
 	
 
 	
