@@ -87,49 +87,31 @@ int ThirtyM_Freq = 0;
 
 
 struct stBuySellPosRecord
-{
-	int MagicNumberOnePos;
-	int MagicNumberTwoPos;
-	int MagicNumberThreePos;
-	int MagicNumberFourPos;	
-	int MagicNumberFivePos;
-	int MagicNumberSixPos;
-	int MagicNumberSevenPos;
-	int MagicNumberEightPos;
-	int MagicNumberNinePos;
-	int MagicNumberTenPos;
-	int MagicNumberElevenPos;
-	int MagicNumberTwelvePos;	
-
-	int MagicNumberThirteenPos;
-	int MagicNumberFourteenPos;
-	int MagicNumberFifteenPos;
-	int MagicNumberSixteenPos;		
-	
-	double TakeProfit[20];
-	double RecentMin[20];
-	double RecentMax[20];
+{	
 	int TradeTimePos[20];
 	int NextModifyPos[20];
 	double NextModifyValue1[20];
-	double NextModifyValue2[20];	
+	double NextModifyValue2[20];
+	int ticket;
 };
-
-// 5 表示上穿上轨；4表示下穿上轨 1表示上穿中线 -1表示下穿中线 -5表示下穿下轨 -4表示上穿下轨
 
 
 
 stBuySellPosRecord BuySellPosRecord[50];
 
 
-struct stTradeRecord
+struct stOrderRecord
 {
 	int ticket;
+	int SymPos;
+	int buyselltype;
+	int buysellminor;
+	
 	double stopless;
 	int number;
 };
 
-stTradeRecord TradeRecord[100];
+stOrderRecord OrderRecord[100];
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -152,6 +134,2135 @@ struct stBoolCrossRecord
 
 
 stBoolCrossRecord BoolCrossRecord[50][16];
+
+
+
+////////////////////////////////////////////////////////////////////////////
+
+
+
+void initsymbol()
+{
+
+	MySymbol[0] = "EURUSD";
+	MySymbol[1] = "AUDUSD";
+	MySymbol[2] = "USDJPY";         
+	MySymbol[3] = "XAUUSD";         
+	MySymbol[4] = "GBPUSD";         
+	MySymbol[5] = "CADCHF"; 
+	MySymbol[6] = "EURCAD"; 	
+	MySymbol[7] = "GBPAUD"; 	
+	MySymbol[8] = "AUDJPY";         
+	MySymbol[9] = "EURJPY"; 
+	MySymbol[10] = "GBPJPY"; 	
+	MySymbol[11] = "USDCAD"; 
+	MySymbol[12] = "AUDCAD"; 	
+	MySymbol[13] = "AUDCHF"; 
+	MySymbol[14] = "CADJPY"; 
+	MySymbol[15] = "EURAUD"; 
+	MySymbol[16] = "GBPCHF"; 
+	MySymbol[17] = "NZDCAD"; 
+	MySymbol[18] = "NZDUSD"; 
+	MySymbol[19] = "NZDJPY"; 
+	MySymbol[20] = "USDCHF";
+ 	
+	MySymbol[21] = "EURGBP"; 	
+	MySymbol[22] = "EURCHF"; 	
+	MySymbol[23] = "AUDNZD"; 	
+	MySymbol[24] = "CHFJPY"; 	
+	MySymbol[25] = "EURNZD"; 	
+	
+	MySymbol[26] = "GBPCAD"; 	
+	MySymbol[27] = "GBPNZD"; 	
+	
+	MySymbol[28] = "USDSGD"; 	
+	MySymbol[29] = "USDZAR"; 	
+
+		
+	symbolNum = 30;
+	
+	
+	
+}
+
+
+
+int MakeMagic(int SymPos,int Magic)
+{
+   int symbolvalue;
+   string my_symbol;
+	my_symbol =   MySymbol[SymPos]; 
+	 
+   if(my_symbol == "EURUSD")
+   {
+      symbolvalue = 0;
+   }
+   else if (my_symbol == "AUDUSD")
+   {
+      symbolvalue = 1000;
+   
+   }
+   else if (my_symbol == "USDJPY")
+   {
+      symbolvalue = 2000;
+   
+   }           
+   else if (my_symbol == "XAUUSD")
+   {
+      symbolvalue = 3000;
+   
+   }   
+   else if (my_symbol == "GBPUSD")
+   {
+      symbolvalue = 4000;
+   
+   }      
+   else if (my_symbol == "CADCHF")
+   {
+      symbolvalue = 5000;
+   
+   }  
+   else if (my_symbol == "EURCAD")
+   {
+      symbolvalue = 6000;
+   
+   }  
+   else if (my_symbol == "GBPAUD")
+   {
+      symbolvalue = 7000;
+   
+   }     
+   else if (my_symbol == "AUDJPY")
+   {
+      symbolvalue = 8000;
+   
+   }  
+   else if (my_symbol == "EURJPY")
+   {
+      symbolvalue = 9000;
+   
+   }  
+   else if (my_symbol == "GBPJPY")
+   {
+      symbolvalue = 10000;
+   
+   }  
+   else if (my_symbol == "USDCAD")
+   {
+      symbolvalue = 11000;
+   
+   }     
+   else if (my_symbol == "AUDCAD")
+   {
+      symbolvalue = 12000;
+   
+   }   
+   else if (my_symbol == "AUDCHF")
+   {
+      symbolvalue = 13000;
+   
+   }   
+   else if (my_symbol == "CADJPY")
+   {
+      symbolvalue = 14000;
+   
+   }   
+   else if (my_symbol == "EURAUD")
+   {
+      symbolvalue = 15000;
+   
+   }      
+   else if (my_symbol == "GBPCHF")
+   {
+      symbolvalue = 16000;
+   
+   }   
+   else if (my_symbol == "NZDCAD")
+   {
+      symbolvalue = 17000;
+   
+   }   
+   else if (my_symbol == "NZDUSD")
+   {
+      symbolvalue = 18000;
+   
+   }   
+   else if (my_symbol == "NZDJPY")
+   {
+      symbolvalue = 19000;
+   
+   }  
+    else if (my_symbol == "USDCHF")
+   {
+      symbolvalue = 20000;
+   
+   }     
+  
+   else if (my_symbol == "EURGBP")
+   {
+      symbolvalue = 21000;
+   
+   }   
+   else if (my_symbol == "EURCHF")
+   {
+      symbolvalue = 22000;
+   
+   }   
+   else if (my_symbol == "AUDNZD")
+   {
+      symbolvalue = 23000;
+   
+   }   
+   else if (my_symbol == "CHFJPY")
+   {
+      symbolvalue = 24000;
+   
+   }   
+   else if (my_symbol == "EURNZD")
+   {
+      symbolvalue = 25000;
+   
+   }   
+   
+  
+   else if (my_symbol == "GBPCAD")
+   {
+      symbolvalue = 26000;
+   
+   }   
+   else if (my_symbol == "GBPNZD")
+   {
+      symbolvalue = 27000;
+   
+   }   
+ 
+   else if (my_symbol == "USDSGD")
+   {
+      symbolvalue = 28000;
+   
+   }   
+   else if (my_symbol == "USDZAR")
+   {
+      symbolvalue = 29000;
+   
+   }   
+
+   else
+   {
+      symbolvalue = -1;
+      return symbolvalue;
+   
+   }
+
+     
+   
+   symbolvalue = symbolvalue + Magic;
+   return symbolvalue;
+}
+
+
+
+void inittiimeperiod()
+{
+	timeperiod[0] = PERIOD_M1;
+	timeperiod[1] = PERIOD_M5;
+	timeperiod[2] = PERIOD_M30;
+	timeperiod[3] = PERIOD_H4;
+	timeperiod[4] = PERIOD_D1;
+	timeperiod[5] = PERIOD_W1;
+	
+	TimePeriodNum = 6;
+	
+}
+
+
+void initmagicnumber()
+{
+	MagicNumberOne = 10;
+	MagicNumberTwo = 20;
+	MagicNumberThree = 30;
+	MagicNumberFour = 40;
+	MagicNumberFive = 50;
+	MagicNumberSix = 60;
+	MagicNumberSeven = 70;
+	MagicNumberEight = 80;
+	MagicNumberNine = 90;
+	MagicNumberTen = 100;
+	MagicNumberEleven = 110;
+	MagicNumberTwelve = 120;
+	MagicNumberThirteen = 130;
+	MagicNumberFourteen = 140;
+	MagicNumberFifteen = 150;
+	MagicNumberSixteen = 160;	
+}
+
+
+
+
+
+
+bool OneMOrderCloseStatus(int MagicNumber)
+{
+	bool status;
+	int i;
+	status = true;
+	
+	if ( OrdersTotal() > 200)
+	{
+		Print("OneMOrderKeepNumber exceed 200");
+		return false;
+	}
+	
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+       if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+       {
+              if((OrderCloseTime() == 0)&&(OrderMagicNumber()== MagicNumber))
+              {
+              
+                  status= false;
+                  break;
+              
+              }
+                
+       }
+	}
+   return status;
+}
+
+
+
+
+int  InitcrossValue(int SymPos,int timeperiodnum)
+{	
+	double myma,myboll_up_B,myboll_low_B,myboll_mid_B;
+	double myma_pre,myboll_up_B_pre,myboll_low_B_pre,myboll_mid_B_pre;
+
+	
+	string my_symbol;
+
+	int my_timeperiod;
+	
+	int crossflag;
+	int j ;
+	int i;
+	 	
+	my_symbol =   MySymbol[SymPos];
+	my_timeperiod = timeperiod[timeperiodnum];	
+	
+	
+	if(iBars(my_symbol,my_timeperiod) <500)
+	{
+		Print(my_symbol + "Bar Number less than 500");
+		return -1;
+	}
+
+	for (i = 1; i< 500;i++)
+	{
+		
+		crossflag = 0;     
+		myma=iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,i-1);  
+		myboll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,i-1);   
+		myboll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,i-1);
+		myboll_mid_B = (	myboll_up_B +  myboll_low_B)/2;
+
+		myma_pre = iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,i); 
+		myboll_up_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,i);      
+		myboll_low_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,i);
+		myboll_mid_B_pre = (myboll_up_B_pre + myboll_low_B_pre)/2;
+
+		if((myma >myboll_up_B) && (myma_pre < myboll_up_B_pre ) )
+		{
+				crossflag = 5;		
+		}
+		
+		if((myma <myboll_up_B) && (myma_pre > myboll_up_B_pre ) )
+		{
+				crossflag = 4;
+		}
+			
+		if((myma < myboll_low_B) && (myma_pre > myboll_low_B_pre ) )
+		{
+				crossflag = -5;
+		}
+			
+		if((myma > myboll_low_B) && (myma_pre < myboll_low_B_pre ) )
+		{
+				crossflag = -4;	
+		}
+	
+		if((myma > myboll_mid_B) && (myma_pre < myboll_mid_B_pre ))
+		{
+				crossflag = 1;				
+		}	
+		if( (myma < myboll_mid_B) && (myma_pre > myboll_mid_B_pre ))
+		{
+				crossflag = -1;								
+		}			
+		
+		if(0 != 	crossflag)		
+		{
+				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[j] = crossflag;
+				//BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[j] = TimeCurrent() - i*Period()*60;
+				BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[j] = iBars(my_symbol,my_timeperiod)-i;
+				j++;
+				if (j >= 9)
+				{
+					break;
+				}
+		}
+
+	}
+	
+	return 0;
+
+}
+
+
+void InitBuySellPos()
+{
+	int SymPos;
+	int i ;
+	string my_symbol;
+	int my_timeperiod;
+	for(SymPos = 0; SymPos < symbolNum;SymPos++)
+	{
+		
+		my_symbol =   MySymbol[SymPos];
+		
+		for(i = 0; i < 20;i++)
+		{			
+			BuySellPosRecord[SymPos].NextModifyPos[i] = 1000000000;
+			
+		}
+
+		my_timeperiod = timeperiod[0];				
+		BuySellPosRecord[SymPos].TradeTimePos[0] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[1] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod);			
+		
+		my_timeperiod = timeperiod[1];				
+		BuySellPosRecord[SymPos].TradeTimePos[4] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[5] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);			
+		BuySellPosRecord[SymPos].TradeTimePos[12] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[13] = iBars(my_symbol,my_timeperiod);			
+				
+		my_timeperiod = timeperiod[2];				
+		BuySellPosRecord[SymPos].TradeTimePos[8] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[9] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);			
+		BuySellPosRecord[SymPos].TradeTimePos[14] = iBars(my_symbol,my_timeperiod);		
+		BuySellPosRecord[SymPos].TradeTimePos[15] = iBars(my_symbol,my_timeperiod);			
+										
+		
+	}
+		
+}
+
+
+void InitMA(int SymPos,int timeperiodnum)
+{
+
+	double MAThree,MAFive,MAThen,MAThentyOne,MASixty;
+	double MAFivePre,MAThenPre,MAThentyOnePre,MASixtyPre;
+	double StrongWeak;
+	int my_timeperiod;	
+	string my_symbol;
+	
+	my_symbol = MySymbol[SymPos];
+	my_timeperiod = timeperiod[timeperiodnum];	
+	
+	MAThree=iMA(my_symbol,my_timeperiod,3,0,MODE_SMA,PRICE_CLOSE,0); 
+	MAThen=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,0);  
+	MAThenPre=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,1); 
+
+	
+	MAFive=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,0); 
+	MAThentyOne=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,0); 
+	MASixty=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,0); 
+ 
+	MAFivePre=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,1); 
+	MAThentyOnePre=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,1); 
+	MASixtyPre=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,1); 
+ 
+ 	StrongWeak =0.5;
+ 
+
+	if((MAThree > MAThen)&&(MAThenPre<MAThen))
+	{		
+		StrongWeak =0.9;	
+	}
+	else if ((MAThree < MAThen)&&(MAThenPre>MAThen))
+	{
+		StrongWeak =0.1;
+	
+	}
+	else
+	{
+		StrongWeak =0.5;
+
+	}
+
+ 			
+	BoolCrossRecord[SymPos][timeperiodnum].Trend = StrongWeak;
+			
+			
+	if (240 == my_timeperiod )
+	{
+		GlobalVariableSet("g_FourH_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
+	}
+	else if (1440 == my_timeperiod )
+	{
+		GlobalVariableSet("g_OneD_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
+	}
+	else
+	{
+		;   
+	}  
+		
+ 
+ 
+ 
+	StrongWeak =0.5;
+
+	if(MAFive > MAThentyOne)
+	{
+			
+		/*多均线多头向上*/
+		if((MASixty < MAThentyOne)&&(MAThentyOne>MAThentyOnePre)&&(MASixty>MASixtyPre))
+		{
+			 StrongWeak =0.9;
+		}
+		else if ((MASixty >= MAThentyOne) &&(MASixty <MAFive))
+		{
+			 StrongWeak =0.6;
+		}
+		else
+		{
+			 StrongWeak =0.5;
+		}
+	
+	}
+	else if (MAFive < MAThentyOne)
+	{
+		/*多均线多头向下*/
+		if((MASixty > MAThentyOne)&&(MAThentyOne<MAThentyOnePre)&&(MASixty<MASixtyPre))
+		{
+			 StrongWeak =0.1;
+		}
+		else if ((MASixty <= MAThentyOne) &&(MASixty > MAFive))
+		{
+			 StrongWeak =0.4;
+		}
+		else
+		{
+			 StrongWeak =0.5;
+		}  	
+	
+	}
+	else
+	{
+		StrongWeak =0.5;
+
+	}
+
+	BoolCrossRecord[SymPos][timeperiodnum].StrongWeak = StrongWeak;	
+	
+	if (10080 == my_timeperiod )
+	{
+		GlobalVariableSet("g_OneW_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
+	}  	
+	else if (1440 == my_timeperiod )
+	{
+		GlobalVariableSet("g_OneD_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
+	}  
+ 
+	else if (240 == my_timeperiod )
+	{
+		GlobalVariableSet("g_FourH_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
+	 
+	}
+	else if (30 == my_timeperiod )
+	{
+		GlobalVariableSet("g_ThirtyM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
+	 
+	}
+	else if (5 == my_timeperiod )
+	{
+		GlobalVariableSet("g_FiveM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
+
+	}
+	else
+	{
+	;   
+	}  
+   			
+		
+	
+}
+
+
+
+
+
+
+
+void ChangeCrossValue( int mvalue,double  mstrongweak,int SymPos,int timeperiodnum)
+{
+
+	int i;
+	int my_timeperiod;
+	string symbol;
+    symbol = MySymbol[SymPos];
+	my_timeperiod = timeperiod[timeperiodnum];
+
+		
+	if (mvalue == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+	{
+		BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0] = mvalue;
+	//	BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[0] = TimeCurrent();
+		BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[0] = iBars(symbol,my_timeperiod);	
+		
+		BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[0] = mstrongweak;		
+	
+		
+		return;
+	}
+	for (i = 0 ; i <9; i++)
+	{
+		BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8-i];
+	//	BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[8-i];
+		BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[8-i] ;		
+		BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[8-i];
+	}
+	
+	BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0] = mvalue;
+	//BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[0] = TimeCurrent();
+	BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[0] = iBars(symbol,my_timeperiod);
+	
+	BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[0] = mstrongweak;
+
+	return;
+}
+
+
+
+/*非Openday期间不新开单*/
+bool opendaycheck(int SymPos)
+{
+	//	int i;
+	string symbol;
+	bool tradetimeflag;
+	datetime timelocal;
+
+	symbol = MySymbol[SymPos];
+	tradetimeflag = true;
+
+    /*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/
+	/*OANDA 服务器时间为GMT + 2 ，北京时间为GMT + 8，相差6个小时*/		
+    timelocal = TimeCurrent() + 5*60*60;
+
+
+//	Print("opendaycheck:" + "timelocal=" + TimeToString(timelocal,TIME_DATE)
+	//				 +"timelocal=" + TimeToString(timelocal,TIME_SECONDS));	
+
+//	Print("opendaycheck:" + "timecur=" + TimeToString(TimeCurrent(),TIME_DATE)
+//					 +"timecur=" + TimeToString(TimeCurrent(),TIME_SECONDS));	
+		
+			
+		
+	
+	//周一早7点前不下单	
+	if (TimeDayOfWeek(timelocal) == 1)
+	{
+		if (TimeHour(timelocal) < 7 ) 
+		{
+			tradetimeflag = false;
+		}
+	}
+	
+	//周六凌晨3点后不下单		
+	if (TimeDayOfWeek(timelocal) == 6)
+	{
+		if (TimeHour(timelocal) > 3 )  
+		{
+			tradetimeflag = false;		
+		}
+	}	
+
+	//周日不下单		
+	if (TimeDayOfWeek(timelocal) == 0)
+	{
+			tradetimeflag = false;		
+	}		
+	return tradetimeflag;
+}
+
+/*欧美交易时间段多以趋势和趋势加强为主，非交易时间多以震荡为主，以此区分一些小周期的交易策略*/
+bool tradetimecheck(int SymPos)
+{
+//	int i;
+	string symbol;
+	bool tradetimeflag ;
+	datetime timelocal;	
+    symbol = MySymbol[SymPos];
+	tradetimeflag = false;
+
+
+    /*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/
+	/*OANDA 服务器时间为GMT + 2 ，北京时间为GMT + 8，相差6个小时*/		
+    timelocal = TimeCurrent() + 5*60*60;
+
+
+	//下午3点前不做趋势单，主要针对1分钟线，非欧美时间趋势不明显
+	
+	if ((TimeHour(timelocal) >= 16 )&& (TimeHour(timelocal) <22 )) 
+	{
+		tradetimeflag = true;		
+	}	
+	/*测试期间全时间段交易*/
+	tradetimeflag = true;		
+	
+	return tradetimeflag;
+	
+}
+
+
+
+bool accountcheck()
+{
+	bool accountflag ;
+	int leverage ;
+	accountflag = true;
+	leverage = AccountLeverage();
+	if(leverage < 10)
+	{
+		Print("Account leverage is to low leverage = ",leverage);		
+		accountflag = false;		
+	}
+	else
+	{
+		
+		/*现有杠杆之下至少还能交易两次*/
+		if(AccountFreeMargin() < 2*MyLotsH*(100000/leverage))
+		{
+			Print("Account Money is not enough free margin = ",AccountFreeMargin() +";Leverage = "+leverage);		
+			accountflag = false;
+		}		
+		
+	}
+
+	return accountflag;
+	
+	
+}
+double orderprofitall()
+{
+	double profit = 0;
+	int i;
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		{
+			profit = profit + OrderProfit();
+			
+		}
+	}
+	return profit;
+}
+
+int ordercountwithprofit(double myprofit)
+{
+	int count = 0;
+	double profit = 0;
+	int i;
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		{
+			if(OrderProfit()>myprofit)
+			{
+				count++;
+			}
+			
+		}
+	}
+	return count;
+}
+
+
+
+
+int ordercountall( )
+{
+	int count = 0;
+	int i;
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		{
+			//if(OrderProfit()>myprofit)
+			{
+				count++;
+			}
+			
+		}
+	}
+	return count;
+}
+
+
+
+
+
+
+void ordercloseallwithprofit(double myprofit)
+{
+	int i,SymPos,NowMagicNumber,ticket;
+	string my_symbol;
+	double vbid,vask;
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		{
+
+			SymPos = ((int)OrderMagicNumber()) /1000;
+			NowMagicNumber = OrderMagicNumber() - SymPos *1000;
+
+			if((SymPos<0)||(SymPos>=symbolNum))
+			{
+			 Print(" ordercloseall SymPos error 0");
+			}
+				
+			my_symbol = MySymbol[SymPos];
+			
+			vbid    = MarketInfo(my_symbol,MODE_BID);						  
+			vask    = MarketInfo(my_symbol,MODE_ASK);	
+			
+			if((OrderType()==OP_BUY)&&(OrderProfit()>myprofit))
+			{
+				ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+				  
+				if(ticket <0)
+				{
+					Print("OrderClose buy ordercloseall  failed with error #",GetLastError());
+				}
+				else
+				{            
+					Print("OrderClose buy ordercloseall   successfully");
+				}    	
+				Sleep(1000); 
+
+			}
+			
+
+			if((OrderType()==OP_SELL)&&(OrderProfit()>myprofit))
+			{
+				ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+				  
+				 if(ticket <0)
+				 {
+					Print("OrderClose sell ordercloseall  failed with error #",GetLastError());
+				 }
+				 else
+				 {            
+					Print("OrderClose sell ordercloseall   successfully");
+				 }    		
+				Sleep(1000); 
+			}
+			
+
+			
+		}
+	}
+	
+	return;
+}
+
+
+
+void ordercloseall()
+{
+	int i,SymPos,NowMagicNumber,ticket;
+	string my_symbol;
+	double vbid,vask;
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		{
+
+			SymPos = ((int)OrderMagicNumber()) /1000;
+			NowMagicNumber = OrderMagicNumber() - SymPos *1000;
+
+			if((SymPos<0)||(SymPos>=symbolNum))
+			{
+			 Print(" ordercloseall SymPos error 0");
+			}
+				
+			my_symbol = MySymbol[SymPos];
+			
+			vbid    = MarketInfo(my_symbol,MODE_BID);						  
+			vask    = MarketInfo(my_symbol,MODE_ASK);	
+			
+			if(OrderType()==OP_BUY)
+			{
+				ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+				  
+				 if(ticket <0)
+				 {
+					Print("OrderClose buy ordercloseall  failed with error #",GetLastError());
+				 }
+				 else
+				 {            
+					Print("OrderClose buy ordercloseall   successfully");
+				 }    	
+				Sleep(1000); 
+		
+			}
+			
+
+			if(OrderType()==OP_SELL)
+			{
+				ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+				  
+				 if(ticket <0)
+				 {
+					Print("OrderClose sell ordercloseall  failed with error #",GetLastError());
+				 }
+				 else
+				 {            
+					Print("OrderClose sell ordercloseall   successfully");
+				 }  
+				Sleep(1000);				 
+		
+			}
+			
+
+			
+		}
+	}
+	
+	return;
+}
+
+bool iddataoptflag = false;
+bool iddatarecovflag = false;
+
+bool importantdatatimeoptall(datetime idtime,int offset,int type)
+{
+   int i,SymPos,NowMagicNumber,vdigits;
+   double vbid,vask,orderLots,orderPrice,orderStopless,
+   bool_length,orderTakeProfit,myMinValue3,myMaxValue4,
+   boll_low_B,boll_up_B;
+   string my_symbol;
+   int res,ticket;
+	datetime loctime;
+	bool flag = false;
+   int my_timeperiod = 0;
+	int timeperiodnum=0;
+	
+//	int SymPos;
+
+	/*本周无重大重要数据发布*/
+	if(offset <= 0)
+	{
+		return false;
+	}
+
+    /*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/
+	/*OANDA 服务器时间为GMT + 2 ，北京时间为GMT + 8，相差6个小时*/		
+    loctime = TimeCurrent() + 5*60*60;
+	
+	
+	offset = 30*60;
+
+
+	/*重大数据期间返回true*/
+	if (((idtime-loctime)<offset)&&((idtime-loctime)>0))
+	{
+		flag = true;
+	}
+	if (((loctime-idtime)<offset)&&((loctime-idtime)>0))
+	{
+		flag = true;
+	}
+		
+	
+	
+	//时间标记初始化
+	if (((idtime-loctime)<2*offset)&&((idtime-loctime)>offset))
+	{
+		iddataoptflag = false;
+		iddatarecovflag = false;
+	
+	}
+	
+		
+	
+	//执行现有订单的止损优化，或者直接关掉
+	if (((idtime-loctime)<offset)&&((idtime-loctime)>0)&&(iddataoptflag == false))
+	{
+		Print("Enter important data publish time!!!!!!");
+		iddataoptflag = true;
+		iddatarecovflag = false;
+		
+		for (i = 0; i < OrdersTotal(); i++)
+		{
+		   if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		   {				   
+				SymPos = ((int)OrderMagicNumber()) /1000;
+				NowMagicNumber = OrderMagicNumber() - SymPos *1000;
+
+				if((SymPos<0)||(SymPos>=symbolNum))
+				{
+				 Print(" importantdatatimeoptall SymPos error 0");
+				}
+					
+				my_symbol = MySymbol[SymPos];
+				if(OrderType()==OP_BUY)
+				{
+					vbid    = MarketInfo(my_symbol,MODE_BID);						  
+					vask    = MarketInfo(my_symbol,MODE_ASK);
+					vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+					
+					boll_up_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+					boll_low_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);	
+
+					bool_length = (boll_up_B - boll_low_B)/2;						
+					
+					
+					myMinValue3 = 100000;
+					for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]);i++)
+					{
+						if(myMinValue3 > iLow(my_symbol,my_timeperiod,i))
+						{
+							myMinValue3 = iLow(my_symbol,my_timeperiod,i);
+						}
+						
+					}				
+					orderLots = NormalizeDouble(MyLotsH,2);
+					orderPrice = vask;				 
+					orderStopless =myMinValue3- bool_length*0.5; 		
+					
+					orderTakeProfit	= orderPrice + bool_length*20;
+					
+					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+					orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+					orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+										 
+					if(1==type)
+					{									 
+						Print(my_symbol+" importantdatatimeoptall Modify:" + "orderLots=" 
+						+ orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless);	
+										
+						res=OrderModify(OrderTicket(),OrderOpenPrice(),
+							   orderStopless,orderTakeProfit,0,clrPurple);							   
+						 if(false == res)
+						 {
+
+							Print("Error in importantdatatimeoptall OrderModify. Error code=",GetLastError());									
+						 }
+						 else
+						 {    								 
+							Print("OrderModify importantdatatimeoptall  successfully ");
+						 }	
+					}	
+					else
+					{
+						Print(my_symbol+" importantdatatimeoptall close:" + "orderLots=" 
+						+ orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless);								
+						ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+						  
+						 if(ticket <0)
+						 {
+							Print("OrderClose importantdatatimeoptall  failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose importantdatatimeoptall   successfully");
+						 }    							 																												
+					}
+					 Sleep(1000);  	
+				 
+				}
+			  
+				if(OrderType()==OP_SELL)
+				{
+					vbid    = MarketInfo(my_symbol,MODE_BID);						  
+					vask    = MarketInfo(my_symbol,MODE_ASK);
+					vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+					boll_up_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+					boll_low_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);	
+
+					bool_length = (boll_up_B - boll_low_B)/2;						
+					
+					
+					
+					myMaxValue4 = -1;
+					for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]);i++)
+					{
+						if(myMaxValue4 < iHigh(my_symbol,my_timeperiod,i))
+						{
+							myMaxValue4 = iHigh(my_symbol,my_timeperiod,i);
+						}					
+					}				
+
+
+					orderLots = NormalizeDouble(MyLotsH,2);
+					orderPrice = vbid;						 
+					orderStopless =myMaxValue4 + bool_length*0.5; 
+															
+					orderTakeProfit	= orderPrice - bool_length*20;
+					
+					if(orderTakeProfit<0)
+					{
+						orderTakeProfit = 0;
+					}
+										
+					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+					orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+					orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+					if(1==type)
+					{									 
+						Print(my_symbol+" importantdatatimeoptall Modify:" + "orderLots="
+						 + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless);	
+										
+						res=OrderModify(OrderTicket(),OrderOpenPrice(),
+							   orderStopless,orderTakeProfit,0,clrPurple);	
+							   
+						 if(false == res)
+						 {
+
+							Print("Error in importantdatatimeoptall OrderModify. Error code=",GetLastError());									
+						 }
+						 else
+						 {    								 
+							Print("OrderModify importantdatatimeoptall  successfully ");
+						 }	
+					}	
+					else
+					{
+						Print(my_symbol+" importantdatatimeoptall close:" + "orderLots=" 
+						+ orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless);								
+						ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+						  
+						 if(ticket <0)
+						 {
+							Print("OrderClose importantdatatimeoptall  failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose importantdatatimeoptall   successfully");
+						 }    							 																												
+					}
+					 Sleep(1000);  							
+				  
+				  
+				}				  
+			  
+		   }
+		}	   
+		
+
+
+	}
+
+
+	
+
+		
+	//恢复订单的止损值到之前状态，经思考后确定暂时不搞这么复杂
+	if (((loctime-idtime)<2*offset)&&((loctime-idtime)>offset)
+	&&(iddatarecovflag == false)&&(iddataoptflag == true))
+	{
+		iddatarecovflag = true;
+		iddataoptflag = false;		
+		Print("Leave important data publish time!!!!!!");
+			
+	}	
+	
+	return flag;
+	
+}
+
+
+
+int init()
+{
+
+
+	double OneW_StrongWeak;
+	double OneD_StrongWeak;
+	double FourH_StrongWeak;
+	double ThirtyM_StrongWeak;
+	double FourH_Trend;
+	double OneD_Trend;
+	double ThirtyM_BoolFlag;
+	double FiveM_BoolFlag;
+	double FourH_BoolFlag;
+	double OneM_BoolFlag;
+
+
+	int SymPos;
+	int timeperiodnum;
+	int my_timeperiod;
+	string my_symbol;
+	int symbolvalue;
+	bool flag;
+	string MailTitlle ="";
+	int i,j;
+	
+	symbolvalue = 0;
+	
+	initsymbol();    
+	initmagicnumber();
+	inittiimeperiod();
+	
+	InitBuySellPos();
+	
+	Freq_Count = 0;
+	TwentyS_Freq = 0;
+	OneM_Freq = 0;
+	ThirtyS_Freq = 0;
+	FiveM_Freq = 0;
+	ThirtyM_Freq = 0;
+	
+	for(SymPos = 0; SymPos < symbolNum;SymPos++)
+	{	
+		for(timeperiodnum = 0; timeperiodnum < TimePeriodNum;timeperiodnum++)
+		{	
+	
+
+			my_symbol =   MySymbol[SymPos];
+			my_timeperiod = timeperiod[timeperiodnum];			 
+
+			if(10080 == my_timeperiod )
+			{		
+	 
+	 
+				  if(GlobalVariableCheck("g_OneW_SW"+my_symbol) == TRUE)
+				  {  
+						GlobalVariableSet("g_OneW_SW"+my_symbol,0.5);
+					  OneW_StrongWeak = GlobalVariableGet("g_OneW_SW"+my_symbol);    
+					  Print("g_OneW_SW already exist  = "+my_symbol+DoubleToString(OneW_StrongWeak));        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_OneW_SW"+my_symbol,0.5);
+					  if(GlobalVariableCheck("g_OneW_SW"+my_symbol) == FALSE)
+					  {
+						Print("init False due to g_OneW_SW set false!"+my_symbol);  
+						return -1;     		      	  
+					  }		    
+					  else
+					  {
+						OneW_StrongWeak = GlobalVariableGet("g_OneW_SW"+my_symbol);  
+							//Print("init g_OneW_SW is OK  = "+my_symbol+DoubleToString(OneW_StrongWeak));  		          			      	  
+					  }  
+
+				  }
+				
+	 
+			}
+			else if(1440 == my_timeperiod )
+			{
+			  if(GlobalVariableCheck("g_OneD_Trend"+my_symbol) == TRUE)
+			  {  
+					GlobalVariableSet("g_OneD_Trend"+my_symbol,0.5);
+				  OneD_Trend = GlobalVariableGet("g_OneD_Trend"+my_symbol);    
+				  Print("g_OneD_Trend already exist  = "+my_symbol+DoubleToString(OneD_Trend));        
+			  }
+			  else
+			  {
+
+					GlobalVariableSet("g_OneD_Trend"+my_symbol,0.5);
+				  if(GlobalVariableCheck("g_OneD_Trend"+my_symbol) == FALSE)
+				  {
+					Print("init False due to g_OneD_Trend set false!"+my_symbol);  
+					return -1;     		      	  
+				  }		    
+				  else
+				  {
+					OneD_Trend = GlobalVariableGet("g_OneD_Trend"+my_symbol);  
+						//Print("init g_OneD_Trend is OK  = "+my_symbol+DoubleToString(OneD_Trend));  		          			      	  
+				  }  
+
+			  }
+				
+				
+
+			  if(GlobalVariableCheck("g_OneD_SW"+my_symbol) == TRUE)
+			  {  
+					GlobalVariableSet("g_OneD_SW"+my_symbol,0.5);
+				  OneD_StrongWeak = GlobalVariableGet("g_OneD_SW"+my_symbol);    
+				  Print("g_OneD_SW already exist  = "+my_symbol+DoubleToString(OneD_StrongWeak));        
+			  }
+			  else
+			  {
+
+					GlobalVariableSet("g_OneD_SW"+my_symbol,0.5);
+				  if(GlobalVariableCheck("g_OneD_SW"+my_symbol) == FALSE)
+				  {
+					Print("init False due to g_OneD_SW set false!"+my_symbol);  
+					return -1;     		      	  
+				  }		    
+				  else
+				  {
+					OneD_StrongWeak = GlobalVariableGet("g_OneD_SW"+my_symbol);  
+						//Print("init g_OneD_SW is OK  = "+my_symbol+DoubleToString(OneD_StrongWeak));  		          			      	  
+				  }  
+
+			  }
+				
+				
+				
+				
+
+
+				
+			
+			}
+			else if(240 == my_timeperiod )
+			{
+		 
+			  if(GlobalVariableCheck("g_FourH_SW"+my_symbol) == TRUE)
+			  {  
+					GlobalVariableSet("g_FourH_SW"+my_symbol,0.5);
+				  FourH_StrongWeak = GlobalVariableGet("g_FourH_SW"+my_symbol);    
+				  Print("g_FourH_StrongWeak already exist  = "+my_symbol+DoubleToString(FourH_StrongWeak));        
+			  }
+			  else
+			  {
+
+					GlobalVariableSet("g_FourH_SW"+my_symbol,0.5);
+				  if(GlobalVariableCheck("g_FourH_SW"+my_symbol) == FALSE)
+				  {
+					Print("init False due to g_FourH_StrongWeak set false!"+my_symbol);  
+					return -1;     		      	  
+				  }		    
+				  else
+				  {
+					FourH_StrongWeak = GlobalVariableGet("g_FourH_SW"+my_symbol);  
+						//Print("init g_FourH_StrongWeak is OK  = "+my_symbol+DoubleToString(FourH_StrongWeak));  		          			      	  
+				  }  
+
+			  }
+						
+			  if(GlobalVariableCheck("g_FourH_Trend"+my_symbol) == TRUE)
+			  {  
+					GlobalVariableSet("g_FourH_Trend"+my_symbol,0.5);
+				  FourH_Trend = GlobalVariableGet("g_FourH_Trend"+my_symbol);    
+				  Print("g_FourH_Trend already exist  = "+my_symbol+DoubleToString(FourH_Trend));        
+			  }
+			  else
+			  {
+
+					GlobalVariableSet("g_FourH_Trend"+my_symbol,0.5);
+				  if(GlobalVariableCheck("g_FourH_Trend"+my_symbol) == FALSE)
+				  {
+					Print("init False due to g_FourH_Trend set false!"+my_symbol);  
+					return -1;     		      	  
+				  }		    
+				  else
+				  {
+					FourH_Trend = GlobalVariableGet("g_FourH_Trend"+my_symbol);  
+					//	Print("init g_FourH_Trend is OK  = "+my_symbol+DoubleToString(FourH_Trend));  		          			      	  
+				  }  
+
+			  }
+				
+
+				  if(GlobalVariableCheck("g_FourH_BI"+my_symbol) == TRUE)
+				  {      
+					Print("g_FourH_BoolIndex already exist"+my_symbol );        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_FourH_BI"+my_symbol,0);
+						  if(GlobalVariableCheck("g_FourH_BI"+my_symbol) == FALSE)
+						  {
+							Print("init False due to g_FourH_BoolIndex set false!"+my_symbol);  
+							return -1;     		      	  
+						  }		    
+						  else
+						  {
+							//	Print("init g_FourH_BoolIndex is OK  "+my_symbol);  		          			      	  
+						  }  
+
+				  } 	
+							  
+			
+				  if(GlobalVariableCheck("g_FourH_BF"+my_symbol) == TRUE)
+				  {  
+						GlobalVariableSet("g_FourH_BF"+my_symbol,0.5);
+					  FourH_BoolFlag = GlobalVariableGet("g_FourH_BF"+my_symbol);    
+					  Print("g_g_FourH_BF already exist  = "+my_symbol+DoubleToString(FourH_BoolFlag));        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_FourH_BF"+my_symbol,0.5);
+					  if(GlobalVariableCheck("g_FourH_BF"+my_symbol) == FALSE)
+					  {
+						Print("init False due to g_g_FourH_BF set false!"+my_symbol);  
+						return -1;     		      	  
+					  }		    
+					  else
+					  {
+						FourH_BoolFlag = GlobalVariableGet("g_FourH_BF"+my_symbol);  
+							//Print("init g_g_FourH_BF is OK  = "+my_symbol+DoubleToString(FourH_BoolFlag));  		          			      	  
+					  }  
+
+				  }
+
+			
+			
+			}
+			 else if (30 == my_timeperiod )
+			 {
+			  
+			  
+
+				  if(GlobalVariableCheck("g_ThirtyM_SW"+my_symbol) == TRUE)
+				  {  
+						GlobalVariableSet("g_ThirtyM_SW"+my_symbol,0.5);
+					  ThirtyM_StrongWeak = GlobalVariableGet("g_ThirtyM_SW"+my_symbol);    
+					  Print("g_ThirtyM_StrongWeak already exist  = "+my_symbol+DoubleToString(ThirtyM_StrongWeak));        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_ThirtyM_SW"+my_symbol,0.5);
+					  if(GlobalVariableCheck("g_ThirtyM_SW"+my_symbol) == FALSE)
+					  {
+						Print("init False due to g_ThirtyM_StrongWeak set false!"+my_symbol);  
+						return -1;     		      	  
+					  }		    
+					  else
+					  {
+						ThirtyM_StrongWeak = GlobalVariableGet("g_ThirtyM_SW"+my_symbol);  
+							//Print("init g_ThirtyM_StrongWeak is OK  = "+my_symbol+DoubleToString(ThirtyM_StrongWeak));  		          			      	  
+					  }  
+
+				  }
+
+
+				  if(GlobalVariableCheck("g_ThirtyM_BF"+my_symbol) == TRUE)
+				  {  
+						GlobalVariableSet("g_ThirtyM_BF"+my_symbol,0.5);
+					  ThirtyM_BoolFlag = GlobalVariableGet("g_ThirtyM_BF"+my_symbol);    
+					  Print("g_ThirtyM_BoolFlag already exist  = "+my_symbol+DoubleToString(ThirtyM_BoolFlag));        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_ThirtyM_BF"+my_symbol,0.5);
+					  if(GlobalVariableCheck("g_ThirtyM_BF"+my_symbol) == FALSE)
+					  {
+						Print("init False due to g_ThirtyM_BoolFlag set false!"+my_symbol);  
+						return -1;     		      	  
+					  }		    
+					  else
+					  {
+						ThirtyM_BoolFlag = GlobalVariableGet("g_ThirtyM_BF"+my_symbol);  
+						//	Print("init g_ThirtyM_BoolFlag is OK  = "+my_symbol+DoubleToString(ThirtyM_BoolFlag));  		          			      	  
+					  }  
+
+				  }
+
+				  if(GlobalVariableCheck("g_ThirtyM_BI"+my_symbol) == TRUE)
+				  {      
+					Print("g_ThirtyM_BoolIndex already exist"+my_symbol );        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_ThirtyM_BI"+my_symbol,0);
+						  if(GlobalVariableCheck("g_ThirtyM_BI"+my_symbol) == FALSE)
+						  {
+							Print("init False due to g_ThirtyM_BoolIndex set false!"+my_symbol);  
+							return -1;     		      	  
+						  }		    
+						  else
+						  {
+							//	Print("init g_ThirtyM_BoolIndex is OK  "+my_symbol);  		          			      	  
+						  }  
+
+				  } 	
+							  
+		
+
+			 
+			 }
+			 else if (5 == my_timeperiod )
+			 {
+
+
+			
+				  if(GlobalVariableCheck("g_FiveM_BF"+my_symbol) == TRUE)
+				  {  
+						GlobalVariableSet("g_FiveM_BF"+my_symbol,0.5);
+					  FiveM_BoolFlag = GlobalVariableGet("g_FiveM_BF"+my_symbol);    
+					  Print("g_FiveM_BoolFlag already exist  = "+my_symbol+DoubleToString(FiveM_BoolFlag));        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_FiveM_BF"+my_symbol,0.5);
+					  if(GlobalVariableCheck("g_FiveM_BF"+my_symbol) == FALSE)
+					  {
+						Print("init False due to g_FiveM_BoolFlag set false!"+my_symbol);  
+						return -1;     		      	  
+					  }		    
+					  else
+					  {
+						FiveM_BoolFlag = GlobalVariableGet("g_FiveM_BF"+my_symbol);  
+							//Print("init g_FiveM_BoolFlag is OK  = "+my_symbol+DoubleToString(FiveM_BoolFlag));  		          			      	  
+					  }  
+
+				  }
+
+
+				  if(GlobalVariableCheck("g_FiveM_BI"+my_symbol) == TRUE)
+				  {      
+					Print("g_FiveM_BoolIndex already exist"+my_symbol );        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_FiveM_BI"+my_symbol,0);
+						  if(GlobalVariableCheck("g_FiveM_BI"+my_symbol) == FALSE)
+						  {
+							Print("init False due to g_FiveM_BoolIndex set false!"+my_symbol);  
+							return -1;     		      	  
+						  }		    
+						  else
+						  {
+							//	Print("init g_FiveM_BoolIndex is OK  "+my_symbol);  		          			      	  
+						  }  
+
+				  } 	
+				  
+
+
+				  if(GlobalVariableCheck("g_FiveM_SW"+my_symbol) == TRUE)
+				  {      
+					Print("g_FiveM_StrongWeak already exist"+my_symbol );        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_FiveM_SW"+my_symbol,0);
+					  if(GlobalVariableCheck("g_FiveM_SW"+my_symbol) == FALSE)
+					  {
+						Print("init False due to g_FiveM_StrongWeak set false!"+my_symbol);  
+						return -1;     		      	  
+					  }		    
+					  else
+					  {
+							//Print("init g_FiveM_StrongWeak is OK  "+my_symbol);  		          			      	  
+					  }  
+
+				  } 	
+				  
+				  
+			 
+			 }
+			 else if (1 == my_timeperiod )
+			 {
+				   
+			
+				  if(GlobalVariableCheck("g_OneM_BF"+my_symbol) == TRUE)
+				  {  
+						GlobalVariableSet("g_OneM_BF"+my_symbol,0.5);
+					  OneM_BoolFlag = GlobalVariableGet("g_OneM_BF"+my_symbol);    
+					  Print("g_OneM_BoolFlag already exist  = "+my_symbol+DoubleToString(OneM_BoolFlag));        
+				  }
+				  else
+				  {
+
+						GlobalVariableSet("g_OneM_BF"+my_symbol,0.5);
+					  if(GlobalVariableCheck("g_OneM_BF"+my_symbol) == FALSE)
+					  {
+						Print("init False due to g_OneM_BoolFlag set false!"+my_symbol);  
+						return -1;     		      	  
+					  }		    
+					  else
+					  {
+						OneM_BoolFlag = GlobalVariableGet("g_OneM_BF"+my_symbol);  
+						//	Print("init g_OneM_BoolFlag is OK  = "+my_symbol+DoubleToString(OneM_BoolFlag));  		          			      	  
+					  }  
+
+				  }
+				   
+				   
+				   
+				   
+				//MailTitlle = MailTitlle +"1M";
+				;
+			 
+			 }            
+			 else
+			 {
+				MailTitlle = MailTitlle + "Bad Time period，should 1M 5M 30M 4H " + Period() ;
+				Print(MailTitlle); 
+				return -1;
+			 }
+			 //MailTitlle = "Init:" + MailTitlle +  +MySymbol[i];
+			 
+			InitcrossValue(SymPos,timeperiodnum);  		 
+			InitMA(SymPos,timeperiodnum);
+			
+			//initbuysellpos(SymPos);	
+			
+			//InitcrossSW(i);	
+			
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+			
+			
+		}
+
+
+	
+	}
+ 
+ 
+	  
+      //等待所有周期的全局参数起来
+      
+      for (i = 0; i < 500; i++)
+      {
+         flag = true;
+         for(j = 0; j < symbolNum;j++)
+         {     	
+      	   	if((GlobalVariableCheck("g_ThirtyM_SW"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_ThirtyM_BF"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_OneM_BF"+MySymbol[j]) == FALSE)			
+				||(GlobalVariableCheck("g_FiveM_BF"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_FourH_BF"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_FourH_SW"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_FourH_BI"+MySymbol[j]) == FALSE)
+      		   ||(GlobalVariableCheck("g_FiveM_SW"+MySymbol[j]) == FALSE)
+      		   ||(GlobalVariableCheck("g_ThirtyM_BI"+MySymbol[j]) == FALSE)				   
+      		   ||(GlobalVariableCheck("g_FiveM_BI"+MySymbol[j]) == FALSE)			   
+			    ||(GlobalVariableCheck("g_FourH_Trend"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_OneD_Trend"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_OneW_SW"+MySymbol[j]) == FALSE)
+				||(GlobalVariableCheck("g_OneD_SW"+MySymbol[j]) == FALSE))
+      	   	{
+      	   	   flag = false;
+      
+      	   	}
+      	   	else
+      	   	{
+      	   		break;
+      	   	}
+      	  }
+      	  if (true == flag)
+      	  {
+      	      break;
+      	  }
+      	  else
+      	  {
+   	   		Print(MySymbol[j] + "waiting for globle_Value init,another ten seconds......" ); 	   	
+   	   		Sleep(5000);      	  
+      	  }
+      }
+      //无法启动所有全局变量
+      if(i ==500)
+      {
+            Print("init false due to open or set global_virable false"); 
+            return -1;   	 
+      }
+      else
+      {
+             Print(MailTitlle + " init successful !!! ");   
+   //         SendNotification(MailTitlle + " init successful !!! "); 
+      
+      }
+	  
+	Print("Server name is ", AccountServer());	  
+	Print("Account #",AccountNumber(), " leverage is ", AccountLeverage());
+	Print("Account free margin = ",AccountFreeMargin());	  
+                
+      return 0;
+}
+
+
+
+int deinit()
+{
+
+	//删除自己的全局变量
+	int SymPos;
+	int timeperiodnum;
+	int my_timeperiod;
+	string my_symbol;	
+	
+	
+	for(SymPos = 0; SymPos < symbolNum;SymPos++)	
+	{	
+		
+		for(timeperiodnum = 0; timeperiodnum < TimePeriodNum;timeperiodnum++) 
+		{   
+
+			my_symbol =   MySymbol[SymPos];
+			
+			my_timeperiod = timeperiod[timeperiodnum];	
+			
+			if(10080 == my_timeperiod )
+			{  		 
+
+				 if(GlobalVariableCheck("g_OneW_SW"+my_symbol) == TRUE)
+				 {      
+					 GlobalVariableDel("g_OneW_SW"+my_symbol);
+			  
+				 }   			 
+						
+			} 
+			else if(1440 == my_timeperiod )
+			{
+				 if(GlobalVariableCheck("g_OneD_Trend"+my_symbol) == TRUE)
+				 {      
+					 GlobalVariableDel("g_OneD_Trend"+my_symbol);
+			  
+				 }     		 
+
+				 if(GlobalVariableCheck("g_OneD_SW"+my_symbol) == TRUE)
+				 {      
+					 GlobalVariableDel("g_OneD_SW"+my_symbol);
+			  
+				 }   			 
+						
+			}
+
+			else if (240 == my_timeperiod )
+			{     
+			 if(GlobalVariableCheck("g_FourH_SW"+my_symbol) == TRUE)
+			 {      
+				 GlobalVariableDel("g_FourH_SW"+my_symbol);
+
+			 }      
+			 if(GlobalVariableCheck("g_FourH_Trend"+my_symbol) == TRUE)
+			 {      
+				 GlobalVariableDel("g_FourH_Trend"+my_symbol);
+
+			 }     		 
+			  if(GlobalVariableCheck("g_FourH_BI"+my_symbol) == TRUE)
+			  {      
+				GlobalVariableDel("g_FourH_BI"+my_symbol);
+			  
+			  }				 
+			 
+
+
+			 if(GlobalVariableCheck("g_FourH_BF"+my_symbol) == TRUE)
+			 {      
+				 GlobalVariableDel("g_FourH_BF"+my_symbol);
+
+			 }    			 
+			 
+			 
+			}
+			else if (30 == my_timeperiod )
+			{     
+
+			 if(GlobalVariableCheck("g_ThirtyM_BF"+my_symbol) == TRUE)
+			 {      
+				 GlobalVariableDel("g_ThirtyM_BF"+my_symbol);
+
+			 }    	  
+
+			 if(GlobalVariableCheck("g_ThirtyM_SW"+my_symbol) == TRUE)
+			 {      
+				 GlobalVariableDel("g_ThirtyM_SW"+my_symbol);
+
+			 }           
+			  if(GlobalVariableCheck("g_ThirtyM_BI"+my_symbol) == TRUE)
+			  {      
+				GlobalVariableDel("g_ThirtyM_BI"+my_symbol);
+			  
+			  }		             
+
+
+			}
+			else if (5 == my_timeperiod )
+			{
+				  
+
+			 if(GlobalVariableCheck("g_FiveM_BF"+my_symbol) == TRUE)
+			 {      
+				 GlobalVariableDel("g_FiveM_BF"+my_symbol);
+
+			 }    	  
+					  
+			  if(GlobalVariableCheck("g_FiveM_SW"+my_symbol) == TRUE)
+			  {      
+				GlobalVariableDel("g_FiveM_SW"+my_symbol);
+			  
+			  }			
+			  
+			  if(GlobalVariableCheck("g_FiveM_BI"+my_symbol) == TRUE)
+			  {      
+				GlobalVariableDel("g_FiveM_BI"+my_symbol);
+			  
+			  }		      		
+							  
+			}
+			else if (1 == my_timeperiod )
+			{
+
+			 if(GlobalVariableCheck("g_OneM_BF"+my_symbol) == TRUE)
+			 {      
+				 GlobalVariableDel("g_OneM_BF"+my_symbol);
+
+			 }    	  
+					 
+			}    	
+
+		}
+
+	}
+
+	return 0;
+}
+
+
+
+
+
+int ChartEvent = 0;
+bool PrintFlag = false;
+
+
+
+void calculateindicator()
+{
+	
+	int SymPos;
+	int timeperiodnum;
+	int my_timeperiod;
+
+	double ma;
+	double boll_up_B,boll_low_B,boll_mid_B,bool_length;
+	
+	double MAThree,MAFive,MAThen,MAThentyOne,MASixty;
+	double MAFivePre,MAThenPre,MAThentyOnePre,MASixtyPre;
+	double StrongWeak;
+	double vbid,vask; 
+	string my_symbol;
+	double boolindex;
+	
+	int crossflag;	
+
+	for(SymPos = 0; SymPos < symbolNum;SymPos++)
+	{	
+		for(timeperiodnum = 0; timeperiodnum < TimePeriodNum;timeperiodnum++)
+		{
+ 
+			my_symbol =   MySymbol[SymPos];
+			my_timeperiod = timeperiod[timeperiodnum];
+			ma=iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,1); 
+			// ma = Close[0];  
+			boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+			boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+			boll_mid_B = (boll_up_B + boll_low_B )/2;
+			/*point*/
+			bool_length =(boll_up_B - boll_low_B )/2;
+
+			ma_pre = iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,2); 
+			boll_up_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,2);      
+			boll_low_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,2);
+			boll_mid_B_pre = (boll_up_B_pre + boll_low_B_pre )/2;
+
+			crossflag = 0;
+			
+		
+			StrongWeak = BoolCrossRecord[SymPos][timeperiodnum].StrongWeak;
+			
+			/*本周期突破高点，观察如小周期未衰竭可追高买入，或者等待回调买入*/
+			/*原则上突破bool线属于偏离价值方向太大，是要回归价值中枢的*/
+			if((ma >boll_up_B) && (ma_pre < boll_up_B_pre ) )
+			{
+			
+				crossflag = 5;		
+				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
+				//  Print(mMailTitlle + Symbol()+"::本周期突破高点，除(1M、5M周期bool口收窄且快速突破追高，移动止损），其他情况择机反向做空:"
+				//  + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
+
+			}
+			
+			/*本周期突破高点后回调，观察如小周期长时间筑顶，寻机卖出*/
+			else if((ma <boll_up_B) && (ma_pre > boll_up_B_pre ) )
+			{
+				crossflag = 4;
+				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
+				//   Print(mMailTitlle + Symbol()+"::本周期突破高点后回调，观察小周期如长时间筑顶，寻机做空:"
+				//   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
+
+	   
+			}
+				
+			
+			/*本周期突破低点，观察如小周期未衰竭可追低卖出，或者等待回调卖出*/
+			else if((ma < boll_low_B) && (ma_pre > boll_low_B_pre ) )
+			{
+			
+				
+				crossflag = -5;
+				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
+				//   Print(mMailTitlle + Symbol() + "::本周期突破低点，除(条件：1M、5M周期bool口收窄且快速突破追低，移动止损），其他情况择机反向做多:"
+				//   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+
+	   
+			}
+				
+			/*本周期突破低点后回调，观察如长时间筑底，寻机买入*/
+			else if((ma > boll_low_B) && (ma_pre < boll_low_B_pre ) )
+			{
+				crossflag = -4;	
+				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
+				//   Print(mMailTitlle + Symbol() + "::本周期突破低点后回调，观察如小周期长时间筑底，寻机买入:"
+				//   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+
+
+			}
+	   
+	   
+					
+			/*本周期上穿中线，表明本周期趋势开始发生变化为上升，在下降大趋势下也可能是回调杀入机会*/
+			else if((ma > boll_mid_B) && (ma_pre < boll_mid_B_pre ))
+			{
+			
+				crossflag = 1;				
+				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);			
+				//    Print(mMailTitlle + Symbol() + "::本周期上穿中线变化为上升，大周期下降大趋势下可能是回调做空机会："
+				//    + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+
+   
+			}	
+			/*本周期下穿中线，表明趋势开始发生变化，在上升大趋势下也可能是回调杀入机会*/
+			else if( (ma < boll_mid_B) && (ma_pre > boll_mid_B_pre ))
+			{
+				crossflag = -1;								
+				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);			
+				 //     Print(mMailTitlle + Symbol() + "::本周期下穿中线变化为下降，大周期上升大趋势下可能是回调做多机会："
+				 //     + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
+
+			}							
+			else
+			{
+				 crossflag = 0;   
+       
+			}
+
+			BoolCrossRecord[SymPos][timeperiodnum].BoolFlag = BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0];
+			BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange = crossflag;
+
+			
+			if (1 == my_timeperiod )
+			{
+				GlobalVariableSet("g_OneM_BF"+my_symbol,
+				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
+
+			} 		
+			else if (5 == my_timeperiod )
+			{
+				GlobalVariableSet("g_FiveM_BF"+my_symbol,
+				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
+
+			} 
+			else if (30 == my_timeperiod )
+			{
+				GlobalVariableSet("g_ThirtyM_BF"+my_symbol,
+				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
+
+			}
+			else if (240 == my_timeperiod )
+			{
+				GlobalVariableSet("g_FourH_BF"+my_symbol,
+				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
+
+			}	
+			else
+			{
+				;
+			}
+
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vbid    = MarketInfo(my_symbol,MODE_BID);					
+			boolindex = ((vask + vbid)/2 - boll_mid_B)/bool_length;
+			BoolCrossRecord[SymPos][timeperiodnum].BoolIndex = boolindex;
+ 
+			if (5 == my_timeperiod )
+			{
+				GlobalVariableSet("g_FiveM_BI"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].BoolIndex);   
+
+			}
+   
+			if (30 == my_timeperiod )
+			{
+				GlobalVariableSet("g_ThirtyM_BI"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].BoolIndex);   
+
+			}
+	
+			if (240 == my_timeperiod )
+			{
+
+				GlobalVariableSet("g_FourH_BI"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].BoolIndex);   
+
+			}
+	   
+	   
+			MAThree=iMA(my_symbol,my_timeperiod,3,0,MODE_SMA,PRICE_CLOSE,0); 
+			MAThen=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,0);  
+			MAThenPre=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,1); 
+	 
+				
+			MAFive=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,0); 
+			MAThentyOne=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,0); 
+			MASixty=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,0); 
+		 
+			MAFivePre=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,1); 
+			MAThentyOnePre=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,1); 
+			MASixtyPre=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,1); 
+			 
+
+			StrongWeak =0.5;
+		 
+
+			if((MAThree > MAThen)&&(MAThenPre<MAThen))
+			{		
+				StrongWeak =0.9;	
+			}
+			else if ((MAThree < MAThen)&&(MAThenPre>MAThen))
+			{
+				StrongWeak =0.1;
+			
+			}
+			else
+			{
+				StrongWeak =0.5;
+
+			}
+
+			
+			BoolCrossRecord[SymPos][timeperiodnum].Trend = StrongWeak;
+			
+			
+			if (240 == my_timeperiod )
+			{
+				GlobalVariableSet("g_FourH_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
+			}
+			else if (1440 == my_timeperiod )
+			{
+				GlobalVariableSet("g_OneD_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
+			}
+			else
+			{
+				;   
+			}  
+				
+		 
+		 
+			 
+			 
+			 
+			StrongWeak =0.5;
+	   
+			if(MAFive > MAThentyOne)
+			{
+					
+				/*多均线多头向上*/
+				if((MASixty < MAThentyOne)&&(MAThentyOne>MAThentyOnePre)&&(MASixty>MASixtyPre))
+				{
+					 StrongWeak =0.9;
+				}
+				else if ((MASixty >= MAThentyOne) &&(MASixty <MAFive))
+				{
+					 StrongWeak =0.6;
+				}
+				else
+				{
+					 StrongWeak =0.5;
+				}
+			
+			}
+			else if (MAFive < MAThentyOne)
+			{
+				/*多均线多头向下*/
+				if((MASixty > MAThentyOne)&&(MAThentyOne<MAThentyOnePre)&&(MASixty<MASixtyPre))
+				{
+					 StrongWeak =0.1;
+				}
+				else if ((MASixty <= MAThentyOne) &&(MASixty > MAFive))
+				{
+					 StrongWeak =0.4;
+				}
+				else
+				{
+					 StrongWeak =0.5;
+				}  	
+			
+			}
+			else
+			{
+				StrongWeak =0.5;
+	   
+			}
+	   
+	   
+			BoolCrossRecord[SymPos][timeperiodnum].StrongWeak = StrongWeak;
+
+	   
+			if (10080 == my_timeperiod )
+			{
+				GlobalVariableSet("g_OneW_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
+			}  
+			else if (1440 == my_timeperiod )
+			{
+				GlobalVariableSet("g_OneD_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
+			}     
+			else if (240 == my_timeperiod )
+			{
+				GlobalVariableSet("g_FourH_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
+
+			}
+			else if (30 == my_timeperiod )
+			{
+				GlobalVariableSet("g_ThirtyM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
+
+			}
+			else if (5 == my_timeperiod )
+			{
+				GlobalVariableSet("g_FiveM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
+
+			}
+			else
+			{
+				;   
+			}  
+
+	   }	
+		
+	}	
+	
+	return;
+}
+
 
 
 
@@ -3837,7 +5948,7 @@ void checkbuysellordertypeone()
 														
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 					
-					&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+					&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 		
 					&&(OrderProfit()>200*OrderLots()))						
 				{
@@ -4119,7 +6230,7 @@ void checkbuysellordertypeone()
 
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 					
-					&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+					&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 		
 					&&(OrderProfit()>200*OrderLots()))						
 				{
@@ -4427,7 +6538,7 @@ void checkbuysellordertypeone()
 
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))	
 				{
@@ -4754,7 +6865,7 @@ void checkbuysellordertypeone()
 			   
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))							
 				{
@@ -5140,7 +7251,7 @@ void checkbuysellordertypetwo()
 
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))								
 				{
@@ -5459,7 +7570,7 @@ void checkbuysellordertypetwo()
 			   
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))						
 				{
@@ -5780,7 +7891,7 @@ void checkbuysellordertypetwo()
 			
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))		
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))		
 				&&(OrderProfit()>200*OrderLots()))						
 				{
 					orderLots = OrderLots()/2;
@@ -6098,7 +8209,7 @@ void checkbuysellordertypetwo()
 			   
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))							
 				{
@@ -6427,7 +8538,7 @@ void checkbuysellordertypetwo()
 							
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))						
 				{
@@ -6751,7 +8862,7 @@ void checkbuysellordertypetwo()
 			   
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))						
 				{
@@ -7135,7 +9246,7 @@ void checkbuysellordertypethree()
 
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))							
 				{
@@ -7457,7 +9568,7 @@ void checkbuysellordertypethree()
 
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))							
 				{
@@ -7763,7 +9874,7 @@ void checkbuysellordertypethree()
 			
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))							
 				{
@@ -8077,7 +10188,7 @@ void checkbuysellordertypethree()
 			   
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))							
 				{
@@ -8392,7 +10503,7 @@ void checkbuysellordertypethree()
 			
 				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))						
 				{
@@ -8716,7 +10827,7 @@ void checkbuysellordertypethree()
 			   
 				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
 				
-				&&( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
 	
 				&&(OrderProfit()>200*OrderLots()))						
 				{
@@ -8758,2130 +10869,6 @@ void checkbuysellordertypethree()
 }	
 	
 	
-
-
-////////////////////////////////////////////////////////////////////////////
-
-
-void inittiimeperiod()
-{
-	timeperiod[0] = PERIOD_M1;
-	timeperiod[1] = PERIOD_M5;
-	timeperiod[2] = PERIOD_M30;
-	timeperiod[3] = PERIOD_H4;
-	timeperiod[4] = PERIOD_D1;
-	timeperiod[5] = PERIOD_W1;
-	
-	TimePeriodNum = 6;
-	
-}
-
-
-void initsymbol()
-{
-
-	MySymbol[0] = "EURUSD";
-	MySymbol[1] = "AUDUSD";
-	MySymbol[2] = "USDJPY";         
-	MySymbol[3] = "XAUUSD";         
-	MySymbol[4] = "GBPUSD";         
-	MySymbol[5] = "CADCHF"; 
-	MySymbol[6] = "EURCAD"; 	
-	MySymbol[7] = "GBPAUD"; 	
-	MySymbol[8] = "AUDJPY";         
-	MySymbol[9] = "EURJPY"; 
-	MySymbol[10] = "GBPJPY"; 	
-	MySymbol[11] = "USDCAD"; 
-	MySymbol[12] = "AUDCAD"; 	
-	MySymbol[13] = "AUDCHF"; 
-	MySymbol[14] = "CADJPY"; 
-	MySymbol[15] = "EURAUD"; 
-	MySymbol[16] = "GBPCHF"; 
-	MySymbol[17] = "NZDCAD"; 
-	MySymbol[18] = "NZDUSD"; 
-	MySymbol[19] = "NZDJPY"; 
-	MySymbol[20] = "USDCHF";
- 	
-	MySymbol[21] = "EURGBP"; 	
-	MySymbol[22] = "EURCHF"; 	
-	MySymbol[23] = "AUDNZD"; 	
-	MySymbol[24] = "CHFJPY"; 	
-	MySymbol[25] = "EURNZD"; 	
-	
-	MySymbol[26] = "GBPCAD"; 	
-	MySymbol[27] = "GBPNZD"; 	
-	
-	MySymbol[28] = "USDSGD"; 	
-	MySymbol[29] = "USDZAR"; 	
-
-		
-	symbolNum = 30;
-	
-	
-	
-}
-
-
-void initmagicnumber()
-{
-	MagicNumberOne = 10;
-	MagicNumberTwo = 20;
-	MagicNumberThree = 30;
-	MagicNumberFour = 40;
-	MagicNumberFive = 50;
-	MagicNumberSix = 60;
-	MagicNumberSeven = 70;
-	MagicNumberEight = 80;
-	MagicNumberNine = 90;
-	MagicNumberTen = 100;
-	MagicNumberEleven = 110;
-	MagicNumberTwelve = 120;
-	MagicNumberThirteen = 130;
-	MagicNumberFourteen = 140;
-	MagicNumberFifteen = 150;
-	MagicNumberSixteen = 160;	
-}
-
-
-
-
-int MakeMagic(int SymPos,int Magic)
-{
-   int symbolvalue;
-   string my_symbol;
-	my_symbol =   MySymbol[SymPos]; 
-	 
-   if(my_symbol == "EURUSD")
-   {
-      symbolvalue = 0;
-   }
-   else if (my_symbol == "AUDUSD")
-   {
-      symbolvalue = 1000;
-   
-   }
-   else if (my_symbol == "USDJPY")
-   {
-      symbolvalue = 2000;
-   
-   }           
-   else if (my_symbol == "XAUUSD")
-   {
-      symbolvalue = 3000;
-   
-   }   
-   else if (my_symbol == "GBPUSD")
-   {
-      symbolvalue = 4000;
-   
-   }      
-   else if (my_symbol == "CADCHF")
-   {
-      symbolvalue = 5000;
-   
-   }  
-   else if (my_symbol == "EURCAD")
-   {
-      symbolvalue = 6000;
-   
-   }  
-   else if (my_symbol == "GBPAUD")
-   {
-      symbolvalue = 7000;
-   
-   }     
-   else if (my_symbol == "AUDJPY")
-   {
-      symbolvalue = 8000;
-   
-   }  
-   else if (my_symbol == "EURJPY")
-   {
-      symbolvalue = 9000;
-   
-   }  
-   else if (my_symbol == "GBPJPY")
-   {
-      symbolvalue = 10000;
-   
-   }  
-   else if (my_symbol == "USDCAD")
-   {
-      symbolvalue = 11000;
-   
-   }     
-   else if (my_symbol == "AUDCAD")
-   {
-      symbolvalue = 12000;
-   
-   }   
-   else if (my_symbol == "AUDCHF")
-   {
-      symbolvalue = 13000;
-   
-   }   
-   else if (my_symbol == "CADJPY")
-   {
-      symbolvalue = 14000;
-   
-   }   
-   else if (my_symbol == "EURAUD")
-   {
-      symbolvalue = 15000;
-   
-   }      
-   else if (my_symbol == "GBPCHF")
-   {
-      symbolvalue = 16000;
-   
-   }   
-   else if (my_symbol == "NZDCAD")
-   {
-      symbolvalue = 17000;
-   
-   }   
-   else if (my_symbol == "NZDUSD")
-   {
-      symbolvalue = 18000;
-   
-   }   
-   else if (my_symbol == "NZDJPY")
-   {
-      symbolvalue = 19000;
-   
-   }  
-    else if (my_symbol == "USDCHF")
-   {
-      symbolvalue = 20000;
-   
-   }     
-  
-   else if (my_symbol == "EURGBP")
-   {
-      symbolvalue = 21000;
-   
-   }   
-   else if (my_symbol == "EURCHF")
-   {
-      symbolvalue = 22000;
-   
-   }   
-   else if (my_symbol == "AUDNZD")
-   {
-      symbolvalue = 23000;
-   
-   }   
-   else if (my_symbol == "CHFJPY")
-   {
-      symbolvalue = 24000;
-   
-   }   
-   else if (my_symbol == "EURNZD")
-   {
-      symbolvalue = 25000;
-   
-   }   
-   
-  
-   else if (my_symbol == "GBPCAD")
-   {
-      symbolvalue = 26000;
-   
-   }   
-   else if (my_symbol == "GBPNZD")
-   {
-      symbolvalue = 27000;
-   
-   }   
- 
-   else if (my_symbol == "USDSGD")
-   {
-      symbolvalue = 28000;
-   
-   }   
-   else if (my_symbol == "USDZAR")
-   {
-      symbolvalue = 29000;
-   
-   }   
-
-   else
-   {
-      symbolvalue = -1;
-      return symbolvalue;
-   
-   }
-
-     
-   
-   symbolvalue = symbolvalue + Magic;
-   return symbolvalue;
-}
-
-
-bool OneMOrderCloseStatus(int MagicNumber)
-{
-	bool status;
-	int i;
-	status = true;
-	
-	if ( OrdersTotal() > 200)
-	{
-		Print("OneMOrderKeepNumber exceed 200");
-		return false;
-	}
-	
-	for (i = 0; i < OrdersTotal(); i++)
-	{
-       if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-       {
-              if((OrderCloseTime() == 0)&&(OrderMagicNumber()== MagicNumber))
-              {
-              
-                  status= false;
-                  break;
-              
-              }
-                
-       }
-	}
-   return status;
-}
-
-
-
-
-int  InitcrossValue(int SymPos,int timeperiodnum)
-{	
-	double myma,myboll_up_B,myboll_low_B,myboll_mid_B;
-	double myma_pre,myboll_up_B_pre,myboll_low_B_pre,myboll_mid_B_pre;
-
-	
-	string my_symbol;
-
-	int my_timeperiod;
-	
-	int crossflag;
-	int j ;
-	int i;
-	 	
-	my_symbol =   MySymbol[SymPos];
-	my_timeperiod = timeperiod[timeperiodnum];	
-	
-	
-	if(iBars(my_symbol,my_timeperiod) <500)
-	{
-		Print(my_symbol + "Bar Number less than 500");
-		return -1;
-	}
-
-	for (i = 1; i< 500;i++)
-	{
-		
-		crossflag = 0;     
-		myma=iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,i-1);  
-		myboll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,i-1);   
-		myboll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,i-1);
-		myboll_mid_B = (	myboll_up_B +  myboll_low_B)/2;
-
-		myma_pre = iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,i); 
-		myboll_up_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,i);      
-		myboll_low_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,i);
-		myboll_mid_B_pre = (myboll_up_B_pre + myboll_low_B_pre)/2;
-
-		if((myma >myboll_up_B) && (myma_pre < myboll_up_B_pre ) )
-		{
-				crossflag = 5;		
-		}
-		
-		if((myma <myboll_up_B) && (myma_pre > myboll_up_B_pre ) )
-		{
-				crossflag = 4;
-		}
-			
-		if((myma < myboll_low_B) && (myma_pre > myboll_low_B_pre ) )
-		{
-				crossflag = -5;
-		}
-			
-		if((myma > myboll_low_B) && (myma_pre < myboll_low_B_pre ) )
-		{
-				crossflag = -4;	
-		}
-	
-		if((myma > myboll_mid_B) && (myma_pre < myboll_mid_B_pre ))
-		{
-				crossflag = 1;				
-		}	
-		if( (myma < myboll_mid_B) && (myma_pre > myboll_mid_B_pre ))
-		{
-				crossflag = -1;								
-		}			
-		
-		if(0 != 	crossflag)		
-		{
-				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[j] = crossflag;
-				//BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[j] = TimeCurrent() - i*Period()*60;
-				BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[j] = iBars(my_symbol,my_timeperiod)-i;
-				j++;
-				if (j >= 9)
-				{
-					break;
-				}
-		}
-
-	}
-	
-	return 0;
-
-}
-
-
-void InitBuySellPos()
-{
-	int SymPos;
-	int i ;
-	string my_symbol;
-	int my_timeperiod;
-	for(SymPos = 0; SymPos < symbolNum;SymPos++)
-	{
-		
-		my_symbol =   MySymbol[SymPos];
-		
-		for(i = 0; i < 20;i++)
-		{			
-			BuySellPosRecord[SymPos].NextModifyPos[i] = 1000000000;
-			
-		}
-
-		my_timeperiod = timeperiod[0];				
-		BuySellPosRecord[SymPos].TradeTimePos[0] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[1] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod);			
-		
-		my_timeperiod = timeperiod[1];				
-		BuySellPosRecord[SymPos].TradeTimePos[4] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[5] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);			
-		BuySellPosRecord[SymPos].TradeTimePos[12] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[13] = iBars(my_symbol,my_timeperiod);			
-				
-		my_timeperiod = timeperiod[2];				
-		BuySellPosRecord[SymPos].TradeTimePos[8] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[9] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);			
-		BuySellPosRecord[SymPos].TradeTimePos[14] = iBars(my_symbol,my_timeperiod);		
-		BuySellPosRecord[SymPos].TradeTimePos[15] = iBars(my_symbol,my_timeperiod);			
-										
-		
-	}
-		
-}
-
-
-void InitMA(int SymPos,int timeperiodnum)
-{
-
-	double MAThree,MAFive,MAThen,MAThentyOne,MASixty;
-	double MAFivePre,MAThenPre,MAThentyOnePre,MASixtyPre;
-	double StrongWeak;
-	int my_timeperiod;	
-	string my_symbol;
-	
-	my_symbol = MySymbol[SymPos];
-	my_timeperiod = timeperiod[timeperiodnum];	
-	
-	MAThree=iMA(my_symbol,my_timeperiod,3,0,MODE_SMA,PRICE_CLOSE,0); 
-	MAThen=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,0);  
-	MAThenPre=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,1); 
-
-	
-	MAFive=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,0); 
-	MAThentyOne=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,0); 
-	MASixty=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,0); 
- 
-	MAFivePre=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,1); 
-	MAThentyOnePre=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,1); 
-	MASixtyPre=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,1); 
- 
- 	StrongWeak =0.5;
- 
-
-	if((MAThree > MAThen)&&(MAThenPre<MAThen))
-	{		
-		StrongWeak =0.9;	
-	}
-	else if ((MAThree < MAThen)&&(MAThenPre>MAThen))
-	{
-		StrongWeak =0.1;
-	
-	}
-	else
-	{
-		StrongWeak =0.5;
-
-	}
-
- 			
-	BoolCrossRecord[SymPos][timeperiodnum].Trend = StrongWeak;
-			
-			
-	if (240 == my_timeperiod )
-	{
-		GlobalVariableSet("g_FourH_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
-	}
-	else if (1440 == my_timeperiod )
-	{
-		GlobalVariableSet("g_OneD_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
-	}
-	else
-	{
-		;   
-	}  
-		
- 
- 
- 
-	StrongWeak =0.5;
-
-	if(MAFive > MAThentyOne)
-	{
-			
-		/*多均线多头向上*/
-		if((MASixty < MAThentyOne)&&(MAThentyOne>MAThentyOnePre)&&(MASixty>MASixtyPre))
-		{
-			 StrongWeak =0.9;
-		}
-		else if ((MASixty >= MAThentyOne) &&(MASixty <MAFive))
-		{
-			 StrongWeak =0.6;
-		}
-		else
-		{
-			 StrongWeak =0.5;
-		}
-	
-	}
-	else if (MAFive < MAThentyOne)
-	{
-		/*多均线多头向下*/
-		if((MASixty > MAThentyOne)&&(MAThentyOne<MAThentyOnePre)&&(MASixty<MASixtyPre))
-		{
-			 StrongWeak =0.1;
-		}
-		else if ((MASixty <= MAThentyOne) &&(MASixty > MAFive))
-		{
-			 StrongWeak =0.4;
-		}
-		else
-		{
-			 StrongWeak =0.5;
-		}  	
-	
-	}
-	else
-	{
-		StrongWeak =0.5;
-
-	}
-
-	BoolCrossRecord[SymPos][timeperiodnum].StrongWeak = StrongWeak;	
-	
-	if (10080 == my_timeperiod )
-	{
-		GlobalVariableSet("g_OneW_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
-	}  	
-	else if (1440 == my_timeperiod )
-	{
-		GlobalVariableSet("g_OneD_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
-	}  
- 
-	else if (240 == my_timeperiod )
-	{
-		GlobalVariableSet("g_FourH_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
-	 
-	}
-	else if (30 == my_timeperiod )
-	{
-		GlobalVariableSet("g_ThirtyM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
-	 
-	}
-	else if (5 == my_timeperiod )
-	{
-		GlobalVariableSet("g_FiveM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
-
-	}
-	else
-	{
-	;   
-	}  
-   			
-		
-	
-}
-
-
-
-
-
-
-
-void ChangeCrossValue( int mvalue,double  mstrongweak,int SymPos,int timeperiodnum)
-{
-
-	int i;
-	int my_timeperiod;
-	string symbol;
-    symbol = MySymbol[SymPos];
-	my_timeperiod = timeperiod[timeperiodnum];
-
-		
-	if (mvalue == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
-	{
-		BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0] = mvalue;
-	//	BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[0] = TimeCurrent();
-		BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[0] = iBars(symbol,my_timeperiod);	
-		
-		BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[0] = mstrongweak;		
-	
-		
-		return;
-	}
-	for (i = 0 ; i <9; i++)
-	{
-		BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8-i];
-	//	BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[8-i];
-		BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[8-i] ;		
-		BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[9-i] = BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[8-i];
-	}
-	
-	BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0] = mvalue;
-	//BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[0] = TimeCurrent();
-	BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[0] = iBars(symbol,my_timeperiod);
-	
-	BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[0] = mstrongweak;
-
-	return;
-}
-
-
-
-/*非Openday期间不新开单*/
-bool opendaycheck(int SymPos)
-{
-	//	int i;
-	string symbol;
-	bool tradetimeflag;
-	datetime timelocal;
-
-	symbol = MySymbol[SymPos];
-	tradetimeflag = true;
-
-    /*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/
-	/*OANDA 服务器时间为GMT + 2 ，北京时间为GMT + 8，相差6个小时*/		
-    timelocal = TimeCurrent() + 5*60*60;
-
-
-//	Print("opendaycheck:" + "timelocal=" + TimeToString(timelocal,TIME_DATE)
-	//				 +"timelocal=" + TimeToString(timelocal,TIME_SECONDS));	
-
-//	Print("opendaycheck:" + "timecur=" + TimeToString(TimeCurrent(),TIME_DATE)
-//					 +"timecur=" + TimeToString(TimeCurrent(),TIME_SECONDS));	
-		
-			
-		
-	
-	//周一早7点前不下单	
-	if (TimeDayOfWeek(timelocal) == 1)
-	{
-		if (TimeHour(timelocal) < 7 ) 
-		{
-			tradetimeflag = false;
-		}
-	}
-	
-	//周六凌晨3点后不下单		
-	if (TimeDayOfWeek(timelocal) == 6)
-	{
-		if (TimeHour(timelocal) > 3 )  
-		{
-			tradetimeflag = false;		
-		}
-	}	
-
-	//周日不下单		
-	if (TimeDayOfWeek(timelocal) == 0)
-	{
-			tradetimeflag = false;		
-	}		
-	return tradetimeflag;
-}
-
-/*欧美交易时间段多以趋势和趋势加强为主，非交易时间多以震荡为主，以此区分一些小周期的交易策略*/
-bool tradetimecheck(int SymPos)
-{
-//	int i;
-	string symbol;
-	bool tradetimeflag ;
-	datetime timelocal;	
-    symbol = MySymbol[SymPos];
-	tradetimeflag = false;
-
-
-    /*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/
-	/*OANDA 服务器时间为GMT + 2 ，北京时间为GMT + 8，相差6个小时*/		
-    timelocal = TimeCurrent() + 5*60*60;
-
-
-	//下午3点前不做趋势单，主要针对1分钟线，非欧美时间趋势不明显
-	
-	if ((TimeHour(timelocal) >= 16 )&& (TimeHour(timelocal) <22 )) 
-	{
-		tradetimeflag = true;		
-	}	
-	/*测试期间全时间段交易*/
-	tradetimeflag = true;		
-	
-	return tradetimeflag;
-	
-}
-
-
-
-bool accountcheck()
-{
-	bool accountflag ;
-	int leverage ;
-	accountflag = true;
-	leverage = AccountLeverage();
-	if(leverage < 10)
-	{
-		Print("Account leverage is to low leverage = ",leverage);		
-		accountflag = false;		
-	}
-	else
-	{
-		
-		/*现有杠杆之下至少还能交易两次*/
-		if(AccountFreeMargin() < 2*MyLotsH*(100000/leverage))
-		{
-			Print("Account Money is not enough free margin = ",AccountFreeMargin() +";Leverage = "+leverage);		
-			accountflag = false;
-		}		
-		
-	}
-
-	return accountflag;
-	
-	
-}
-double orderprofitall()
-{
-	double profit = 0;
-	int i;
-	for (i = 0; i < OrdersTotal(); i++)
-	{
-		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-		{
-			profit = profit + OrderProfit();
-			
-		}
-	}
-	return profit;
-}
-
-int ordercountwithprofit(double myprofit)
-{
-	int count = 0;
-	double profit = 0;
-	int i;
-	for (i = 0; i < OrdersTotal(); i++)
-	{
-		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-		{
-			if(OrderProfit()>myprofit)
-			{
-				count++;
-			}
-			
-		}
-	}
-	return count;
-}
-
-
-
-
-int ordercountall( )
-{
-	int count = 0;
-	int i;
-	for (i = 0; i < OrdersTotal(); i++)
-	{
-		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-		{
-			//if(OrderProfit()>myprofit)
-			{
-				count++;
-			}
-			
-		}
-	}
-	return count;
-}
-
-
-
-
-
-
-void ordercloseallwithprofit(double myprofit)
-{
-	int i,SymPos,NowMagicNumber,ticket;
-	string my_symbol;
-	double vbid,vask;
-	for (i = 0; i < OrdersTotal(); i++)
-	{
-		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-		{
-
-			SymPos = ((int)OrderMagicNumber()) /1000;
-			NowMagicNumber = OrderMagicNumber() - SymPos *1000;
-
-			if((SymPos<0)||(SymPos>=symbolNum))
-			{
-			 Print(" ordercloseall SymPos error 0");
-			}
-				
-			my_symbol = MySymbol[SymPos];
-			
-			vbid    = MarketInfo(my_symbol,MODE_BID);						  
-			vask    = MarketInfo(my_symbol,MODE_ASK);	
-			
-			if((OrderType()==OP_BUY)&&(OrderProfit()>myprofit))
-			{
-				ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
-				  
-				if(ticket <0)
-				{
-					Print("OrderClose buy ordercloseall  failed with error #",GetLastError());
-				}
-				else
-				{            
-					Print("OrderClose buy ordercloseall   successfully");
-				}    	
-				Sleep(1000); 
-
-			}
-			
-
-			if((OrderType()==OP_SELL)&&(OrderProfit()>myprofit))
-			{
-				ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
-				  
-				 if(ticket <0)
-				 {
-					Print("OrderClose sell ordercloseall  failed with error #",GetLastError());
-				 }
-				 else
-				 {            
-					Print("OrderClose sell ordercloseall   successfully");
-				 }    		
-				Sleep(1000); 
-			}
-			
-
-			
-		}
-	}
-	
-	return;
-}
-
-
-
-void ordercloseall()
-{
-	int i,SymPos,NowMagicNumber,ticket;
-	string my_symbol;
-	double vbid,vask;
-	for (i = 0; i < OrdersTotal(); i++)
-	{
-		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-		{
-
-			SymPos = ((int)OrderMagicNumber()) /1000;
-			NowMagicNumber = OrderMagicNumber() - SymPos *1000;
-
-			if((SymPos<0)||(SymPos>=symbolNum))
-			{
-			 Print(" ordercloseall SymPos error 0");
-			}
-				
-			my_symbol = MySymbol[SymPos];
-			
-			vbid    = MarketInfo(my_symbol,MODE_BID);						  
-			vask    = MarketInfo(my_symbol,MODE_ASK);	
-			
-			if(OrderType()==OP_BUY)
-			{
-				ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
-				  
-				 if(ticket <0)
-				 {
-					Print("OrderClose buy ordercloseall  failed with error #",GetLastError());
-				 }
-				 else
-				 {            
-					Print("OrderClose buy ordercloseall   successfully");
-				 }    	
-				Sleep(1000); 
-		
-			}
-			
-
-			if(OrderType()==OP_SELL)
-			{
-				ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
-				  
-				 if(ticket <0)
-				 {
-					Print("OrderClose sell ordercloseall  failed with error #",GetLastError());
-				 }
-				 else
-				 {            
-					Print("OrderClose sell ordercloseall   successfully");
-				 }  
-				Sleep(1000);				 
-		
-			}
-			
-
-			
-		}
-	}
-	
-	return;
-}
-
-bool iddataoptflag = false;
-bool iddatarecovflag = false;
-
-bool importantdatatimeoptall(datetime idtime,int offset,int type)
-{
-   int i,SymPos,NowMagicNumber,vdigits;
-   double vbid,vask,orderLots,orderPrice,orderStopless,
-   bool_length,orderTakeProfit,myMinValue3,myMaxValue4,
-   boll_low_B,boll_up_B;
-   string my_symbol;
-   int res,ticket;
-	datetime loctime;
-	bool flag = false;
-   int my_timeperiod = 0;
-	int timeperiodnum=0;
-	
-//	int SymPos;
-
-	/*本周无重大重要数据发布*/
-	if(offset <= 0)
-	{
-		return false;
-	}
-
-    /*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/
-	/*OANDA 服务器时间为GMT + 2 ，北京时间为GMT + 8，相差6个小时*/		
-    loctime = TimeCurrent() + 5*60*60;
-	
-	
-	offset = 30*60;
-
-
-	/*重大数据期间返回true*/
-	if (((idtime-loctime)<offset)&&((idtime-loctime)>0))
-	{
-		flag = true;
-	}
-	if (((loctime-idtime)<offset)&&((loctime-idtime)>0))
-	{
-		flag = true;
-	}
-		
-	
-	
-	//时间标记初始化
-	if (((idtime-loctime)<2*offset)&&((idtime-loctime)>offset))
-	{
-		iddataoptflag = false;
-		iddatarecovflag = false;
-	
-	}
-	
-		
-	
-	//执行现有订单的止损优化，或者直接关掉
-	if (((idtime-loctime)<offset)&&((idtime-loctime)>0)&&(iddataoptflag == false))
-	{
-		Print("Enter important data publish time!!!!!!");
-		iddataoptflag = true;
-		iddatarecovflag = false;
-		
-		for (i = 0; i < OrdersTotal(); i++)
-		{
-		   if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-		   {				   
-				SymPos = ((int)OrderMagicNumber()) /1000;
-				NowMagicNumber = OrderMagicNumber() - SymPos *1000;
-
-				if((SymPos<0)||(SymPos>=symbolNum))
-				{
-				 Print(" importantdatatimeoptall SymPos error 0");
-				}
-					
-				my_symbol = MySymbol[SymPos];
-				if(OrderType()==OP_BUY)
-				{
-					vbid    = MarketInfo(my_symbol,MODE_BID);						  
-					vask    = MarketInfo(my_symbol,MODE_ASK);
-					vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-					
-					boll_up_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
-					boll_low_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);	
-
-					bool_length = (boll_up_B - boll_low_B)/2;						
-					
-					
-					myMinValue3 = 100000;
-					for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]);i++)
-					{
-						if(myMinValue3 > iLow(my_symbol,my_timeperiod,i))
-						{
-							myMinValue3 = iLow(my_symbol,my_timeperiod,i);
-						}
-						
-					}				
-					orderLots = NormalizeDouble(MyLotsH,2);
-					orderPrice = vask;				 
-					orderStopless =myMinValue3- bool_length*0.5; 		
-					
-					orderTakeProfit	= orderPrice + bool_length*20;
-					
-					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
-					orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-					orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
-										 
-					if(1==type)
-					{									 
-						Print(my_symbol+" importantdatatimeoptall Modify:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
-										+"MagicNumberOnePos="+BuySellPosRecord[SymPos].MagicNumberOnePos);	
-										
-						res=OrderModify(OrderTicket(),OrderOpenPrice(),
-							   orderStopless,orderTakeProfit,0,clrPurple);							   
-						 if(false == res)
-						 {
-
-							Print("Error in importantdatatimeoptall OrderModify. Error code=",GetLastError());									
-						 }
-						 else
-						 {    								 
-							Print("OrderModify importantdatatimeoptall  successfully ");
-						 }	
-					}	
-					else
-					{
-						Print(my_symbol+" importantdatatimeoptall close:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
-										+"MagicNumberOnePos="+BuySellPosRecord[SymPos].MagicNumberOnePos);								
-						ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
-						  
-						 if(ticket <0)
-						 {
-							Print("OrderClose importantdatatimeoptall  failed with error #",GetLastError());
-						 }
-						 else
-						 {            
-							Print("OrderClose importantdatatimeoptall   successfully");
-						 }    							 																												
-					}
-					 Sleep(1000);  	
-				 
-				}
-			  
-				if(OrderType()==OP_SELL)
-				{
-					vbid    = MarketInfo(my_symbol,MODE_BID);						  
-					vask    = MarketInfo(my_symbol,MODE_ASK);
-					vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-					boll_up_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
-					boll_low_B = iBands(my_symbol,0,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);	
-
-					bool_length = (boll_up_B - boll_low_B)/2;						
-					
-					
-					
-					myMaxValue4 = -1;
-					for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]);i++)
-					{
-						if(myMaxValue4 < iHigh(my_symbol,my_timeperiod,i))
-						{
-							myMaxValue4 = iHigh(my_symbol,my_timeperiod,i);
-						}					
-					}				
-
-
-					orderLots = NormalizeDouble(MyLotsH,2);
-					orderPrice = vbid;						 
-					orderStopless =myMaxValue4 + bool_length*0.5; 
-															
-					orderTakeProfit	= orderPrice - bool_length*20;
-					
-					if(orderTakeProfit<0)
-					{
-						orderTakeProfit = 0;
-					}
-										
-					orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
-					orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-					orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
-
-					if(1==type)
-					{									 
-						Print(my_symbol+" importantdatatimeoptall Modify:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
-										+"MagicNumberOnePos="+BuySellPosRecord[SymPos].MagicNumberOnePos);	
-										
-						res=OrderModify(OrderTicket(),OrderOpenPrice(),
-							   orderStopless,orderTakeProfit,0,clrPurple);	
-							   
-						 if(false == res)
-						 {
-
-							Print("Error in importantdatatimeoptall OrderModify. Error code=",GetLastError());									
-						 }
-						 else
-						 {    								 
-							Print("OrderModify importantdatatimeoptall  successfully ");
-						 }	
-					}	
-					else
-					{
-						Print(my_symbol+" importantdatatimeoptall close:" + "orderLots=" + orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless
-										+"MagicNumberOnePos="+BuySellPosRecord[SymPos].MagicNumberOnePos);								
-						ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
-						  
-						 if(ticket <0)
-						 {
-							Print("OrderClose importantdatatimeoptall  failed with error #",GetLastError());
-						 }
-						 else
-						 {            
-							Print("OrderClose importantdatatimeoptall   successfully");
-						 }    							 																												
-					}
-					 Sleep(1000);  							
-				  
-				  
-				}				  
-			  
-		   }
-		}	   
-		
-
-
-	}
-
-
-	
-
-		
-	//恢复订单的止损值到之前状态，经思考后确定暂时不搞这么复杂
-	if (((loctime-idtime)<2*offset)&&((loctime-idtime)>offset)
-	&&(iddatarecovflag == false)&&(iddataoptflag == true))
-	{
-		iddatarecovflag = true;
-		iddataoptflag = false;		
-		Print("Leave important data publish time!!!!!!");
-			
-	}	
-	
-	return flag;
-	
-}
-
-
-
-int init()
-{
-
-
-	double OneW_StrongWeak;
-	double OneD_StrongWeak;
-	double FourH_StrongWeak;
-	double ThirtyM_StrongWeak;
-	double FourH_Trend;
-	double OneD_Trend;
-	double ThirtyM_BoolFlag;
-	double FiveM_BoolFlag;
-	double FourH_BoolFlag;
-	double OneM_BoolFlag;
-
-
-	int SymPos;
-	int timeperiodnum;
-	int my_timeperiod;
-	string my_symbol;
-	int symbolvalue;
-	bool flag;
-	string MailTitlle ="";
-	int i,j;
-	
-	symbolvalue = 0;
-	
-	initsymbol();    
-	initmagicnumber();
-	inittiimeperiod();
-	
-	InitBuySellPos();
-	
-	Freq_Count = 0;
-	TwentyS_Freq = 0;
-	OneM_Freq = 0;
-	ThirtyS_Freq = 0;
-	FiveM_Freq = 0;
-	ThirtyM_Freq = 0;
-	
-	for(SymPos = 0; SymPos < symbolNum;SymPos++)
-	{	
-		for(timeperiodnum = 0; timeperiodnum < TimePeriodNum;timeperiodnum++)
-		{	
-	
-
-			my_symbol =   MySymbol[SymPos];
-			my_timeperiod = timeperiod[timeperiodnum];			 
-
-			if(10080 == my_timeperiod )
-			{		
-	 
-	 
-				  if(GlobalVariableCheck("g_OneW_SW"+my_symbol) == TRUE)
-				  {  
-						GlobalVariableSet("g_OneW_SW"+my_symbol,0.5);
-					  OneW_StrongWeak = GlobalVariableGet("g_OneW_SW"+my_symbol);    
-					  Print("g_OneW_SW already exist  = "+my_symbol+DoubleToString(OneW_StrongWeak));        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_OneW_SW"+my_symbol,0.5);
-					  if(GlobalVariableCheck("g_OneW_SW"+my_symbol) == FALSE)
-					  {
-						Print("init False due to g_OneW_SW set false!"+my_symbol);  
-						return -1;     		      	  
-					  }		    
-					  else
-					  {
-						OneW_StrongWeak = GlobalVariableGet("g_OneW_SW"+my_symbol);  
-							//Print("init g_OneW_SW is OK  = "+my_symbol+DoubleToString(OneW_StrongWeak));  		          			      	  
-					  }  
-
-				  }
-				
-	 
-			}
-			else if(1440 == my_timeperiod )
-			{
-			  if(GlobalVariableCheck("g_OneD_Trend"+my_symbol) == TRUE)
-			  {  
-					GlobalVariableSet("g_OneD_Trend"+my_symbol,0.5);
-				  OneD_Trend = GlobalVariableGet("g_OneD_Trend"+my_symbol);    
-				  Print("g_OneD_Trend already exist  = "+my_symbol+DoubleToString(OneD_Trend));        
-			  }
-			  else
-			  {
-
-					GlobalVariableSet("g_OneD_Trend"+my_symbol,0.5);
-				  if(GlobalVariableCheck("g_OneD_Trend"+my_symbol) == FALSE)
-				  {
-					Print("init False due to g_OneD_Trend set false!"+my_symbol);  
-					return -1;     		      	  
-				  }		    
-				  else
-				  {
-					OneD_Trend = GlobalVariableGet("g_OneD_Trend"+my_symbol);  
-						//Print("init g_OneD_Trend is OK  = "+my_symbol+DoubleToString(OneD_Trend));  		          			      	  
-				  }  
-
-			  }
-				
-				
-
-			  if(GlobalVariableCheck("g_OneD_SW"+my_symbol) == TRUE)
-			  {  
-					GlobalVariableSet("g_OneD_SW"+my_symbol,0.5);
-				  OneD_StrongWeak = GlobalVariableGet("g_OneD_SW"+my_symbol);    
-				  Print("g_OneD_SW already exist  = "+my_symbol+DoubleToString(OneD_StrongWeak));        
-			  }
-			  else
-			  {
-
-					GlobalVariableSet("g_OneD_SW"+my_symbol,0.5);
-				  if(GlobalVariableCheck("g_OneD_SW"+my_symbol) == FALSE)
-				  {
-					Print("init False due to g_OneD_SW set false!"+my_symbol);  
-					return -1;     		      	  
-				  }		    
-				  else
-				  {
-					OneD_StrongWeak = GlobalVariableGet("g_OneD_SW"+my_symbol);  
-						//Print("init g_OneD_SW is OK  = "+my_symbol+DoubleToString(OneD_StrongWeak));  		          			      	  
-				  }  
-
-			  }
-				
-				
-				
-				
-
-
-				
-			
-			}
-			else if(240 == my_timeperiod )
-			{
-		 
-			  if(GlobalVariableCheck("g_FourH_SW"+my_symbol) == TRUE)
-			  {  
-					GlobalVariableSet("g_FourH_SW"+my_symbol,0.5);
-				  FourH_StrongWeak = GlobalVariableGet("g_FourH_SW"+my_symbol);    
-				  Print("g_FourH_StrongWeak already exist  = "+my_symbol+DoubleToString(FourH_StrongWeak));        
-			  }
-			  else
-			  {
-
-					GlobalVariableSet("g_FourH_SW"+my_symbol,0.5);
-				  if(GlobalVariableCheck("g_FourH_SW"+my_symbol) == FALSE)
-				  {
-					Print("init False due to g_FourH_StrongWeak set false!"+my_symbol);  
-					return -1;     		      	  
-				  }		    
-				  else
-				  {
-					FourH_StrongWeak = GlobalVariableGet("g_FourH_SW"+my_symbol);  
-						//Print("init g_FourH_StrongWeak is OK  = "+my_symbol+DoubleToString(FourH_StrongWeak));  		          			      	  
-				  }  
-
-			  }
-						
-			  if(GlobalVariableCheck("g_FourH_Trend"+my_symbol) == TRUE)
-			  {  
-					GlobalVariableSet("g_FourH_Trend"+my_symbol,0.5);
-				  FourH_Trend = GlobalVariableGet("g_FourH_Trend"+my_symbol);    
-				  Print("g_FourH_Trend already exist  = "+my_symbol+DoubleToString(FourH_Trend));        
-			  }
-			  else
-			  {
-
-					GlobalVariableSet("g_FourH_Trend"+my_symbol,0.5);
-				  if(GlobalVariableCheck("g_FourH_Trend"+my_symbol) == FALSE)
-				  {
-					Print("init False due to g_FourH_Trend set false!"+my_symbol);  
-					return -1;     		      	  
-				  }		    
-				  else
-				  {
-					FourH_Trend = GlobalVariableGet("g_FourH_Trend"+my_symbol);  
-					//	Print("init g_FourH_Trend is OK  = "+my_symbol+DoubleToString(FourH_Trend));  		          			      	  
-				  }  
-
-			  }
-				
-
-				  if(GlobalVariableCheck("g_FourH_BI"+my_symbol) == TRUE)
-				  {      
-					Print("g_FourH_BoolIndex already exist"+my_symbol );        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_FourH_BI"+my_symbol,0);
-						  if(GlobalVariableCheck("g_FourH_BI"+my_symbol) == FALSE)
-						  {
-							Print("init False due to g_FourH_BoolIndex set false!"+my_symbol);  
-							return -1;     		      	  
-						  }		    
-						  else
-						  {
-							//	Print("init g_FourH_BoolIndex is OK  "+my_symbol);  		          			      	  
-						  }  
-
-				  } 	
-							  
-			
-				  if(GlobalVariableCheck("g_FourH_BF"+my_symbol) == TRUE)
-				  {  
-						GlobalVariableSet("g_FourH_BF"+my_symbol,0.5);
-					  FourH_BoolFlag = GlobalVariableGet("g_FourH_BF"+my_symbol);    
-					  Print("g_g_FourH_BF already exist  = "+my_symbol+DoubleToString(FourH_BoolFlag));        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_FourH_BF"+my_symbol,0.5);
-					  if(GlobalVariableCheck("g_FourH_BF"+my_symbol) == FALSE)
-					  {
-						Print("init False due to g_g_FourH_BF set false!"+my_symbol);  
-						return -1;     		      	  
-					  }		    
-					  else
-					  {
-						FourH_BoolFlag = GlobalVariableGet("g_FourH_BF"+my_symbol);  
-							//Print("init g_g_FourH_BF is OK  = "+my_symbol+DoubleToString(FourH_BoolFlag));  		          			      	  
-					  }  
-
-				  }
-
-			
-			
-			}
-			 else if (30 == my_timeperiod )
-			 {
-			  
-			  
-
-				  if(GlobalVariableCheck("g_ThirtyM_SW"+my_symbol) == TRUE)
-				  {  
-						GlobalVariableSet("g_ThirtyM_SW"+my_symbol,0.5);
-					  ThirtyM_StrongWeak = GlobalVariableGet("g_ThirtyM_SW"+my_symbol);    
-					  Print("g_ThirtyM_StrongWeak already exist  = "+my_symbol+DoubleToString(ThirtyM_StrongWeak));        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_ThirtyM_SW"+my_symbol,0.5);
-					  if(GlobalVariableCheck("g_ThirtyM_SW"+my_symbol) == FALSE)
-					  {
-						Print("init False due to g_ThirtyM_StrongWeak set false!"+my_symbol);  
-						return -1;     		      	  
-					  }		    
-					  else
-					  {
-						ThirtyM_StrongWeak = GlobalVariableGet("g_ThirtyM_SW"+my_symbol);  
-							//Print("init g_ThirtyM_StrongWeak is OK  = "+my_symbol+DoubleToString(ThirtyM_StrongWeak));  		          			      	  
-					  }  
-
-				  }
-
-
-				  if(GlobalVariableCheck("g_ThirtyM_BF"+my_symbol) == TRUE)
-				  {  
-						GlobalVariableSet("g_ThirtyM_BF"+my_symbol,0.5);
-					  ThirtyM_BoolFlag = GlobalVariableGet("g_ThirtyM_BF"+my_symbol);    
-					  Print("g_ThirtyM_BoolFlag already exist  = "+my_symbol+DoubleToString(ThirtyM_BoolFlag));        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_ThirtyM_BF"+my_symbol,0.5);
-					  if(GlobalVariableCheck("g_ThirtyM_BF"+my_symbol) == FALSE)
-					  {
-						Print("init False due to g_ThirtyM_BoolFlag set false!"+my_symbol);  
-						return -1;     		      	  
-					  }		    
-					  else
-					  {
-						ThirtyM_BoolFlag = GlobalVariableGet("g_ThirtyM_BF"+my_symbol);  
-						//	Print("init g_ThirtyM_BoolFlag is OK  = "+my_symbol+DoubleToString(ThirtyM_BoolFlag));  		          			      	  
-					  }  
-
-				  }
-
-				  if(GlobalVariableCheck("g_ThirtyM_BI"+my_symbol) == TRUE)
-				  {      
-					Print("g_ThirtyM_BoolIndex already exist"+my_symbol );        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_ThirtyM_BI"+my_symbol,0);
-						  if(GlobalVariableCheck("g_ThirtyM_BI"+my_symbol) == FALSE)
-						  {
-							Print("init False due to g_ThirtyM_BoolIndex set false!"+my_symbol);  
-							return -1;     		      	  
-						  }		    
-						  else
-						  {
-							//	Print("init g_ThirtyM_BoolIndex is OK  "+my_symbol);  		          			      	  
-						  }  
-
-				  } 	
-							  
-		
-
-			 
-			 }
-			 else if (5 == my_timeperiod )
-			 {
-
-
-			
-				  if(GlobalVariableCheck("g_FiveM_BF"+my_symbol) == TRUE)
-				  {  
-						GlobalVariableSet("g_FiveM_BF"+my_symbol,0.5);
-					  FiveM_BoolFlag = GlobalVariableGet("g_FiveM_BF"+my_symbol);    
-					  Print("g_FiveM_BoolFlag already exist  = "+my_symbol+DoubleToString(FiveM_BoolFlag));        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_FiveM_BF"+my_symbol,0.5);
-					  if(GlobalVariableCheck("g_FiveM_BF"+my_symbol) == FALSE)
-					  {
-						Print("init False due to g_FiveM_BoolFlag set false!"+my_symbol);  
-						return -1;     		      	  
-					  }		    
-					  else
-					  {
-						FiveM_BoolFlag = GlobalVariableGet("g_FiveM_BF"+my_symbol);  
-							//Print("init g_FiveM_BoolFlag is OK  = "+my_symbol+DoubleToString(FiveM_BoolFlag));  		          			      	  
-					  }  
-
-				  }
-
-
-				  if(GlobalVariableCheck("g_FiveM_BI"+my_symbol) == TRUE)
-				  {      
-					Print("g_FiveM_BoolIndex already exist"+my_symbol );        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_FiveM_BI"+my_symbol,0);
-						  if(GlobalVariableCheck("g_FiveM_BI"+my_symbol) == FALSE)
-						  {
-							Print("init False due to g_FiveM_BoolIndex set false!"+my_symbol);  
-							return -1;     		      	  
-						  }		    
-						  else
-						  {
-							//	Print("init g_FiveM_BoolIndex is OK  "+my_symbol);  		          			      	  
-						  }  
-
-				  } 	
-				  
-
-
-				  if(GlobalVariableCheck("g_FiveM_SW"+my_symbol) == TRUE)
-				  {      
-					Print("g_FiveM_StrongWeak already exist"+my_symbol );        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_FiveM_SW"+my_symbol,0);
-					  if(GlobalVariableCheck("g_FiveM_SW"+my_symbol) == FALSE)
-					  {
-						Print("init False due to g_FiveM_StrongWeak set false!"+my_symbol);  
-						return -1;     		      	  
-					  }		    
-					  else
-					  {
-							//Print("init g_FiveM_StrongWeak is OK  "+my_symbol);  		          			      	  
-					  }  
-
-				  } 	
-				  
-				  
-			 
-			 }
-			 else if (1 == my_timeperiod )
-			 {
-				   
-			
-				  if(GlobalVariableCheck("g_OneM_BF"+my_symbol) == TRUE)
-				  {  
-						GlobalVariableSet("g_OneM_BF"+my_symbol,0.5);
-					  OneM_BoolFlag = GlobalVariableGet("g_OneM_BF"+my_symbol);    
-					  Print("g_OneM_BoolFlag already exist  = "+my_symbol+DoubleToString(OneM_BoolFlag));        
-				  }
-				  else
-				  {
-
-						GlobalVariableSet("g_OneM_BF"+my_symbol,0.5);
-					  if(GlobalVariableCheck("g_OneM_BF"+my_symbol) == FALSE)
-					  {
-						Print("init False due to g_OneM_BoolFlag set false!"+my_symbol);  
-						return -1;     		      	  
-					  }		    
-					  else
-					  {
-						OneM_BoolFlag = GlobalVariableGet("g_OneM_BF"+my_symbol);  
-						//	Print("init g_OneM_BoolFlag is OK  = "+my_symbol+DoubleToString(OneM_BoolFlag));  		          			      	  
-					  }  
-
-				  }
-				   
-				   
-				   
-				   
-				//MailTitlle = MailTitlle +"1M";
-				;
-			 
-			 }            
-			 else
-			 {
-				MailTitlle = MailTitlle + "Bad Time period，should 1M 5M 30M 4H " + Period() ;
-				Print(MailTitlle); 
-				return -1;
-			 }
-			 //MailTitlle = "Init:" + MailTitlle +  +MySymbol[i];
-			 
-			InitcrossValue(SymPos,timeperiodnum);  		 
-			InitMA(SymPos,timeperiodnum);
-			
-			//initbuysellpos(SymPos);	
-			
-			//InitcrossSW(i);	
-			
-			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
-			
-			
-		}
-
-
-	
-	}
- 
- 
-	  
-      //等待所有周期的全局参数起来
-      
-      for (i = 0; i < 500; i++)
-      {
-         flag = true;
-         for(j = 0; j < symbolNum;j++)
-         {     	
-      	   	if((GlobalVariableCheck("g_ThirtyM_SW"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_ThirtyM_BF"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_OneM_BF"+MySymbol[j]) == FALSE)			
-				||(GlobalVariableCheck("g_FiveM_BF"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_FourH_BF"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_FourH_SW"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_FourH_BI"+MySymbol[j]) == FALSE)
-      		   ||(GlobalVariableCheck("g_FiveM_SW"+MySymbol[j]) == FALSE)
-      		   ||(GlobalVariableCheck("g_ThirtyM_BI"+MySymbol[j]) == FALSE)				   
-      		   ||(GlobalVariableCheck("g_FiveM_BI"+MySymbol[j]) == FALSE)			   
-			    ||(GlobalVariableCheck("g_FourH_Trend"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_OneD_Trend"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_OneW_SW"+MySymbol[j]) == FALSE)
-				||(GlobalVariableCheck("g_OneD_SW"+MySymbol[j]) == FALSE))
-      	   	{
-      	   	   flag = false;
-      
-      	   	}
-      	   	else
-      	   	{
-      	   		break;
-      	   	}
-      	  }
-      	  if (true == flag)
-      	  {
-      	      break;
-      	  }
-      	  else
-      	  {
-   	   		Print(MySymbol[j] + "waiting for globle_Value init,another ten seconds......" ); 	   	
-   	   		Sleep(5000);      	  
-      	  }
-      }
-      //无法启动所有全局变量
-      if(i ==500)
-      {
-            Print("init false due to open or set global_virable false"); 
-            return -1;   	 
-      }
-      else
-      {
-             Print(MailTitlle + " init successful !!! ");   
-   //         SendNotification(MailTitlle + " init successful !!! "); 
-      
-      }
-	  
-	Print("Server name is ", AccountServer());	  
-	Print("Account #",AccountNumber(), " leverage is ", AccountLeverage());
-	Print("Account free margin = ",AccountFreeMargin());	  
-                
-      return 0;
-}
-
-
-
-int deinit()
-{
-
-	//删除自己的全局变量
-	int SymPos;
-	int timeperiodnum;
-	int my_timeperiod;
-	string my_symbol;	
-	
-	
-	for(SymPos = 0; SymPos < symbolNum;SymPos++)	
-	{	
-		
-		for(timeperiodnum = 0; timeperiodnum < TimePeriodNum;timeperiodnum++) 
-		{   
-
-			my_symbol =   MySymbol[SymPos];
-			
-			my_timeperiod = timeperiod[timeperiodnum];	
-			
-			if(10080 == my_timeperiod )
-			{  		 
-
-				 if(GlobalVariableCheck("g_OneW_SW"+my_symbol) == TRUE)
-				 {      
-					 GlobalVariableDel("g_OneW_SW"+my_symbol);
-			  
-				 }   			 
-						
-			} 
-			else if(1440 == my_timeperiod )
-			{
-				 if(GlobalVariableCheck("g_OneD_Trend"+my_symbol) == TRUE)
-				 {      
-					 GlobalVariableDel("g_OneD_Trend"+my_symbol);
-			  
-				 }     		 
-
-				 if(GlobalVariableCheck("g_OneD_SW"+my_symbol) == TRUE)
-				 {      
-					 GlobalVariableDel("g_OneD_SW"+my_symbol);
-			  
-				 }   			 
-						
-			}
-
-			else if (240 == my_timeperiod )
-			{     
-			 if(GlobalVariableCheck("g_FourH_SW"+my_symbol) == TRUE)
-			 {      
-				 GlobalVariableDel("g_FourH_SW"+my_symbol);
-
-			 }      
-			 if(GlobalVariableCheck("g_FourH_Trend"+my_symbol) == TRUE)
-			 {      
-				 GlobalVariableDel("g_FourH_Trend"+my_symbol);
-
-			 }     		 
-			  if(GlobalVariableCheck("g_FourH_BI"+my_symbol) == TRUE)
-			  {      
-				GlobalVariableDel("g_FourH_BI"+my_symbol);
-			  
-			  }				 
-			 
-
-
-			 if(GlobalVariableCheck("g_FourH_BF"+my_symbol) == TRUE)
-			 {      
-				 GlobalVariableDel("g_FourH_BF"+my_symbol);
-
-			 }    			 
-			 
-			 
-			}
-			else if (30 == my_timeperiod )
-			{     
-
-			 if(GlobalVariableCheck("g_ThirtyM_BF"+my_symbol) == TRUE)
-			 {      
-				 GlobalVariableDel("g_ThirtyM_BF"+my_symbol);
-
-			 }    	  
-
-			 if(GlobalVariableCheck("g_ThirtyM_SW"+my_symbol) == TRUE)
-			 {      
-				 GlobalVariableDel("g_ThirtyM_SW"+my_symbol);
-
-			 }           
-			  if(GlobalVariableCheck("g_ThirtyM_BI"+my_symbol) == TRUE)
-			  {      
-				GlobalVariableDel("g_ThirtyM_BI"+my_symbol);
-			  
-			  }		             
-
-
-			}
-			else if (5 == my_timeperiod )
-			{
-				  
-
-			 if(GlobalVariableCheck("g_FiveM_BF"+my_symbol) == TRUE)
-			 {      
-				 GlobalVariableDel("g_FiveM_BF"+my_symbol);
-
-			 }    	  
-					  
-			  if(GlobalVariableCheck("g_FiveM_SW"+my_symbol) == TRUE)
-			  {      
-				GlobalVariableDel("g_FiveM_SW"+my_symbol);
-			  
-			  }			
-			  
-			  if(GlobalVariableCheck("g_FiveM_BI"+my_symbol) == TRUE)
-			  {      
-				GlobalVariableDel("g_FiveM_BI"+my_symbol);
-			  
-			  }		      		
-							  
-			}
-			else if (1 == my_timeperiod )
-			{
-
-			 if(GlobalVariableCheck("g_OneM_BF"+my_symbol) == TRUE)
-			 {      
-				 GlobalVariableDel("g_OneM_BF"+my_symbol);
-
-			 }    	  
-					 
-			}    	
-
-		}
-
-	}
-
-	return 0;
-}
-
-
-
-
-
-int ChartEvent = 0;
-bool PrintFlag = false;
-
-
-
-void calculateindicator()
-{
-	
-	int SymPos;
-	int timeperiodnum;
-	int my_timeperiod;
-
-	double ma;
-	double boll_up_B,boll_low_B,boll_mid_B,bool_length;
-	
-	double MAThree,MAFive,MAThen,MAThentyOne,MASixty;
-	double MAFivePre,MAThenPre,MAThentyOnePre,MASixtyPre;
-	double StrongWeak;
-	double vbid,vask; 
-	string my_symbol;
-	double boolindex;
-	
-	int crossflag;	
-
-	for(SymPos = 0; SymPos < symbolNum;SymPos++)
-	{	
-		for(timeperiodnum = 0; timeperiodnum < TimePeriodNum;timeperiodnum++)
-		{
- 
-			my_symbol =   MySymbol[SymPos];
-			my_timeperiod = timeperiod[timeperiodnum];
-			ma=iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,1); 
-			// ma = Close[0];  
-			boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
-			boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
-			boll_mid_B = (boll_up_B + boll_low_B )/2;
-			/*point*/
-			bool_length =(boll_up_B - boll_low_B )/2;
-
-			ma_pre = iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,2); 
-			boll_up_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,2);      
-			boll_low_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,2);
-			boll_mid_B_pre = (boll_up_B_pre + boll_low_B_pre )/2;
-
-			crossflag = 0;
-			
-		
-			StrongWeak = BoolCrossRecord[SymPos][timeperiodnum].StrongWeak;
-			
-			/*本周期突破高点，观察如小周期未衰竭可追高买入，或者等待回调买入*/
-			/*原则上突破bool线属于偏离价值方向太大，是要回归价值中枢的*/
-			if((ma >boll_up_B) && (ma_pre < boll_up_B_pre ) )
-			{
-			
-				crossflag = 5;		
-				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
-				//  Print(mMailTitlle + Symbol()+"::本周期突破高点，除(1M、5M周期bool口收窄且快速突破追高，移动止损），其他情况择机反向做空:"
-				//  + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
-
-			}
-			
-			/*本周期突破高点后回调，观察如小周期长时间筑顶，寻机卖出*/
-			else if((ma <boll_up_B) && (ma_pre > boll_up_B_pre ) )
-			{
-				crossflag = 4;
-				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
-				//   Print(mMailTitlle + Symbol()+"::本周期突破高点后回调，观察小周期如长时间筑顶，寻机做空:"
-				//   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      
-
-	   
-			}
-				
-			
-			/*本周期突破低点，观察如小周期未衰竭可追低卖出，或者等待回调卖出*/
-			else if((ma < boll_low_B) && (ma_pre > boll_low_B_pre ) )
-			{
-			
-				
-				crossflag = -5;
-				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
-				//   Print(mMailTitlle + Symbol() + "::本周期突破低点，除(条件：1M、5M周期bool口收窄且快速突破追低，移动止损），其他情况择机反向做多:"
-				//   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
-
-	   
-			}
-				
-			/*本周期突破低点后回调，观察如长时间筑底，寻机买入*/
-			else if((ma > boll_low_B) && (ma_pre < boll_low_B_pre ) )
-			{
-				crossflag = -4;	
-				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);
-				//   Print(mMailTitlle + Symbol() + "::本周期突破低点后回调，观察如小周期长时间筑底，寻机买入:"
-				//   + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
-
-
-			}
-	   
-	   
-					
-			/*本周期上穿中线，表明本周期趋势开始发生变化为上升，在下降大趋势下也可能是回调杀入机会*/
-			else if((ma > boll_mid_B) && (ma_pre < boll_mid_B_pre ))
-			{
-			
-				crossflag = 1;				
-				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);			
-				//    Print(mMailTitlle + Symbol() + "::本周期上穿中线变化为上升，大周期下降大趋势下可能是回调做空机会："
-				//    + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
-
-   
-			}	
-			/*本周期下穿中线，表明趋势开始发生变化，在上升大趋势下也可能是回调杀入机会*/
-			else if( (ma < boll_mid_B) && (ma_pre > boll_mid_B_pre ))
-			{
-				crossflag = -1;								
-				ChangeCrossValue(crossflag,StrongWeak,SymPos,timeperiodnum);			
-				 //     Print(mMailTitlle + Symbol() + "::本周期下穿中线变化为下降，大周期上升大趋势下可能是回调做多机会："
-				 //     + DoubleToString(bool_length)+":"+DoubleToString(bool_length/Point));  	  	      	      	      
-
-			}							
-			else
-			{
-				 crossflag = 0;   
-       
-			}
-
-			BoolCrossRecord[SymPos][timeperiodnum].BoolFlag = BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0];
-			BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange = crossflag;
-
-			
-			if (1 == my_timeperiod )
-			{
-				GlobalVariableSet("g_OneM_BF"+my_symbol,
-				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
-
-			} 		
-			else if (5 == my_timeperiod )
-			{
-				GlobalVariableSet("g_FiveM_BF"+my_symbol,
-				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
-
-			} 
-			else if (30 == my_timeperiod )
-			{
-				GlobalVariableSet("g_ThirtyM_BF"+my_symbol,
-				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
-
-			}
-			else if (240 == my_timeperiod )
-			{
-				GlobalVariableSet("g_FourH_BF"+my_symbol,
-				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]); 		
-
-			}	
-			else
-			{
-				;
-			}
-
-			
-			vask    = MarketInfo(my_symbol,MODE_ASK);
-			vbid    = MarketInfo(my_symbol,MODE_BID);					
-			boolindex = ((vask + vbid)/2 - boll_mid_B)/bool_length;
-			BoolCrossRecord[SymPos][timeperiodnum].BoolIndex = boolindex;
- 
-			if (5 == my_timeperiod )
-			{
-				GlobalVariableSet("g_FiveM_BI"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].BoolIndex);   
-
-			}
-   
-			if (30 == my_timeperiod )
-			{
-				GlobalVariableSet("g_ThirtyM_BI"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].BoolIndex);   
-
-			}
-	
-			if (240 == my_timeperiod )
-			{
-
-				GlobalVariableSet("g_FourH_BI"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].BoolIndex);   
-
-			}
-	   
-	   
-			MAThree=iMA(my_symbol,my_timeperiod,3,0,MODE_SMA,PRICE_CLOSE,0); 
-			MAThen=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,0);  
-			MAThenPre=iMA(my_symbol,my_timeperiod,10,0,MODE_SMA,PRICE_CLOSE,1); 
-	 
-				
-			MAFive=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,0); 
-			MAThentyOne=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,0); 
-			MASixty=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,0); 
-		 
-			MAFivePre=iMA(my_symbol,my_timeperiod,5,0,MODE_SMA,PRICE_CLOSE,1); 
-			MAThentyOnePre=iMA(my_symbol,my_timeperiod,21,0,MODE_SMA,PRICE_CLOSE,1); 
-			MASixtyPre=iMA(my_symbol,my_timeperiod,60,0,MODE_SMA,PRICE_CLOSE,1); 
-			 
-
-			StrongWeak =0.5;
-		 
-
-			if((MAThree > MAThen)&&(MAThenPre<MAThen))
-			{		
-				StrongWeak =0.9;	
-			}
-			else if ((MAThree < MAThen)&&(MAThenPre>MAThen))
-			{
-				StrongWeak =0.1;
-			
-			}
-			else
-			{
-				StrongWeak =0.5;
-
-			}
-
-			
-			BoolCrossRecord[SymPos][timeperiodnum].Trend = StrongWeak;
-			
-			
-			if (240 == my_timeperiod )
-			{
-				GlobalVariableSet("g_FourH_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
-			}
-			else if (1440 == my_timeperiod )
-			{
-				GlobalVariableSet("g_OneD_Trend"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].Trend);   	 
-			}
-			else
-			{
-				;   
-			}  
-				
-		 
-		 
-			 
-			 
-			 
-			StrongWeak =0.5;
-	   
-			if(MAFive > MAThentyOne)
-			{
-					
-				/*多均线多头向上*/
-				if((MASixty < MAThentyOne)&&(MAThentyOne>MAThentyOnePre)&&(MASixty>MASixtyPre))
-				{
-					 StrongWeak =0.9;
-				}
-				else if ((MASixty >= MAThentyOne) &&(MASixty <MAFive))
-				{
-					 StrongWeak =0.6;
-				}
-				else
-				{
-					 StrongWeak =0.5;
-				}
-			
-			}
-			else if (MAFive < MAThentyOne)
-			{
-				/*多均线多头向下*/
-				if((MASixty > MAThentyOne)&&(MAThentyOne<MAThentyOnePre)&&(MASixty<MASixtyPre))
-				{
-					 StrongWeak =0.1;
-				}
-				else if ((MASixty <= MAThentyOne) &&(MASixty > MAFive))
-				{
-					 StrongWeak =0.4;
-				}
-				else
-				{
-					 StrongWeak =0.5;
-				}  	
-			
-			}
-			else
-			{
-				StrongWeak =0.5;
-	   
-			}
-	   
-	   
-			BoolCrossRecord[SymPos][timeperiodnum].StrongWeak = StrongWeak;
-
-	   
-			if (10080 == my_timeperiod )
-			{
-				GlobalVariableSet("g_OneW_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
-			}  
-			else if (1440 == my_timeperiod )
-			{
-				GlobalVariableSet("g_OneD_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   	 
-			}     
-			else if (240 == my_timeperiod )
-			{
-				GlobalVariableSet("g_FourH_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
-
-			}
-			else if (30 == my_timeperiod )
-			{
-				GlobalVariableSet("g_ThirtyM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
-
-			}
-			else if (5 == my_timeperiod )
-			{
-				GlobalVariableSet("g_FiveM_SW"+my_symbol,BoolCrossRecord[SymPos][timeperiodnum].StrongWeak);   
-
-			}
-			else
-			{
-				;   
-			}  
-
-	   }	
-		
-	}	
-	
-	return;
-}
-
-
 
 //int start()
 void OnTick(void)
