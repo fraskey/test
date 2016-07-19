@@ -78,12 +78,7 @@ public class MA_Play  implements IStrategy  {
 	 int iBoll_B = 0;
 //	 public int[] timeperiod;
 	 int TimePeriodNum = 0;
-	 TimeWrapperMql feinongtime;
-	 int feilongtimeoffset = 0;
-	 TimeWrapperMql yixitime;
-	 int yixitimeoffset = 0;
-	 TimeWrapperMql bigeventstime;
-	 int bigeventstimeoffset = 0;
+
 	 double ma_pre = 0;
 	 double boll_up_B_pre = 0;
 	 double boll_low_B_pre = 0;
@@ -1231,6 +1226,8 @@ public boolean OneMOrderCloseStatus(int MagicNumber) throws JFException
     }
 
 
+ 
+ 
 public void orderbuyselltypeone(int SymPos)throws JFException
 {
 	
@@ -2052,7 +2049,6 @@ public void orderbuyselltypeone(int SymPos)throws JFException
 	}						
 }
 
-
 public void checkbuysellordertypeone(int SymPos)throws JFException
 {
 	
@@ -2064,7 +2060,7 @@ public void checkbuysellordertypeone(int SymPos)throws JFException
 	double boll_up_B,boll_low_B,bool_length;	
 	double vbid,vask; 
 	double MinValue3 = 100000;
-
+	double MaxValue4 = -1;
 
 
 	double orderLots ;   
@@ -2085,7 +2081,7 @@ public void checkbuysellordertypeone(int SymPos)throws JFException
 	my_timeperiod = timeperiod[timeperiodnum];	
 	my_symbol =   MySymbol[SymPos];
 	
-	order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberThree)));		
+	order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberOne)));		
 	if(null != order)
 	{	
 		if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
@@ -2204,7 +2200,7 @@ public void checkbuysellordertypeone(int SymPos)throws JFException
 			   
 			   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[0])>360)
 			   {   	   
-				  if( order.getTakeProfitPrice()> 0)
+				  if( order.getProfitLossInAccountCurrency()> 0)
 				  {
 					  order.close();
 				  }   
@@ -2271,15 +2267,5328 @@ public void checkbuysellordertypeone(int SymPos)throws JFException
 	}
 
 
+	order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTwo)));		
+	if(null != order)
+	{	
+		if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+		{
+		
+			double [] mybool = new double[10];
+			
+			mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+					iBoll_B, 2, 2, MaType.SMA, 1);
+			
+			boll_up_B = mybool[0];
+			//boll_mid_B = mybool[1];
+			boll_low_B = mybool[2];	
+			
+			bool_length = (boll_up_B - boll_low_B)/2;
+			
+			 vask = history.getLastTick(my_symbol).getAsk();
+			 vbid = history.getLastTick(my_symbol).getBid();
+			
+			/*直接止损！*/
+			if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())				
+			{
+				 order.close();
+			}
+//////////////////////		
+		
+
+		   
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[1]) > 0)
+			{
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[1] = iBars(my_symbol,my_timeperiod)+10000000;	
+						
+				MaxValue4 = -1;
+				for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+				{
+					IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i); 					
+					if(MaxValue4 < prevBar.getHigh())
+					{
+						MaxValue4 = prevBar.getHigh();
+					}					
+				}								 
+
+
+				orderPrice = vbid;						 
+				orderStopless =MaxValue4 + 3*bool_length; 	
+
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[1])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[1];
+				}	
+				if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[1])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[1];
+				}	
+				
+				orderTakeProfit	= 	orderPrice -bool_length*5;
+				
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);	
+														
+				
+			}
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[1]) >-10)
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]))
+			{
+				order.close();
+				
+			}											   
+		   
+		   
+	   
+		   
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+				||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+			{
+				
+
+				
+				if(order.getTakeProfitPrice() < 0.1)
+				{
+					
+					
+					MaxValue4 = -1;
+					for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+					{
+						IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i); 					
+						if(MaxValue4 < prevBar.getHigh())
+						{
+							MaxValue4 = prevBar.getHigh();
+						}					
+					}								 
+
+
+					orderPrice = vbid;						 
+					orderStopless =MaxValue4 + 4*bool_length; 							
+					orderTakeProfit	= 	orderPrice -bool_length*6;
+					
+					/*保护胜利果实*/
+					if(orderStopless > order.getStopLossPrice() )
+					{
+						orderStopless = order.getStopLossPrice();
+					}			
+					
+                    order.setStopLossPrice(orderStopless);          
+                    order.setTakeProfitPrice(orderTakeProfit);								
+				}
+				
+
+				/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,90分钟开始监控时间控制*/
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[1])>400)
+				{
+					order.close();
+				}
+
+				else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[1])>360)
+				{   	   
+				  if( order.getProfitLossInAccountCurrency()> 0)
+				  {
+					  order.close();
+				  }   
+
+					if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					{
+						order.close();
+						
+					}											   
+			   				  
+				  
+				}  																		
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)
+			   &&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+			{
+				
+				BuySellPosRecord[SymPos].TradeTimePos[1] = iBars(my_symbol,my_timeperiod);												
+				
+				if(order.getTakeProfitPrice() > 0.1)
+				{				
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);   								
+				}																		
+				
+			}
+			if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[1] = BuySellPosRecord[SymPos].TradeTimePos[1]-
+						1;
+										  
+				}   						
+
+			}								   
+
+			if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+				
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+	
+	               &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+	            {
+	                orderLots = order.getAmount()/2;
+	                
+	                /*三次完成出货*/
+	                if (orderLots <= MyLotsL*9/64)
+	                {
+	                    orderLots = order.getAmount();
+	                }                                           
+	                order.close(orderLots);                                                                                                                                 
+	            }     
+					
+//////////////////////		
+		}
+		
+	}
 	
 	
+
+	order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberThree)));		
+	if(null != order)
+	{	
+		if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+		{
+		
+			double [] mybool = new double[10];
+			
+			mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+					iBoll_B, 2, 2, MaType.SMA, 1);
+			
+			boll_up_B = mybool[0];
+			//boll_mid_B = mybool[1];
+			boll_low_B = mybool[2];	
+			
+			bool_length = (boll_up_B - boll_low_B)/2;
+			
+			 vask = history.getLastTick(my_symbol).getAsk();
+			 vbid = history.getLastTick(my_symbol).getBid();
+			
+			/*直接止损！*/
+			if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())				
+			{
+				 order.close();
+			}
+//////////////////////		
+		   
+		   
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[2]) > 0)
+			{
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[2] = iBars(my_symbol,my_timeperiod)+10000000;	
+	               MinValue3 = 100000;
+	                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	                {
+	                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+	                    if(MinValue3 > prevBar.getLow())
+	                    {
+	                        MinValue3 = prevBar.getLow();
+	                    }
+	                    
+	                }     							
+				
+
+				orderPrice = vask;				 
+				orderStopless =MinValue3- bool_length*3; 
+
+
+				if(orderStopless <BuySellPosRecord[SymPos].NextModifyValue1[2])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[2];
+				}						
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue2[2])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[2];
+				}							
+				
+				orderTakeProfit	= 	orderPrice  + bool_length*5;
+				
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);											
+				
+			}
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[2]) >-10)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]))
+			{
+				order.close();
+				
+			}						
+
+			if((-4.5 >BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag )
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[2]) < -1000))
+			{
+				order.close();
+			}						
+																	
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)
+				||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.8))
+			{
+				
+				if(order.getTakeProfitPrice() < 0.1)
+				{
+					
+		               MinValue3 = 100000;
+		                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		                {
+		                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+		                    if(MinValue3 > prevBar.getLow())
+		                    {
+		                        MinValue3 = prevBar.getLow();
+		                    }
+		                    
+		                }     							
+						
+					
+
+					orderPrice = vask;				 
+					orderStopless =MinValue3- bool_length*4; 						
+					orderTakeProfit	= 	orderPrice  + bool_length*6;
+
+					
+					/*保护胜利果实*/
+					if(orderStopless < order.getStopLossPrice() )
+					{
+						orderStopless = order.getStopLossPrice();
+					}							
+					
+	                 order.setStopLossPrice(orderStopless);          
+	                 order.setTakeProfitPrice(orderTakeProfit);
+					
+
+							
+				}
+				
+				
+			   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+			   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[2])>400)
+			   {
+				   order.close();
+			   }
+			   
+			   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[2])>360)
+			   {   	   
+				  if( order.getProfitLossInAccountCurrency()> 0)
+				  {
+					  order.close();
+				  }   
+					if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					{
+						order.close();
+						
+					}	
+
+				  
+			   }  
+			   
+						
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)
+				&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))	
+			{
+				
+				BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);
+				if(order.getTakeProfitPrice()> 0.1)
+				{																			 
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);   							
+				}																		
+				
+			}	
+			if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak < 0.2)
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[2] = BuySellPosRecord[SymPos].TradeTimePos[2]-
+						1;
+										  
+				}   						
+
+			}	
+
+
+
+			if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+         {
+             orderLots = order.getAmount()/2;
+             
+             /*三次完成出货*/
+             if (orderLots <= MyLotsL*9/64)
+             {
+                 orderLots = order.getAmount();
+             }                                           
+             order.close(orderLots);                                                                                                                                 
+         }   
+												   					
+			
+//////////////////////////			
+		}
+	}
 	
+
+
+	order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFour)));		
+	if(null != order)
+	{	
+		if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+		{
+		
+			double [] mybool = new double[10];
+			
+			mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+					iBoll_B, 2, 2, MaType.SMA, 1);
+			
+			boll_up_B = mybool[0];
+			//boll_mid_B = mybool[1];
+			boll_low_B = mybool[2];	
+			
+			bool_length = (boll_up_B - boll_low_B)/2;
+			
+			 vask = history.getLastTick(my_symbol).getAsk();
+			 vbid = history.getLastTick(my_symbol).getBid();
+			
+			/*直接止损！*/
+			if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())				
+			{
+				 order.close();
+			}
+/////////////////////////////
+
+		   
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[3]) > 0)
+			{
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[3] = iBars(my_symbol,my_timeperiod)+10000000;	
+						
+                MaxValue4 = -1;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                    if(MaxValue4 < prevBar.getHigh())
+                    {
+                        MaxValue4 = prevBar.getHigh();
+                    }                   
+                }                                
+
+
+				orderPrice = vbid;						 
+				orderStopless =MaxValue4 + 3*bool_length; 	
+
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[3])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[3];
+				}	
+				if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[3])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[3];
+				}	
+				
+				orderTakeProfit	= 	orderPrice -bool_length*5;
+
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);  
+                      
+						
+				
+			}
+			
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[3]) >-10)
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]))
+			{
+				order.close();
+				
+			}											   
+												   
+			
+			if((4.5 <BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[3]) < -1000))					
+			{
+				order.close();
+				
+			}											   
+												   
+		   
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+				||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+			{
+				
+
+				
+				if(order.getTakeProfitPrice() < 0.1)
+				{
+					
+                    MaxValue4 = -1;
+                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                    {
+                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                        if(MaxValue4 < prevBar.getHigh())
+                        {
+                            MaxValue4 = prevBar.getHigh();
+                        }                   
+                    }   
+
+					orderPrice = vbid;						 
+					orderStopless =MaxValue4 + 4*bool_length; 							
+					orderTakeProfit	= 	orderPrice -bool_length*6;
+
+					
+					/*保护胜利果实*/
+						if(orderStopless > order.getStopLossPrice() )
+						{
+							orderStopless = order.getStopLossPrice();
+						}			
+						
+	                    order.setStopLossPrice(orderStopless);          
+	                    order.setTakeProfitPrice(orderTakeProfit);   								
+				}
+				
+
+				/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[3])>400)
+				{
+					order.close();
+				}
+
+				else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[3])>360)
+				{   	   
+				  if( order.getProfitLossInAccountCurrency()> 0)
+				  {
+					  order.close();
+				  }   	
+					if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					{
+						order.close();
+						
+					}							  
+				}  						
+				
+				
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)
+				&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+			{
+										
+				BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod);
+				if(order.getTakeProfitPrice() > 0.1)
+				{
+					
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);  
+							
+				}																		
+				
+			}
+			if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[3] = BuySellPosRecord[SymPos].TradeTimePos[3]-
+						1;
+										  
+				}   						
+
+			}						
+				
+		   
+			if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+         {
+             orderLots = order.getAmount()/2;
+             
+             /*三次完成出货*/
+             if (orderLots <= MyLotsL*9/64)
+             {
+                 orderLots = order.getAmount();
+             }                                           
+             order.close(orderLots);                                                                                                                                 
+         }     
+		   
+						
+			
+////////////////////////////			
+			
+		}
+	}
+	
+
 	
 		
 	
 }
 	
+
+
+
+
+
+
+void orderbuyselltypetwo(int SymPos)throws JFException
+{
+	
+	   int timeperiodnum;
+	    Period my_timeperiod;
+	    Instrument my_symbol;
+
+	    double boll_up_B,boll_low_B,boll_mid_B,bool_length;    
+	    double vbid,vask; 
+	    double MinValue3 = 100000;
+	    double MaxValue4=-1;
+
+
+	    double orderLots ;   
+	    double orderStopless ;
+	    double orderTakeProfit;
+	    double orderPrice;
+	    double[] mybool = new double[10];
+	    int i;
+	 
+	    
+	    timeperiodnum = 1;  
+
+
+	    orderLots = 0;   
+	    orderStopless = 0;
+	    orderTakeProfit = 0;
+	    orderPrice = 0;
+	        
+	    my_symbol =   MySymbol[SymPos];
+	    my_timeperiod = timeperiod[timeperiodnum];  
+
+	    
+	    mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+	            iBoll_B, 2, 2, MaType.SMA, 1);
+	    
+	    boll_up_B = mybool[0];
+	    boll_mid_B = mybool[1];
+	    boll_low_B = mybool[2]; 
+	    
+	    /*point*/
+	    bool_length =(boll_up_B - boll_low_B )/2;   
+	
+	//每次突破bool上轨的时候重新评估止损和止盈值，原则上止损和止盈值都不要轻易触发。
+	
+	
+	if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==false)
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberThirteen))==false)
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFive))==false)))		
+	{
+        vask = history.getLastTick(my_symbol).getAsk();
+        vbid = history.getLastTick(my_symbol).getBid();
+       
+       MinValue3 = 100000;
+       for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+       {
+           IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+           if(MinValue3 > prevBar.getLow())
+           {
+               MinValue3 = prevBar.getLow();
+           }
+           
+       }      
+		orderPrice = vask;				 
+		//orderStopless =MinValue3- bool_length*4; 
+		orderStopless = boll_low_B - bool_length;
+		/*
+		if((orderPrice - orderStopless)>bool_length*2)
+		{
+			orderStopless = orderPrice - bool_length*2;
+		}
+		*/
+		orderTakeProfit	= 	orderPrice + bool_length*6;
+		
+
+		//orderTakeProfit = 0;
+        IOrder order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFive)));      
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberFive Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;                                    
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }
+        
+        
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSeven)));   
+        
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberSeven Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }       
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberThirteen)));           
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberThirteen Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }  
+        
+	
+	}
+	
+
+			
+	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了找到比较好的入场点，和止损点
+	//突破型买点，在欧美交易时间交投活跃期间开突破类型单，防止假突破，采用三重多头测试，最关键的一点还是要设置小止损
+	
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag >3.5)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex >0.8)	
+	
+		&&(opendaycheck(SymPos) == true)
+		//&&(tradetimecheck(SymPos) ==true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFive))==true)))
+	{
+
+	
+		if(/*(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (-4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+
+			&&(1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))	
+										
+		{
+			
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MinValue3 = 100000;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               if(MinValue3 > prevBar.getLow())
+               {
+                   MinValue3 = prevBar.getLow();
+               }
+               
+           }      
+			
+			orderLots = MyLotsL;
+			orderPrice = vask;				 
+
+			orderStopless =MinValue3- bool_length*4; 	
+
+			BuySellPosRecord[SymPos].NextModifyValue1[4] = orderStopless;
+			
+			orderStopless =MinValue3- bool_length*2; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[4] = orderStopless;
+			
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+
+	           String s;
+	            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+	            console.getOut().println(s);                                                                    
+	                        
+	            s = my_symbol+" MagicNumberFive OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+	                        +orderPrice+"orderStopless="
+	                        +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+	            console.getOut().println(s);			
+
+
+	            
+			if(true == accountcheck())
+			{
+			
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFive)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);             
+                 if(null != order)                
+				 { 
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[4] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[4] = iBars(my_symbol,my_timeperiod);						            				 			 
+					console.getOut().println("OrderSend MagicNumberFive  successfully");
+				 }								
+				 
+			}					 
+						
+		}
+					
+		else
+		{
+		;
+		}		
+	
+	}
+	
+	
+	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点
+	//转折型买点
+	
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <-0.85)	
+	
+		//&&((ThirtyM_BoolFlag <0)&&(ThirtyM_BoolFlag >-4.5))
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFive))==true)))
+	{
+		
+		
+		/*三十分钟多头向下，一而鼓，再而竭，三而衰由止损保障，空头陷阱*/
+		
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		
+			&& (-4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (-1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+						
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))			
+			
+		{
+			
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MinValue3 = 100000;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               if(MinValue3 > prevBar.getLow())
+               {
+                   MinValue3 = prevBar.getLow();
+               }
+               
+           }   
+           
+           orderLots = MyLotsH;
+			orderPrice = vask;				 
+
+			orderStopless =MinValue3- bool_length*4; 	
+
+			BuySellPosRecord[SymPos].NextModifyValue1[6] = orderStopless;
+			
+			orderStopless =MinValue3- bool_length*2; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[6] = orderStopless;
+			
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+
+			
+			//orderTakeProfit = 0;
+	           String s;
+	            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+	            console.getOut().println(s);                                                                    
+	                        
+	            s = my_symbol+" MagicNumberSeven3 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+	                        +orderPrice+"orderStopless="
+	                        +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+	            console.getOut().println(s);	
+			
+			if(true == accountcheck())
+			{
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSeven)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);     
+                
+                
+                 if(null != order)
+				 {     
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[6] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);				 				 
+					console.getOut().println("OrderSend MagicNumberSeven3  successfully");
+				 }													
+			}					
+			
+		}			
+					
+		
+		/*三十分钟非多头向下，一分钟bool背驰，空头陷阱*/
+		
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		
+			&& (-1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))
+					
+		{
+			
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MinValue3 = 100000;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               if(MinValue3 > prevBar.getLow())
+               {
+                   MinValue3 = prevBar.getLow();
+               }
+               
+           }               
+           orderLots = MyLotsH;
+           
+			orderPrice = vask;				 
+
+			orderStopless =MinValue3- bool_length*4; 	
+
+
+			BuySellPosRecord[SymPos].NextModifyValue1[6] = orderStopless;
+			
+			
+			orderStopless =MinValue3- bool_length*2; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[6] = orderStopless;				
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+
+
+			//orderTakeProfit = 0;
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);                                                                    
+                        
+            s = my_symbol+" MagicNumberseven4 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                        +orderPrice+"orderStopless="
+                        +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+            console.getOut().println(s);    	
+			
+			if(true == accountcheck())
+			{
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSeven)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {            
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[6] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);				 				 
+					console.getOut().println("OrderSend MagicNumberSeven4  successfully");
+				 }													
+	
+			}
+
+
+		}
+	}			
+	
+
+
+	//超级大周期处于空头市场，上周期多头市场，本周期在高位上涨回调小周期背驰阶段买入，趋势转折交易，猜底摸顶
+	//大周期超级转折型买点
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex >0.8)	
+		
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberThirteen))==true)
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberThirteen))==true)))
+	{
+		
+		
+		/*三十分钟多头向上，五分钟上涨两次确认，回调空头陷阱*/
+		
+		if(/*(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])
+			
+			&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)				
+			
+			&&(1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))		
+
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+			orderLots = MyLotsL;
+			orderPrice = vask;		
+			
+			
+			orderStopless =boll_low_B; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[12] = orderStopless;
+			
+			orderStopless =boll_mid_B; 
+			
+			BuySellPosRecord[SymPos].NextModifyValue2[12] = orderStopless;				
+			
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);                                                                    
+                        
+            s = my_symbol+" MagicNumberThirteen OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                        +orderPrice+"orderStopless="
+                        +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+            console.getOut().println(s);    
+
+            
+			 if(true == accountcheck())
+			 {
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberThirteen)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;				 
+					BuySellPosRecord[SymPos].NextModifyPos[12] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[12] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberThirteen  successfully");
+				 }
+													 	
+			 }					 
+							
+		
+		}			
+					
+		
+	}		
+	
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////		
+	//多空分界		
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////		
+			
+	
+	//每次突破bool下轨的时候重新评估止损和止盈值，原则上止损和止盈值都不要轻易触发。
+	if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(-5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)		
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFourteen))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSix))==false)))
+	{
+		
+        vask = history.getLastTick(my_symbol).getAsk();
+        vbid = history.getLastTick(my_symbol).getBid();
+       
+       MaxValue4 = -1;
+       for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+       {
+           IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+           
+           if(MaxValue4 < prevBar.getHigh())
+           {
+               MaxValue4 = prevBar.getHigh();
+           }                   
+       }               
+   
+
+
+		orderPrice = vbid;						 
+		//orderStopless =MaxValue4 + bool_length*4; 
+		orderStopless = boll_up_B + bool_length;
+		
+		/*
+		if(( orderStopless- orderPrice)>bool_length*2)
+		{
+			orderStopless = orderPrice + bool_length*2;
+		}
+		*/
+
+			
+		orderTakeProfit	= 	orderPrice - bool_length*6;
+		
+        IOrder order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSix)));      
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberSix Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;                                    
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }
+        
+        
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEight)));    
+        
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberEight Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }  
+        
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFourteen)));           
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberFourteen Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }  
+        		
+		
+	}	
+	
+
+
+	
+	//大周期处于空头市场，本周期在上涨背驰阶段卖出，趋势交易，目的是为了找到比较好的入场点，和止损点
+	//突破型卖点，在欧美交易时间交投活跃期间开突破类型单，防止假突破，采用三重空头测试，关键是减少止损
+	//突破型卖点止损设置值比较大		
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag <-3.5)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <-0.8)	
+
+		&&(opendaycheck(SymPos) == true)
+		//&&(tradetimecheck(SymPos) ==true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSix))==true)))
+	{
+
+
+		if(/*(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+
+			&&(-1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))	
+			
+	
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MaxValue4 = -1;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               
+               if(MaxValue4 < prevBar.getHigh())
+               {
+                   MaxValue4 = prevBar.getHigh();
+               }                   
+           }               
+                   
+       
+           orderLots = MyLotsL;
+			orderPrice = vbid;		
+			
+			orderStopless =MaxValue4 + bool_length*4; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[5] = orderStopless;
+			
+			orderStopless =MaxValue4 + bool_length*2; 
+			
+			BuySellPosRecord[SymPos].NextModifyValue2[5] = orderStopless;				
+			
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+
+	           String s;
+	            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+	            console.getOut().println(s);
+	                                
+	            s= my_symbol+" MagicNumberSix OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+	                            +orderPrice+"orderStopless="+orderStopless
+	                            +"orderTakeProfit="+orderTakeProfit;    
+	            
+	            console.getOut().println(s);    			
+									
+			 
+			 if(true == accountcheck())
+			 {
+				 
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSix)), 
+                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[5] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[5] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberSix  successfully");
+				 }					
+				 
+			 }
+											
+		}
+					
+		else
+		{
+		;
+		}		
+	
+	}	
+	
+
+
+	
+	//大周期处于空头市场，本周期在上涨背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点
+	//转折型卖点
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+		
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex >0.85)		
+	
+		//&&((ThirtyM_BoolFlag >0)&&(ThirtyM_BoolFlag < 4.5))			
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSix))==true)))
+	{
+		
+
+		/*三十分钟周期向上时，慎重做空，一而鼓，再而竭，三而衰由止损保障，确保多头陷阱*/
+		
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		
+			&& (4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+						
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))
+
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MaxValue4 = -1;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               
+               if(MaxValue4 < prevBar.getHigh())
+               {
+                   MaxValue4 = prevBar.getHigh();
+               }                   
+           }               
+       
+           orderLots = MyLotsH;
+			orderPrice = vbid;		
+			
+			orderStopless =MaxValue4 + bool_length*4; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[7] = orderStopless;
+			
+			orderStopless =MaxValue4 + bool_length*2; 
+			
+			BuySellPosRecord[SymPos].NextModifyValue2[7] = orderStopless;				
+			
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);
+                                
+            s= my_symbol+" MagicNumberEight3 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                            +orderPrice+"orderStopless="+orderStopless
+                            +"orderTakeProfit="+orderTakeProfit;    
+            
+            console.getOut().println(s);   
+			
+			
+
+			 if(true == accountcheck())
+			 {
+				 
+				 
+	                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEight)), 
+	                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+	                        5, orderStopless, orderTakeProfit);                     
+	                
+	                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;				 
+					BuySellPosRecord[SymPos].NextModifyPos[7] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberEight3  successfully");
+				 }
+													 
+			 }					 
+								
+		
+		}			
+		
+		
+		/*三十分钟线未明显多头向上，一分钟线背驰就认为是多头陷阱*/
+
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		
+			&& (1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))		
+
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MaxValue4 = -1;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               
+               if(MaxValue4 < prevBar.getHigh())
+               {
+                   MaxValue4 = prevBar.getHigh();
+               }                   
+           }               
+       
+           orderLots = MyLotsH;
+			orderPrice = vbid;						 
+
+			
+			orderStopless =MaxValue4 + bool_length*4; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[7] = orderStopless;	
+
+			
+			orderStopless =MaxValue4 + bool_length*2; 
+			BuySellPosRecord[SymPos].NextModifyValue2[7] = orderStopless;
+			
+							
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+			
+
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);
+                                
+            s= my_symbol+" MagicNumberEight4 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                            +orderPrice+"orderStopless="+orderStopless
+                            +"orderTakeProfit="+orderTakeProfit;    
+            
+            console.getOut().println(s);   									
+
+			//orderTakeProfit = 0;		
+			
+									
+			 
+			 if(true == accountcheck())
+			 {
+					 
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEight)), 
+                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;				 
+					BuySellPosRecord[SymPos].NextModifyPos[7] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberEight4  successfully");
+				 }
+													 
+			 }					 
+							
+		}
+					
+	}						
+
+			
+	
+	//超级大周期处于多头市场，上周期空头市场，本周期在低位下跌回调小周期背驰阶段卖出，趋势转折交易，猜底摸顶
+	//大周期超级转折型卖点
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)	
+	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)	
+		
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <-0.8)		
+	
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFourteen))==true)
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFourteen))==true)))
+	{
+		
+		
+		/*三十分钟空头向下，五分钟下跌两次确认，回调多头陷阱*/
+		
+		
+		if(/*(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (-4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (-4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])
+			
+			&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)				
+			
+			&&(-1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))			
+					
+		{
+			
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+            
+			orderLots = MyLotsL;
+			
+			orderPrice = vbid;				 
+
+			orderStopless =boll_up_B; 	
+
+			BuySellPosRecord[SymPos].NextModifyValue1[13] = orderStopless;
+			
+			orderStopless =boll_mid_B; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[13] = orderStopless;
+			
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+			
+
+			
+			//orderTakeProfit = 0;
+						
+
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);
+                                
+            s= my_symbol+" MagicNumberFourteen OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                            +orderPrice+"orderStopless="+orderStopless
+                            +"orderTakeProfit="+orderTakeProfit;    
+            
+            console.getOut().println(s);  
+			
+
+			if(true == accountcheck())
+			{
+				
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFourteen)), 
+                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {     
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[13] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[13] = iBars(my_symbol,my_timeperiod);				 				 
+					console.getOut().println("OrderSend MagicNumberFourteen  successfully");
+				 }													
+
+			}					
+			
+		}									
+	}		
+						
+	
+}
+
+public void checkbuysellordertypetwo(int SymPos)throws JFException
+{
     
+    int timeperiodnum;
+    Period my_timeperiod;
+    Instrument my_symbol;
+
+    
+    double boll_up_B,boll_low_B,bool_length;    
+    double vbid,vask; 
+    double MinValue3 = 100000;
+    double MaxValue4 = -1;
+
+
+    double orderLots ;   
+    double orderStopless ;
+    double orderTakeProfit;
+    double orderPrice;
+    
+    int i;
+ 
+    
+    timeperiodnum = 1;  
+    IOrder order;
+
+    orderLots = 0;   
+    orderStopless = 0;
+    orderTakeProfit = 0;
+    orderPrice = 0;
+    my_timeperiod = timeperiod[timeperiodnum];  
+    my_symbol =   MySymbol[SymPos];
+    
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFive)));     
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+                                
+ //////////////////////
+
+		   
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[4]) > 0)
+			{
+				
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[4] = iBars(my_symbol,my_timeperiod)+10000000;	
+	               MinValue3 = 100000;
+	                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	                {
+	                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+	                    if(MinValue3 > prevBar.getLow())
+	                    {
+	                        MinValue3 = prevBar.getLow();
+	                    }
+	                    
+	                }                           
+	                
+
+				orderPrice = vask;				 
+				orderStopless =MinValue3- bool_length*3; 
+
+
+				if(orderStopless <BuySellPosRecord[SymPos].NextModifyValue1[4])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[4];
+				}						
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue2[4])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[4];
+				}							
+				
+				orderTakeProfit	= 	orderPrice  + bool_length*5;
+									
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);											
+				
+			}
+
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[4]) >-50)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[4]) <=-15)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+			{
+                order.close();																	
+				
+			}						
+							
+
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[4]) >-15)
+				&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))					
+			{
+                order.close();		 																		
+				
+			}						
+							
+			else
+			{
+				;
+			}
+							
+			if((-0.1 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[4]) < -1000))					
+			{
+                order.close();		
+				
+			}						
+							
+													
+				
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8) 
+				|| (BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak < 0.8))
+			{
+				
+
+				
+
+                if(order.getTakeProfitPrice() < 0.1)
+                {
+                    
+                    MinValue3 = 100000;
+                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                    {
+                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+                        if(MinValue3 > prevBar.getLow())
+                        {
+                            MinValue3 = prevBar.getLow();
+                        }
+                        
+                    }   
+                    
+					orderPrice = vask;				 
+					orderStopless =MinValue3- bool_length*4; 						
+					orderTakeProfit	= 	orderPrice  + bool_length*6;
+					
+                    /*保护胜利果实*/
+                    if(orderStopless < order.getStopLossPrice() )
+                    {
+                        orderStopless = order.getStopLossPrice();
+                    }                           
+                    
+                    order.setStopLossPrice(orderStopless);          
+                    order.setTakeProfitPrice(orderTakeProfit);
+                                								
+				}
+				
+				
+			   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+			   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[4])>400)
+			   {
+                   order.close();   
+			   }
+			   
+			   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[4])>360)
+			   {   	   
+	                  if( order.getProfitLossInAccountCurrency()> 0)
+	                  {
+	                      order.close();
+	                  }   
+	                    if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+	                    {
+	                          order.close();
+	                    }   
+	                  
+	             
+				  
+			   }  
+			   
+						
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)
+				&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))	
+			{
+				BuySellPosRecord[SymPos].TradeTimePos[4] = iBars(my_symbol,my_timeperiod);							
+                if(order.getTakeProfitPrice() > 0.1)
+                {                   
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);                                                
+                }  																		
+				
+			}	
+
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak < 0.2)
+				||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[4] = BuySellPosRecord[SymPos].TradeTimePos[4]-
+						1;
+										  
+				}   						
+
+			}	
+		
+		
+
+			if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+			
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+	        {
+	            orderLots = order.getAmount()/2;
+	            
+	            /*三次完成出货*/
+	            if (orderLots <= MyLotsL*9/64)
+	            {
+	                orderLots = order.getAmount();
+	            }                                           
+	            order.close(orderLots);                                                                                                                                 
+	        }              
+            
+ /////////////////////           
+        }
+    }
+    
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSix)));     
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+////////////////////// 
+		if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[5]) > 0)
+		{
+			/*初始化一个超大值，该值不可能达到*/
+			BuySellPosRecord[SymPos].NextModifyPos[5] = iBars(my_symbol,my_timeperiod)+10000000;	
+					
+            MaxValue4 = -1;
+            for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+            {
+                IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                if(MaxValue4 < prevBar.getHigh())
+                {
+                    MaxValue4 = prevBar.getHigh();
+                }                   
+            }                                
+
+
+			orderPrice = vbid;						 
+			orderStopless =MaxValue4 + 3*bool_length; 	
+
+			if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[5])
+			{
+				orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[5];
+			}	
+			if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[5])
+			{
+				orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[5];
+			}	
+			
+			orderTakeProfit	= 	orderPrice -bool_length*5;
+			
+
+			
+            order.setStopLossPrice(orderStopless);          
+            order.setTakeProfitPrice(orderTakeProfit);  
+					
+					
+			
+		}
+		
+		
+		else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[5]) >-50)
+			&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[5]) <=-15)
+			&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+		{
+            order.close();																		
+			
+		}											   
+											   
+
+
+		else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[5]) >-15)
+			&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+			&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))	
+		{
+            order.close();
+		}											   
+											   
+		else
+		{
+			;
+		}
+
+		
+		if((0.1 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+			&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+			&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[5]) < -1000))					
+		{
+            order.close();																	
+			
+		}											   
+											   
+													   
+	   
+		if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+		{
+			
+
+			
+            if(order.getTakeProfitPrice() < 0.1)
+            {
+                
+                
+                MaxValue4 = -1;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                    if(MaxValue4 < prevBar.getHigh())
+                    {
+                        MaxValue4 = prevBar.getHigh();
+                    }                   
+                }                                
+
+
+				orderPrice = vbid;						 
+				orderStopless =MaxValue4 + 4*bool_length; 							
+				orderTakeProfit	= 	orderPrice -bool_length*6;
+				
+                /*保护胜利果实*/
+                if(orderStopless > order.getStopLossPrice() )
+                {
+                    orderStopless = order.getStopLossPrice();
+                }           
+                
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);   							
+			}
+			
+
+			/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[5])>400)
+			{
+				order.close();
+			}
+
+			else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[5])>360)
+			{   	   
+                if( order.getProfitLossInAccountCurrency()> 0)
+                {
+                    order.close();
+                }   
+
+                  if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+                  {
+                      order.close();
+                      
+                  }  						  
+			}  						
+			
+			
+		}
+		
+		
+		if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+		{
+									
+			BuySellPosRecord[SymPos].TradeTimePos[5] = iBars(my_symbol,my_timeperiod);
+            if(order.getTakeProfitPrice() > 0.1)
+            {               
+                order.setStopLossPrice(order.getStopLossPrice());           
+                order.setTakeProfitPrice(0);                                
+            }  																	
+			
+		}
+		if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak > 0.8))
+		{
+			
+			//非激进处理
+								if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+			{
+				//后退一个时间周期
+				BuySellPosRecord[SymPos].TradeTimePos[5] = BuySellPosRecord[SymPos].TradeTimePos[5]-
+					1;
+									  
+			}   						
+
+		}						
+
+
+					
+	   
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+		
+		&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+        &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+	     {
+	         orderLots = order.getAmount()/2;
+	         
+	         /*三次完成出货*/
+	         if (orderLots <= MyLotsL*9/64)
+	         {
+	             orderLots = order.getAmount();
+	         }                                           
+	         order.close(orderLots);                                                                                                                                 
+	     } 
+			            
+            
+            
+//////////////////////
+        }
+    }
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSeven)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+////////////////////// 
+
+	            
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[6]) > 0)
+			{
+				
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[6] = iBars(my_symbol,my_timeperiod)+10000000;	
+	            MinValue3 = 100000;
+	            for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	            {
+	                IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+	                if(MinValue3 > prevBar.getLow())
+	                {
+	                    MinValue3 = prevBar.getLow();
+	                }
+	                
+	            }                               
+	        
+	
+				orderPrice = vask;				 
+				orderStopless =MinValue3- bool_length*3; 
+	
+	
+				if(orderStopless <BuySellPosRecord[SymPos].NextModifyValue1[6])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[6];
+				}						
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue2[6])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[6];
+				}							
+				
+				orderTakeProfit	= 	orderPrice  + bool_length*5;
+				
+	            order.setStopLossPrice(orderStopless);          
+	            order.setTakeProfitPrice(orderTakeProfit);   										
+				
+			}
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[6]) >-20)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]))
+			{
+	            order.close();																	
+				
+			}						
+							
+	
+			if((-4.5 >BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[6]) < -1000))					
+			{
+	            order.close();
+			}						
+							
+													
+				
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.8))
+			{
+				
+	
+				
+	
+	            if(order.getTakeProfitPrice() < 0.1)
+	            {
+	                
+	                   MinValue3 = 100000;
+	                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	                    {
+	                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+	                        if(MinValue3 > prevBar.getLow())
+	                        {
+	                            MinValue3 = prevBar.getLow();
+	                        }
+	                        
+	                    }    
+	
+					orderPrice = vask;				 
+					orderStopless =MinValue3- bool_length*4; 						
+					orderTakeProfit	= 	orderPrice  + bool_length*6;
+					
+	                /*保护胜利果实*/
+	                if(orderStopless < order.getStopLossPrice() )
+	                {
+	                    orderStopless = order.getStopLossPrice();
+	                }                           
+	                
+	                 order.setStopLossPrice(orderStopless);          
+	                 order.setTakeProfitPrice(orderTakeProfit);
+	                								
+				}
+				
+				
+			   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+			   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[6])>400)
+			   {
+	               order.close();	   
+			   }
+			   
+			   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[6])>360)
+			   {   	   
+	               if( order.getProfitLossInAccountCurrency()> 0)
+	               {
+	                   order.close();
+	               }   
+	                 if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+	                 {
+	                     order.close();
+	                     
+	                 }   
+	
+				  
+			   }  
+			   
+						
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))	
+			{
+				BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);
+	            if(order.getTakeProfitPrice()> 0.1)
+	            {                                                                            
+	                order.setStopLossPrice(order.getStopLossPrice());           
+	                order.setTakeProfitPrice(0);                            
+	            }   																	
+				
+			}	
+			if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak < 0.2)
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[6] = BuySellPosRecord[SymPos].TradeTimePos[6]-
+						1;
+										  
+				}   						
+	
+			}	
+	
+		
+			if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))		
+	        &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+	       {
+	           orderLots = order.getAmount()/2;
+	           
+	           /*三次完成出货*/
+	           if (orderLots <= MyLotsL*9/64)
+	           {
+	               orderLots = order.getAmount();
+	           }                                           
+	           order.close(orderLots);                                                                                                                                 
+	       }   
+	            
+            
+//////////////////////
+        }
+    }
+            
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEight)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+/////////////////////////////
+			   
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[7]) > 0)
+				{
+					/*初始化一个超大值，该值不可能达到*/
+					BuySellPosRecord[SymPos].NextModifyPos[7] = iBars(my_symbol,my_timeperiod)+10000000;	
+							
+	                MaxValue4 = -1;
+	                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	                {
+	                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+	                    if(MaxValue4 < prevBar.getHigh())
+	                    {
+	                        MaxValue4 = prevBar.getHigh();
+	                    }                   
+	                }                                
+
+
+					orderPrice = vbid;						 
+					orderStopless =MaxValue4 + 3*bool_length; 	
+
+					if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[7])
+					{
+						orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[7];
+					}	
+					if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[7])
+					{
+						orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[7];
+					}	
+					
+					orderTakeProfit	= 	orderPrice -bool_length*5;
+					
+
+					
+		               order.setStopLossPrice(orderStopless);          
+		                order.setTakeProfitPrice(orderTakeProfit);  	
+							
+							
+					
+				}
+				
+				
+				else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[7]) >-20)
+					&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]))
+				{
+	                order.close();																		
+					
+				}											   
+													   
+			   
+				
+				if((4.5 <BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+					&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[7]) < -1000))					
+				{
+	                order.close();																	
+					
+				}											   
+													   
+			   
+							   
+			   
+			   
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+				{
+					
+	
+					
+	                if(order.getTakeProfitPrice() < 0.1)
+	                {
+	                    
+	                    MaxValue4 = -1;
+	                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	                    {
+	                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+	                        if(MaxValue4 < prevBar.getHigh())
+	                        {
+	                            MaxValue4 = prevBar.getHigh();
+	                        }                   
+	                    }   
+
+						orderPrice = vbid;						 
+						orderStopless =MaxValue4 + 4*bool_length; 							
+						orderTakeProfit	= 	orderPrice -bool_length*6;
+						
+	                    /*保护胜利果实*/
+                        if(orderStopless > order.getStopLossPrice() )
+                        {
+                            orderStopless = order.getStopLossPrice();
+                        }           
+                        
+                        order.setStopLossPrice(orderStopless);          
+                        order.setTakeProfitPrice(orderTakeProfit);  								
+					}
+					
+
+					/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[7])>400)
+					{
+		                  order.close();	   
+					}
+
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[7])>360)
+					{   	   
+		                  if( order.getProfitLossInAccountCurrency()> 0)
+		                  {
+		                      order.close();
+		                  }     
+		                    if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+		                    {
+		                        order.close();
+		                        
+		                    }   						  
+					}  						
+					
+					
+				}
+				
+				
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+				{
+											
+					BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);
+	                if(order.getTakeProfitPrice() > 0.1)
+	                {
+	                    
+	                    order.setStopLossPrice(order.getStopLossPrice());           
+	                    order.setTakeProfitPrice(0);  
+	                            
+	                }    																		
+					
+				}
+				if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)
+				{
+					
+					//非激进处理
+										if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+					{
+						//后退一个时间周期
+						BuySellPosRecord[SymPos].TradeTimePos[7] = BuySellPosRecord[SymPos].TradeTimePos[7]-
+							1;
+											  
+					}   						
+	
+				}						
+					 
+			
+			   
+				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+				
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+	
+	            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+		         {
+		             orderLots = order.getAmount()/2;
+		             
+		             /*三次完成出货*/
+		             if (orderLots <= MyLotsL*9/64)
+		             {
+		                 orderLots = order.getAmount();
+		             }                                           
+		             order.close(orderLots);                                                                                                                                 
+		         }     
+		           
+				
+            
+////////////////////////////
+        }
+    }
+
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberThirteen)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+//////////////////////   
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[12]) > 0)
+			{
+				
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[12] = iBars(my_symbol,my_timeperiod)+10000000;	
+                MinValue3 = 100000;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+                    if(MinValue3 > prevBar.getLow())
+                    {
+                        MinValue3 = prevBar.getLow();
+                    }
+                    
+                }                               
+            
+
+				orderPrice = vask;				 
+				orderStopless =MinValue3- bool_length*3; 
+
+
+				if(orderStopless <BuySellPosRecord[SymPos].NextModifyValue1[12])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[12];
+				}						
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue2[12])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[12];
+				}							
+				
+				orderTakeProfit	= 	orderPrice  + bool_length*5;
+				
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);   											
+				
+			}
+
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[12]) >-50)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[12]) <=-15)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+			{
+                order.close();																		
+				
+			}						
+							
+
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[12]) >-15)
+				&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))					
+			{
+                order.close();
+				
+			}						
+							
+			else
+			{
+				;
+			}
+							
+			if((-0.1 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[12]) < -1000))					
+			{
+                order.close();
+				
+			}						
+							
+													
+				
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8) || (BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak < 0.8))
+			{
+				
+
+				
+
+                if(order.getTakeProfitPrice() < 0.1)
+                {
+                    
+                       MinValue3 = 100000;
+                        for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                        {
+                            IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+                            if(MinValue3 > prevBar.getLow())
+                            {
+                                MinValue3 = prevBar.getLow();
+                            }
+                            
+                        }     
+					orderPrice = vask;				 
+					orderStopless =MinValue3- bool_length*4; 						
+					orderTakeProfit	= 	orderPrice  + bool_length*6;
+					
+	                   /*保护胜利果实*/
+                    if(orderStopless < order.getStopLossPrice() )
+                    {
+                        orderStopless = order.getStopLossPrice();
+                    }                           
+                    
+                     order.setStopLossPrice(orderStopless);          
+                     order.setTakeProfitPrice(orderTakeProfit);
+                     								
+				}
+				
+				
+			   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+			   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[12])>400)
+			   {
+	                  order.close(); 	   
+			   }
+			   
+			   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[12])>360)
+			   {   	   
+	                  if( order.getProfitLossInAccountCurrency()> 0)
+	                  {
+	                      order.close();
+	                  }   
+	                    if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+	                    {
+	                        order.close();
+	                        
+	                    }   
+
+				  
+			   }  
+			   
+						
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))	
+			{
+				BuySellPosRecord[SymPos].TradeTimePos[12] = iBars(my_symbol,my_timeperiod);							
+                if(order.getTakeProfitPrice()> 0.1)
+                {                                                                            
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);                            
+                }    																	
+				
+			}	
+
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak < 0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))
+			{
+				
+				//非激进处理
+									if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[12] = BuySellPosRecord[SymPos].TradeTimePos[12]-
+						1;
+										  
+				}   						
+
+			}	
+
+						
+						
+			if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+	           &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+	         {
+	             orderLots = order.getAmount()/2;
+	             
+	             /*三次完成出货*/
+	             if (orderLots <= MyLotsL*9/64)
+	             {
+	                 orderLots = order.getAmount();
+	             }                                           
+	             order.close(orderLots);                                                                                                                                 
+	         }   
+            
+//////////////////////
+        }
+    }
+    
+
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFourteen)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+/////////////////////////////
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[13]) > 0)
+			{
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[13] = iBars(my_symbol,my_timeperiod)+10000000;	
+						
+                MaxValue4 = -1;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                    if(MaxValue4 < prevBar.getHigh())
+                    {
+                        MaxValue4 = prevBar.getHigh();
+                    }                   
+                }                                
+
+
+				orderPrice = vbid;						 
+				orderStopless =MaxValue4 + 3*bool_length; 	
+
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[13])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[13];
+				}	
+				if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[13])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[13];
+				}	
+				
+				orderTakeProfit	= 	orderPrice -bool_length*5;
+				
+
+				
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);  
+                      
+						
+						
+				
+			}
+			
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[13]) >-50)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[13]) <=-15)
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+			{
+                order.close();
+			}											   
+												   
+	
+
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[13]) >-15)
+				&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))	
+			{
+                order.close();																	
+				
+			}											   
+												   
+			else
+			{
+				;
+			}
+
+	
+			
+			if((0.1 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[13]) < -1000))					
+			{
+                order.close();
+			}											   
+												   
+		   
+						   
+		   
+		   
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+			{
+				
+
+				
+	               if(order.getTakeProfitPrice() < 0.1)
+	                {
+	                    
+	                    MaxValue4 = -1;
+	                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	                    {
+	                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+	                        if(MaxValue4 < prevBar.getHigh())
+	                        {
+	                            MaxValue4 = prevBar.getHigh();
+	                        }                   
+	                    }   
+
+
+					orderPrice = vbid;						 
+					orderStopless =MaxValue4 + 4*bool_length; 							
+					orderTakeProfit	= 	orderPrice -bool_length*6;
+					
+                    
+                    /*保护胜利果实*/
+                        if(orderStopless > order.getStopLossPrice() )
+                        {
+                            orderStopless = order.getStopLossPrice();
+                        }           
+                        
+                        order.setStopLossPrice(orderStopless);          
+                        order.setTakeProfitPrice(orderTakeProfit); 							
+				}
+				
+
+				/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[13])>400)
+				{
+                    order.close();	   
+				}
+
+				else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[13])>360)
+				{   	   
+	                if( order.getProfitLossInAccountCurrency()> 0)
+	                  {
+	                      order.close();
+	                  }     
+	                    if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+	                    {
+	                        order.close();
+	                        
+	                    }  						  
+				}  						
+				
+				
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+			{
+										
+				BuySellPosRecord[SymPos].TradeTimePos[13] = iBars(my_symbol,my_timeperiod);
+                if(order.getTakeProfitPrice() > 0.1)
+                {
+                    
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);  
+                            
+                }   																		
+				
+			}
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak > 0.8))
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[13] = BuySellPosRecord[SymPos].TradeTimePos[13]-
+						1;
+										  
+				}   						
+
+			}						
+			
+			  
+		
+		   
+			if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+	         {
+	             orderLots = order.getAmount()/2;
+	             
+	             /*三次完成出货*/
+	             if (orderLots <= MyLotsL*9/64)
+	             {
+	                 orderLots = order.getAmount();
+	             }                                           
+	             order.close(orderLots);                                                                                                                                 
+	         }     
+           
+            
+            
+            
+////////////////////////////
+        }
+    }
+    
+    
+    
+}
+
+
+
+
+
+
+void orderbuyselltypethree(int SymPos)throws JFException
+{
+	
+    int timeperiodnum;
+    Period my_timeperiod;
+    Instrument my_symbol;
+
+    double boll_up_B,boll_low_B,boll_mid_B,bool_length;    
+    double vbid,vask; 
+    double MinValue3 = 100000;
+    double MaxValue4=-1;
+
+
+    double orderLots ;   
+    double orderStopless ;
+    double orderTakeProfit;
+    double orderPrice;
+    double[] mybool = new double[10];
+    int i;
+ 
+    
+    timeperiodnum = 2;  
+
+
+    orderLots = 0;   
+    orderStopless = 0;
+    orderTakeProfit = 0;
+    orderPrice = 0;
+        
+    my_symbol =   MySymbol[SymPos];
+    my_timeperiod = timeperiod[timeperiodnum];  
+
+    
+    mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+            iBoll_B, 2, 2, MaType.SMA, 1);
+    
+    boll_up_B = mybool[0];
+    boll_mid_B = mybool[1];
+    boll_low_B = mybool[2]; 
+    
+    /*point*/
+    bool_length =(boll_up_B - boll_low_B )/2;   	
+	
+	//每次突破bool上轨的时候重新评估止损和止盈值，原则上止损和止盈值都不要轻易触发。
+	
+	
+	if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFifteen))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==false)))		
+	{
+        vask = history.getLastTick(my_symbol).getAsk();
+        vbid = history.getLastTick(my_symbol).getBid();
+       
+       MinValue3 = 100000;
+       for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+       {
+           IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+           if(MinValue3 > prevBar.getLow())
+           {
+               MinValue3 = prevBar.getLow();
+           }
+           
+       }     			
+
+		orderPrice = vask;				 
+		//orderStopless =MinValue3- bool_length*4;
+		orderStopless = boll_low_B - bool_length;			
+		/*
+		if((orderPrice - orderStopless)>bool_length*2)
+		{
+			orderStopless = orderPrice - bool_length*2;
+		}
+		*/
+		orderTakeProfit	= 	orderPrice + bool_length*6;
+
+        IOrder order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberNine)));      
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberNine Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;                                    
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }
+        
+        
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEleven)));   
+        
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberEleven Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }       
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFifteen)));           
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberFifteen Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }  				
+	
+	}
+	
+	
+	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了找到比较好的入场点，和止损点
+	//突破型买点，在欧美交易时间交投活跃期间开突破类型单，防止假突破，采用三重多头测试，最关键的一点还是要设置小止损
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag >3.5)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex >0.8)	
+			
+		&&(opendaycheck(SymPos) == true)
+		//&&(tradetimecheck(SymPos) ==true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==true)))
+	{
+		
+		if(/*(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (-4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+
+			&&(1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))
+								
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MinValue3 = 100000;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               if(MinValue3 > prevBar.getLow())
+               {
+                   MinValue3 = prevBar.getLow();
+               }
+               
+           }      
+            
+            orderLots = MyLotsL;
+			orderPrice = vask;				 
+
+			orderStopless =MinValue3- bool_length*4; 	
+
+			BuySellPosRecord[SymPos].NextModifyValue1[8] = orderStopless;
+			
+			orderStopless =MinValue3- bool_length*2; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[8] = orderStopless;
+			
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+
+            String s;
+             s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+             + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+             + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+             + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+             + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+             + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+             console.getOut().println(s);                                                                    
+                         
+             s = my_symbol+" MagicNumberNine OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                         +orderPrice+"orderStopless="
+                         +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+             console.getOut().println(s);            
+
+
+			if(true == accountcheck())
+			{
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberNine)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);             
+                 if(null != order)   
+				 { 
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[8] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[8] = iBars(my_symbol,my_timeperiod);						            				 			 
+					console.getOut().println("OrderSend MagicNumberNine  successfully");
+				 }								
+				 
+			}					 
+						
+		}
+					
+		else
+		{
+		;
+		}		
+	
+	}
+	
+	
+	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点
+	//转折型买点
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <-0.85)		
+	
+		//&&((FourH_BoolFlag <0)&&(FourH_BoolFlag >-4.5))
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==true)))
+	{
+		
+		
+		/*三十分钟多头向下，一而鼓，再而竭，三而衰由止损保障，空头陷阱*/
+		
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		
+			&& (-4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (-1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+						
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))
+					
+		{
+			
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MinValue3 = 100000;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               if(MinValue3 > prevBar.getLow())
+               {
+                   MinValue3 = prevBar.getLow();
+               }
+               
+           }   
+           
+           orderLots = MyLotsH;
+			orderPrice = vask;				 
+
+			orderStopless =MinValue3- bool_length*4; 	
+
+			BuySellPosRecord[SymPos].NextModifyValue1[10] = orderStopless;
+			
+			orderStopless =MinValue3- bool_length*2; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[10] = orderStopless;
+			
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);                                                                    
+                        
+            s = my_symbol+" MagicNumberEleven3 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                        +orderPrice+"orderStopless="
+                        +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+            console.getOut().println(s); 
+			
+			
+			if(true == accountcheck())
+			{
+				
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEleven)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);     
+                
+                
+                 if(null != order)
+				 {    
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[10] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);				 				 
+					console.getOut().println("OrderSend MagicNumberEleven3  successfully");
+				 }													
+			}					
+			
+		}			
+					
+		
+		/*三十分钟非多头向下，一分钟bool背驰，空头陷阱*/
+		
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		
+			&& (-1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))
+							
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MinValue3 = 100000;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               if(MinValue3 > prevBar.getLow())
+               {
+                   MinValue3 = prevBar.getLow();
+               }
+               
+           }               
+           orderLots = MyLotsH;
+			orderPrice = vask;				 
+
+			orderStopless =MinValue3- bool_length*4; 	
+
+
+			BuySellPosRecord[SymPos].NextModifyValue1[10] = orderStopless;
+			
+			
+			orderStopless =MinValue3- bool_length*2; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[10] = orderStopless;				
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);                                                                    
+                        
+            s = my_symbol+" MagicNumberEleven4 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                        +orderPrice+"orderStopless="
+                        +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+            console.getOut().println(s);    			
+
+	
+            
+			if(true == accountcheck())
+			{
+				
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEleven)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {        
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[10] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);				 				 
+					console.getOut().println("OrderSend MagicNumberEleven4  successfully");
+				 }													
+			}
+
+
+		}
+	}			
+	
+
+
+	//超级大周期处于空头市场，上周期多头市场，本周期在高位上涨回调小周期背驰阶段买入，趋势转折交易，猜底摸顶
+	//大周期超级转折型买点
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex >0.8)	
+		
+				
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFifteen))==true)
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFifteen))==true)))
+	{
+		
+		/*四小时多头向上，三十分钟上涨两次确认，回调空头陷阱*/
+
+		if(/*(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])
+			
+			&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)				
+			
+			&&(1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))		
+			
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+            orderLots = MyLotsL;
+			orderPrice = vask;		
+			
+			
+			orderStopless =boll_low_B; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[14] = orderStopless;
+			
+			orderStopless =boll_mid_B; 
+			
+			BuySellPosRecord[SymPos].NextModifyValue2[14] = orderStopless;				
+			
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice + bool_length*4;
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);                                                                    
+                        
+            s = my_symbol+" MagicNumberFifteen OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                        +orderPrice+"orderStopless="
+                        +orderStopless +"orderTakeProfit="+orderTakeProfit; 
+            console.getOut().println(s); 
+			
+
+					
+			 if(true == accountcheck())
+			 {
+			 
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFifteen)), 
+                        my_symbol, OrderCommand.BUY, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;				 
+					BuySellPosRecord[SymPos].NextModifyPos[14] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[14] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberFifteen  successfully");
+				 }
+													 	
+			 }					 
+							
+		
+		}			
+					
+		
+	}		
+	
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////		
+	//多空分界		
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////		
+					
+	
+	
+	//每次突破bool下轨的时候重新评估止损和止盈值，原则上止损和止盈值都不要轻易触发。
+	
+	
+	if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(-5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)	
+	
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSixteen))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==false)))
+	{
+		
+        vask = history.getLastTick(my_symbol).getAsk();
+        vbid = history.getLastTick(my_symbol).getBid();
+       
+       MaxValue4 = -1;
+       for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+       {
+           IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+           
+           if(MaxValue4 < prevBar.getHigh())
+           {
+               MaxValue4 = prevBar.getHigh();
+           }                   
+       }               
+   
+
+
+		orderPrice = vbid;						 
+		//orderStopless =MaxValue4 + bool_length*4; 
+		orderStopless = boll_up_B + bool_length;
+		/*
+		if(( orderStopless- orderPrice)>bool_length*2)
+		{
+			orderStopless = orderPrice + bool_length*2;
+		}
+		*/
+
+			
+		orderTakeProfit	= 	orderPrice - bool_length*6;
+
+	       
+        IOrder order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTen)));      
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberTen Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;                                    
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }
+        
+        
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTwelve)));    
+        
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberTwelve Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }  
+        
+        order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSixteen)));           
+        if(null != order)
+        {
+            if(orderStopless >order.getStopLossPrice() )
+            {
+                String s;
+                s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+                + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+                console.getOut().println(s);
+                                    
+                s= my_symbol+" MagicNumberSixteen Modify:" + "orderLots=" + orderLots +"orderPrice ="
+                                +orderPrice+"orderStopless="+orderStopless
+                                +"orderTakeProfit="+orderTakeProfit;    
+                
+                console.getOut().println(s);
+                
+                order.setStopLossPrice(orderStopless);
+                
+                order.setTakeProfitPrice(orderTakeProfit);
+                       
+            }
+            
+        }  
+              								
+		
+	}	
+	
+
+	
+	//大周期处于空头市场，本周期在上涨背驰阶段卖出，趋势交易，目的是为了找到比较好的入场点，和止损点
+	//突破型卖点，在欧美交易时间交投活跃期间开突破类型单，防止假突破，采用三重空头测试，关键是减少止损
+	//突破型卖点止损设置值比较大
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag <-3.5)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <-0.8)	
+		
+		&&(opendaycheck(SymPos) == true)
+		//&&(tradetimecheck(SymPos) ==true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==true)))
+	{
+		 
+
+		if(/*(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+
+			&&(-1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))					
+	
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MaxValue4 = -1;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               
+               if(MaxValue4 < prevBar.getHigh())
+               {
+                   MaxValue4 = prevBar.getHigh();
+               }                   
+           }               
+                   
+       
+           orderLots = MyLotsL;
+           
+			orderPrice = vbid;		
+			
+			orderStopless =MaxValue4 + bool_length*4; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[9] = orderStopless;
+			
+			orderStopless =MaxValue4 + bool_length*2; 
+			
+			BuySellPosRecord[SymPos].NextModifyValue2[9] = orderStopless;				
+			
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);
+                                
+            s= my_symbol+" MagicNumberTen OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                            +orderPrice+"orderStopless="+orderStopless
+                            +"orderTakeProfit="+orderTakeProfit;    
+            
+            console.getOut().println(s);    			
+			
+			
+            
+			if(true == accountcheck())
+			{
+				
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTen)), 
+                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[9] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[9] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberTen  successfully");
+				 }					
+				 
+			}
+												
+		}
+					
+		else
+		{
+		;
+		}		
+	
+	}	
+	
+
+	
+	//大周期处于空头市场，本周期在上涨背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点
+	//转折型卖点
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)	
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
+		
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex >0.85)	
+		
+		//&&((FourH_BoolFlag > 0)&&(FourH_BoolFlag < 4.5))
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==true)))
+	{
+		
+
+		/*三十分钟周期向上时，慎重做空，一而鼓，再而竭，三而衰由止损保障，确保多头陷阱*/
+		
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		
+			&& (4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])	
+						
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))
+		
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MaxValue4 = -1;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               
+               if(MaxValue4 < prevBar.getHigh())
+               {
+                   MaxValue4 = prevBar.getHigh();
+               }                   
+           }               
+       
+           orderLots = MyLotsH;
+           
+			orderPrice = vbid;		
+			
+			orderStopless =MaxValue4 + bool_length*4; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[11] = orderStopless;
+			
+			orderStopless =MaxValue4 + bool_length*2; 
+			
+			BuySellPosRecord[SymPos].NextModifyValue2[11] = orderStopless;				
+			
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);
+                                
+            s= my_symbol+" MagicNumberTwelve3 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                            +orderPrice+"orderStopless="+orderStopless
+                            +"orderTakeProfit="+orderTakeProfit;    
+            
+            console.getOut().println(s);   
+			
+			
+			
+            
+			if(true == accountcheck())
+			{
+			 
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTwelve)), 
+                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[11] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberTwelve3  successfully");
+				 }
+													 	
+			}					 
+							
+		
+		}			
+		
+		
+		/*三十分钟线未明显多头向上，一分钟线背驰就认为是多头陷阱*/
+		
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+			&&(4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)		
+			&& (1 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])				
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))	
+		
+		{
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+           
+           MaxValue4 = -1;
+           for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+           {
+               IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+               
+               if(MaxValue4 < prevBar.getHigh())
+               {
+                   MaxValue4 = prevBar.getHigh();
+               }                   
+           }               
+       
+           orderLots = MyLotsH;
+           
+			orderPrice = vbid;						 
+
+			
+			orderStopless =MaxValue4 + bool_length*4; 
+			
+
+			BuySellPosRecord[SymPos].NextModifyValue1[11] = orderStopless;	
+
+			
+			orderStopless =MaxValue4 + bool_length*2; 
+			BuySellPosRecord[SymPos].NextModifyValue2[11] = orderStopless;
+			
+							
+			/*
+			if(( orderStopless- orderPrice)>bool_length*2)
+			{
+				orderStopless = orderPrice + bool_length*2;
+			}
+			*/
+
+				
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+			
+            String s;
+            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+            console.getOut().println(s);
+                                
+            s= my_symbol+" MagicNumberTwelve4 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+                            +orderPrice+"orderStopless="+orderStopless
+                            +"orderTakeProfit="+orderTakeProfit;    
+            
+            console.getOut().println(s); 
+									
+						
+			
+			if(true == accountcheck())
+			{
+			 
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTwelve)), 
+                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {   
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[11] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);				 					 
+					console.getOut().println("OrderSend MagicNumberTwelve4  successfully");
+				 }
+
+			}					 
+								
+		}
+					
+	}						
+
+	
+	
+	//超级大周期处于多头市场，上周期空头市场，本周期在低位下跌回调小周期背驰阶段卖出，趋势转折交易，猜底摸顶
+	//大周期超级转折型卖点
+	
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)		
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)			
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <-0.8)	
+		
+		&&(opendaycheck(SymPos) == true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSixteen))==true)
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSixteen))==true)))
+	{
+		
+		
+		/*三十分钟空头向下，五分钟下跌两次确认，回调多头陷阱*/
+
+		if(/*(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)*/
+			(-4==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			&& (-4 ==BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])	
+			&& (-4 !=BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])			
+			&&(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)				
+			
+			&&(-1 == BoolCrossRecord[SymPos][timeperiodnum-1].CrossFlagChange)
+			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[2]))			
+						
+		{
+			
+            vask = history.getLastTick(my_symbol).getAsk();
+            vbid = history.getLastTick(my_symbol).getBid();
+            
+            orderLots = MyLotsL;
+            
+			orderPrice = vbid;				 
+
+			orderStopless =boll_up_B; 	
+
+			BuySellPosRecord[SymPos].NextModifyValue1[15] = orderStopless;
+			
+			orderStopless =boll_mid_B; 	
+			BuySellPosRecord[SymPos].NextModifyValue2[15] = orderStopless;
+			
+			/*
+			if((orderPrice - orderStopless)>bool_length*2)
+			{
+				orderStopless = orderPrice - bool_length*2;
+			}
+			*/
+			orderTakeProfit	= 	orderPrice - bool_length*4;
+			
+
+			
+	         String s;
+	            s = my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+	            + BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9];
+	            console.getOut().println(s);
+	                                
+	            s= my_symbol+" MagicNumberSixteen OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+	                            +orderPrice+"orderStopless="+orderStopless
+	                            +"orderTakeProfit="+orderTakeProfit;    
+	            
+	            console.getOut().println(s); 			
+
+
+			if(true == accountcheck())
+			{
+                
+                IOrder order = engine.submitOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSixteen)), 
+                        my_symbol, OrderCommand.SELL, orderLots, orderPrice, 
+                        5, orderStopless, orderTakeProfit);                     
+                
+                 if(null != order)
+				 {     
+					TwentyS_Freq++;
+					OneM_Freq++;
+					ThirtyS_Freq++;
+					FiveM_Freq++;
+					ThirtyM_Freq++;	
+					BuySellPosRecord[SymPos].NextModifyPos[15] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[15] = iBars(my_symbol,my_timeperiod);				 				 
+					console.getOut().println("OrderSend MagicNumberSixteen  successfully");
+				 }													
+	
+			}					
+			
+		}									
+	}		
+							
+	
+}
+ 
+
+public void checkbuysellordertypethree(int SymPos)throws JFException
+{
+    
+    int timeperiodnum;
+    Period my_timeperiod;
+    Instrument my_symbol;
+
+    
+    double boll_up_B,boll_low_B,bool_length;    
+    double vbid,vask; 
+    double MinValue3 = 100000;
+    double MaxValue4 = -1;
+
+
+    double orderLots ;   
+    double orderStopless ;
+    double orderTakeProfit;
+    double orderPrice;
+    
+    int i;
+ 
+    
+    timeperiodnum = 2;  
+    IOrder order;
+
+    orderLots = 0;   
+    orderStopless = 0;
+    orderTakeProfit = 0;
+    orderPrice = 0;
+    my_timeperiod = timeperiod[timeperiodnum];  
+    my_symbol =   MySymbol[SymPos];
+    
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberNine)));     
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+                                
+ //////////////////////
+			   
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[8]) > 0)
+				{
+					
+					/*初始化一个超大值，该值不可能达到*/
+					BuySellPosRecord[SymPos].NextModifyPos[8] = iBars(my_symbol,my_timeperiod)+10000000;	
+	                   MinValue3 = 100000;
+	                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+	                    {
+	                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+	                        if(MinValue3 > prevBar.getLow())
+	                        {
+	                            MinValue3 = prevBar.getLow();
+	                        }
+	                        
+	                    }                           
+	                    
+
+					orderPrice = vask;				 
+					orderStopless =MinValue3- bool_length*3; 
+
+
+					if(orderStopless <BuySellPosRecord[SymPos].NextModifyValue1[8])
+					{
+						orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[8];
+					}						
+					if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue2[8])
+					{
+						orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[8];
+					}							
+					
+					orderTakeProfit	= 	orderPrice  + bool_length*5;
+					
+	                order.setStopLossPrice(orderStopless);          
+	                order.setTakeProfitPrice(orderTakeProfit);    											
+					
+				}
+
+				else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[8]) >-50)
+					&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[8]) <=-15)
+					&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+				{
+		               order.close();     																	
+					
+				}						
+								
+
+				
+				else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[8]) >-15)
+					&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))					
+				{
+		               order.close();     																		
+					
+				}						
+								
+				else
+				{
+					;
+				}
+								
+				if((-0.1 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+					&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[8]) < -1000))					
+				{
+		               order.close();     																		
+					
+				}						
+								
+														
+					
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8) 
+					|| (BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak < 0.8))
+				{
+					
+
+					
+
+		               if(order.getTakeProfitPrice() < 0.1)
+		                {
+		                    
+		                    MinValue3 = 100000;
+		                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		                    {
+		                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+		                        if(MinValue3 > prevBar.getLow())
+		                        {
+		                            MinValue3 = prevBar.getLow();
+		                        }
+		                        
+		                    }   							
+
+						orderPrice = vask;				 
+						orderStopless =MinValue3- bool_length*4; 						
+						orderTakeProfit	= 	orderPrice  + bool_length*6;
+						
+	                    /*保护胜利果实*/
+	                    if(orderStopless < order.getStopLossPrice() )
+	                    {
+	                        orderStopless = order.getStopLossPrice();
+	                    }                           
+	                    
+	                    order.setStopLossPrice(orderStopless);          
+	                    order.setTakeProfitPrice(orderTakeProfit);								
+					}
+					
+					
+				   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+				   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>400)
+				   {
+	                   order.close();      
+				   }
+				   
+				   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>360)
+				   {   	   
+	                     if( order.getProfitLossInAccountCurrency()> 0)
+	                      {
+	                          order.close();
+	                      }   
+	                        if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+	                        {
+	                              order.close();
+	                        }   
+	                      
+
+					  
+				   }  
+				   
+							
+				}
+				
+				
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))	
+				{
+					BuySellPosRecord[SymPos].TradeTimePos[8] = iBars(my_symbol,my_timeperiod);							
+	                if(order.getTakeProfitPrice() > 0.1)
+	                {                   
+	                    order.setStopLossPrice(order.getStopLossPrice());           
+	                    order.setTakeProfitPrice(0);                                                
+	                }  																		
+					
+				}	
+
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak < 0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))
+				{
+					
+					//非激进处理
+										if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+					{
+						//后退一个时间周期
+						BuySellPosRecord[SymPos].TradeTimePos[8] = BuySellPosRecord[SymPos].TradeTimePos[8]-
+							1;
+											  
+					}   						
+
+				}	
+
+
+			
+				
+			
+
+				if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+				
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+	
+	            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+	            {
+	                orderLots = order.getAmount()/2;
+	                
+	                /*三次完成出货*/
+	                if (orderLots <= MyLotsL*9/64)
+	                {
+	                    orderLots = order.getAmount();
+	                }                                           
+	                order.close(orderLots);                                                                                                                                 
+	            }    
+
+            
+            
+ /////////////////////           
+        }
+    }
+    
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTen)));     
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+////////////////////// 
+	
+			   
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[9]) > 0)
+				{
+					/*初始化一个超大值，该值不可能达到*/
+					BuySellPosRecord[SymPos].NextModifyPos[9] = iBars(my_symbol,my_timeperiod)+10000000;	
+		            
+					MaxValue4 = -1;
+		            for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		            {
+		                IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+		                if(MaxValue4 < prevBar.getHigh())
+		                {
+		                    MaxValue4 = prevBar.getHigh();
+		                }                   
+		            }                                
+
+
+					orderPrice = vbid;						 
+					orderStopless =MaxValue4 + 3*bool_length; 	
+
+					if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[9])
+					{
+						orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[9];
+					}	
+					if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[9])
+					{
+						orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[9];
+					}	
+					
+					orderTakeProfit	= 	orderPrice -bool_length*5;
+					
+
+					
+		            
+		            order.setStopLossPrice(orderStopless);          
+		            order.setTakeProfitPrice(orderTakeProfit);  	
+							
+							
+					
+				}
+				
+				
+				else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[9]) >-50)
+					&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[9]) <=-15)
+					&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+				{
+			           order.close();      																	
+					
+				}											   
+													   
+		
+
+				else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[9]) >-15)
+					&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))	
+				{
+			           order.close();      
+					
+				}											   
+													   
+				else
+				{
+					;
+				}
+
+		
+				
+				if((0.1 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+					&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+					&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[9]) < -1000))					
+				{
+			           order.close();      
+				}											   
+													   
+							   
+			   
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+				{
+					
+	
+					
+		            if(order.getTakeProfitPrice() < 0.1)
+		            {
+		                
+		                
+		                MaxValue4 = -1;
+		                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		                {
+		                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+		                    if(MaxValue4 < prevBar.getHigh())
+		                    {
+		                        MaxValue4 = prevBar.getHigh();
+		                    }                   
+		                }                                
+
+
+						orderPrice = vbid;						 
+						orderStopless =MaxValue4 + 4*bool_length; 							
+						orderTakeProfit	= 	orderPrice -bool_length*6;
+						
+			               /*保护胜利果实*/
+		                if(orderStopless > order.getStopLossPrice() )
+		                {
+		                    orderStopless = order.getStopLossPrice();
+		                }           
+		                
+		                order.setStopLossPrice(orderStopless);          
+		                order.setTakeProfitPrice(orderTakeProfit); 							
+					}
+					
+
+					/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>400)
+					{
+		                order.close();	   
+					}
+
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>360)
+					{   	   
+		                if( order.getProfitLossInAccountCurrency()> 0)
+		                {
+		                    order.close();
+		                }   
+
+		                  if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+		                  {
+		                      order.close();
+		                      
+		                  }     						  
+					}  						
+					
+					
+				}
+				
+				
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+				{
+											
+					BuySellPosRecord[SymPos].TradeTimePos[9] = iBars(my_symbol,my_timeperiod);
+		            if(order.getTakeProfitPrice() > 0.1)
+		            {               
+		                order.setStopLossPrice(order.getStopLossPrice());           
+		                order.setTakeProfitPrice(0);                                
+		            }                                                                   
+		            
+					
+				}
+				if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak > 0.8))
+				{
+					
+					//非激进处理
+										if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+					{
+						//后退一个时间周期
+						BuySellPosRecord[SymPos].TradeTimePos[9] = BuySellPosRecord[SymPos].TradeTimePos[9]-
+							1;
+											  
+					}   						
+	
+				}						
+				
+
+				if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+				
+				&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+	
+			       &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+		         {
+		             orderLots = order.getAmount()/2;
+		             
+		             /*三次完成出货*/
+		             if (orderLots <= MyLotsL*9/64)
+		             {
+		                 orderLots = order.getAmount();
+		             }                                           
+		             order.close(orderLots);                                                                                                                                 
+		         } 				
+			   			            
+            
+            
+//////////////////////
+        }
+    }
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberEleven)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+////////////////////// 
+
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[10]) > 0)
+			{
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[10] = iBars(my_symbol,my_timeperiod)+10000000;	
+                MinValue3 = 100000;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+                    if(MinValue3 > prevBar.getLow())
+                    {
+                        MinValue3 = prevBar.getLow();
+                    }
+                    
+                }  							
+				
+
+				orderPrice = vask;				 
+				orderStopless =MinValue3- bool_length*3; 
+
+
+				if(orderStopless <BuySellPosRecord[SymPos].NextModifyValue1[10])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[10];
+				}						
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue2[10])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[10];
+				}							
+				
+				orderTakeProfit	= 	orderPrice  + bool_length*5;
+				
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);     
+			}
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[10]) >-20)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]))
+			{
+                order.close();         																	
+				
+			}						
+							
+			if((-4.5 >BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[10]) < -1000))					
+			{
+                order.close();         																		
+				
+			}						
+							
+	
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.8))
+			{
+				
+
+				
+
+			    
+                if(order.getTakeProfitPrice() < 0.1)
+                {
+                    
+                       MinValue3 = 100000;
+                        for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                        {
+                            IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+                            if(MinValue3 > prevBar.getLow())
+                            {
+                                MinValue3 = prevBar.getLow();
+                            }
+                            
+                        }   
+
+					orderPrice = vask;				 
+					orderStopless =MinValue3- bool_length*4; 						
+					orderTakeProfit	= 	orderPrice  + bool_length*6;
+					
+                    /*保护胜利果实*/
+                    if(orderStopless < order.getStopLossPrice() )
+                    {
+                        orderStopless = order.getStopLossPrice();
+                    }                           
+                    
+                     order.setStopLossPrice(orderStopless);          
+                     order.setTakeProfitPrice(orderTakeProfit);								
+				}
+				
+				
+			   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+			   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[10])>400)
+			   {
+                   order.close();       	   
+			   }
+			   
+			   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[10])>360)
+			   {   	   
+                   if( order.getProfitLossInAccountCurrency()> 0)
+                   {
+                       order.close();
+                   }   
+                     if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+                     {
+                         order.close();
+                         
+                     }   
+				  
+			   }  
+			   
+						
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))	
+			{
+				
+				BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);
+	              if(order.getTakeProfitPrice()> 0.1)
+	                {                                                                            
+	                    order.setStopLossPrice(order.getStopLossPrice());           
+	                    order.setTakeProfitPrice(0);                            
+	                }                                                                       
+	                																	
+				
+			}	
+			if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak < 0.2)
+			{
+				
+				//非激进处理
+									if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[10] = BuySellPosRecord[SymPos].TradeTimePos[10]-
+						1;
+										  
+				}   						
+
+			}	
+
+		
+			if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+           {
+               orderLots = order.getAmount()/2;
+               
+               /*三次完成出货*/
+               if (orderLots <= MyLotsL*9/64)
+               {
+                   orderLots = order.getAmount();
+               }                                           
+               order.close(orderLots);                                                                                                                                 
+           }   
+                  
+	            
+            
+//////////////////////
+        }
+    }
+            
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberTwelve)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+/////////////////////////////
+			   
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[11]) > 0)
+			{
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[11] = iBars(my_symbol,my_timeperiod)+10000000;	
+						
+                MaxValue4 = -1;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                    if(MaxValue4 < prevBar.getHigh())
+                    {
+                        MaxValue4 = prevBar.getHigh();
+                    }                   
+                }  
+
+				orderPrice = vbid;						 
+				orderStopless =MaxValue4 + 3*bool_length; 	
+
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[11])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[11];
+				}	
+				if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[11])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[11];
+				}	
+				
+				orderTakeProfit	= 	orderPrice -bool_length*5;
+				
+
+                
+                order.setStopLossPrice(orderStopless);          
+                 order.setTakeProfitPrice(orderTakeProfit);      
+                     	
+						
+						
+				
+			}
+			
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[11]) >-20)
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]))
+			{
+                order.close();      																
+				
+			}											   
+												   
+		   
+			if((4.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[11]) < -1000))					
+			{
+                order.close();      																		
+				
+			}											   
+												   
+						   
+		   
+		   
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+			{
+				
+
+				
+                if(order.getTakeProfitPrice() < 0.1)
+                {
+                    
+                    MaxValue4 = -1;
+                    for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                    {
+                        IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                        if(MaxValue4 < prevBar.getHigh())
+                        {
+                            MaxValue4 = prevBar.getHigh();
+                        }                   
+                    }   
+
+					orderPrice = vbid;						 
+					orderStopless =MaxValue4 + 4*bool_length; 							
+					orderTakeProfit	= 	orderPrice -bool_length*6;
+							
+					
+                    /*保护胜利果实*/
+                    if(orderStopless > order.getStopLossPrice() )
+                    {
+                        orderStopless = order.getStopLossPrice();
+                    }           
+                    
+                    order.setStopLossPrice(orderStopless);          
+                    order.setTakeProfitPrice(orderTakeProfit);   								
+				}
+				
+
+				/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[11])>400)
+				{
+                    order.close();      	   
+				}
+
+				else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[11])>360)
+				{   	   
+                    if( order.getProfitLossInAccountCurrency()> 0)
+                    {
+                        order.close();
+                    }     
+                      if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+                      {
+                          order.close();
+                          
+                      }    						  
+				}  						
+				
+				
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+			{
+										
+				BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);
+                if(order.getTakeProfitPrice() > 0.1)
+                {
+                    
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);  
+                            
+                }  																	
+				
+			}
+			if(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[11] = BuySellPosRecord[SymPos].TradeTimePos[11]-
+						1;
+										  
+				}   						
+
+			}						
+				
+
+		   
+			if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+             {
+                 orderLots = order.getAmount()/2;
+                 
+                 /*三次完成出货*/
+                 if (orderLots <= MyLotsL*9/64)
+                 {
+                     orderLots = order.getAmount();
+                 }                                           
+                 order.close(orderLots);                                                                                                                                 
+             }     
+            
+////////////////////////////
+        }
+    }
+
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberFifteen)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+//////////////////////   
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[14]) > 0)
+			{
+				
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[14] = iBars(my_symbol,my_timeperiod)+10000000;	
+                MinValue3 = 100000;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+                    if(MinValue3 > prevBar.getLow())
+                    {
+                        MinValue3 = prevBar.getLow();
+                    }
+                    
+                }  							
+				
+
+				orderPrice = vask;				 
+				orderStopless =MinValue3- bool_length*3; 
+
+
+				if(orderStopless <BuySellPosRecord[SymPos].NextModifyValue1[14])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[14];
+				}						
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue2[14])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[14];
+				}							
+				
+				orderTakeProfit	= 	orderPrice  + bool_length*5;
+				
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit); 											
+				
+			}
+
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[14]) >-50)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[14]) <=-15)
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+			{
+                order.close();      																	
+				
+			}						
+							
+
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[14]) >-15)
+				&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(-4.5 > BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))					
+			{
+                order.close();      																		
+				
+			}						
+							
+			else
+			{
+				;
+			}
+							
+			if((-0.1 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(4.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[14]) < -1000))					
+			{
+                order.close();      																	
+				
+			}						
+							
+													
+				
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8) || (BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak < 0.8))
+			{
+				
+
+				
+
+                if(order.getTakeProfitPrice() < 0.1)
+                {
+                    
+                       MinValue3 = 100000;
+                        for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                        {
+                            IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);  
+                            if(MinValue3 > prevBar.getLow())
+                            {
+                                MinValue3 = prevBar.getLow();
+                            }
+                            
+                        }  
+
+					orderPrice = vask;				 
+					orderStopless =MinValue3- bool_length*4; 						
+					orderTakeProfit	= 	orderPrice  + bool_length*6;
+					
+                    /*保护胜利果实*/
+                  if(orderStopless < order.getStopLossPrice() )
+                  {
+                      orderStopless = order.getStopLossPrice();
+                  }                           
+                  
+                   order.setStopLossPrice(orderStopless);          
+                   order.setTakeProfitPrice(orderTakeProfit);								
+				}
+				
+				
+			   /*在非多头向上的情况下，一分钟400个周期，理论上应该走完了,360周期开始监控时间控制*/
+			   if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[14])>400)
+			   {
+                   order.close();        	   
+			   }
+			   
+			   else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[14])>360)
+			   {   	   
+                   if( order.getProfitLossInAccountCurrency()> 0)
+                   {
+                       order.close();
+                   }   
+                     if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+                     {
+                         order.close();
+                         
+                     }   
+
+				  
+			   }  
+			   
+						
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))	
+			{
+				BuySellPosRecord[SymPos].TradeTimePos[14] = iBars(my_symbol,my_timeperiod);							
+               if(order.getTakeProfitPrice()> 0.1)
+                {                                                                            
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);                            
+                }  																	
+				
+			}	
+
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak < 0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))
+			{
+				
+				//非激进处理
+									if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[14] = BuySellPosRecord[SymPos].TradeTimePos[14]-
+						1;
+										  
+				}   						
+
+			}	
+
+			
+			
+
+		
+			if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+           {
+               orderLots = order.getAmount()/2;
+               
+               /*三次完成出货*/
+               if (orderLots <= MyLotsL*9/64)
+               {
+                   orderLots = order.getAmount();
+               }                                           
+               order.close(orderLots);                                                                                                                                 
+           }  
+            
+            
+            
+//////////////////////
+        }
+    }
+    
+
+
+    order = engine.getOrder(String.valueOf( MakeMagic(SymPos,MagicNumberSixteen)));       
+    if(null != order)
+    {   
+        if(order.getState() == IOrder.State.FILLED || order.getState() == IOrder.State.OPENED)
+        {
+        
+            double [] mybool = new double[10];
+            
+            mybool = indicators.bbands(my_symbol, my_timeperiod, OfferSide.BID, AppliedPrice.CLOSE,
+                    iBoll_B, 2, 2, MaType.SMA, 1);
+            
+            boll_up_B = mybool[0];
+            //boll_mid_B = mybool[1];
+            boll_low_B = mybool[2]; 
+            
+            bool_length = (boll_up_B - boll_low_B)/2;
+            
+             vask = history.getLastTick(my_symbol).getAsk();
+             vbid = history.getLastTick(my_symbol).getBid();
+            
+            /*直接止损！*/
+            if(order.getProfitLossInAccountCurrency()<-400*order.getAmount())               
+            {
+                 order.close();
+            }
+/////////////////////////////
+			if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[15]) > 0)
+			{
+				/*初始化一个超大值，该值不可能达到*/
+				BuySellPosRecord[SymPos].NextModifyPos[15] = iBars(my_symbol,my_timeperiod)+10000000;	
+						
+                MaxValue4 = -1;
+                for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                {
+                    IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                    if(MaxValue4 < prevBar.getHigh())
+                    {
+                        MaxValue4 = prevBar.getHigh();
+                    }                   
+                }    							 
+
+
+				orderPrice = vbid;						 
+				orderStopless =MaxValue4 + 3*bool_length; 	
+
+				if(orderStopless > BuySellPosRecord[SymPos].NextModifyValue1[15])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue1[15];
+				}	
+				if(orderStopless < BuySellPosRecord[SymPos].NextModifyValue2[15])
+				{
+					orderStopless = BuySellPosRecord[SymPos].NextModifyValue2[15];
+				}	
+				
+				orderTakeProfit	= 	orderPrice -bool_length*5;
+				
+
+				
+                order.setStopLossPrice(orderStopless);          
+                order.setTakeProfitPrice(orderTakeProfit);  
+						
+				
+			}
+			
+			
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[15]) >-50)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[15]) <=-15)
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))
+			{
+                order.close();																	
+				
+			}											   
+												   
+	
+
+			else if(((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[15]) >-15)
+				&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(4.5 < BoolCrossRecord[SymPos][timeperiodnum-1].BoolFlag))	
+			{
+                order.close();																	
+				
+			}											   
+												   
+			else
+			{
+				;
+			}
+
+	
+			
+			if((0.1 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+				&&(-4.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolFlag)
+				&&((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].NextModifyPos[15]) < -1000))					
+			{
+                order.close();																	
+				
+			}											   
+												   
+		   
+						   
+		   
+		   
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2))
+			{
+				
+
+				
+	               
+                if(order.getTakeProfitPrice() < 0.1)
+                 {
+                     
+                     MaxValue4 = -1;
+                     for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+                     {
+                         IBar prevBar = history.getBar(my_symbol, my_timeperiod, OfferSide.ASK, i);                  
+                         if(MaxValue4 < prevBar.getHigh())
+                         {
+                             MaxValue4 = prevBar.getHigh();
+                         }                   
+                     }   								 
+
+
+					orderPrice = vbid;						 
+					orderStopless =MaxValue4 + 4*bool_length; 							
+					orderTakeProfit	= 	orderPrice -bool_length*6;
+					
+                    
+                    /*保护胜利果实*/
+                        if(orderStopless > order.getStopLossPrice() )
+                        {
+                            orderStopless = order.getStopLossPrice();
+                        }           
+                        
+                        order.setStopLossPrice(orderStopless);          
+                        order.setTakeProfitPrice(orderTakeProfit);  							
+				}
+				
+
+				/*在非多头向下的情况下一分钟400个周期，理论上应该走完了,360分钟开始监控时间控制*/
+				if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[15])>400)
+				{
+                    order.close();    	   
+				}
+
+				else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[15])>360)
+				{   	   
+                    if( order.getProfitLossInAccountCurrency()> 0)
+                    {
+                        order.close();
+                    }     
+                      if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+                      {
+                          order.close();
+                          
+                      }   							  
+				}  						
+				
+				
+			}
+			
+			
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))	
+			{
+										
+				BuySellPosRecord[SymPos].TradeTimePos[15] = iBars(my_symbol,my_timeperiod);
+                if(order.getTakeProfitPrice() > 0.1)
+                {
+                    
+                    order.setStopLossPrice(order.getStopLossPrice());           
+                    order.setTakeProfitPrice(0);  
+                            
+                }  																	
+				
+			}
+			if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak > 0.8)||(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak > 0.8))
+			{
+				
+				//非激进处理
+				if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
+				{
+					//后退一个时间周期
+					BuySellPosRecord[SymPos].TradeTimePos[15] = BuySellPosRecord[SymPos].TradeTimePos[15]-
+						1;
+										  
+				}   						
+
+			}						
+			
+
+
+		
+		   
+			if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)
+			
+			&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+
+            &&(order.getProfitLossInAccountCurrency()>200*order.getAmount()))                       
+            {
+                orderLots = order.getAmount()/2;
+                
+                /*三次完成出货*/
+                if (orderLots <= MyLotsL*9/64)
+                {
+                    orderLots = order.getAmount();
+                }                                           
+                order.close(orderLots);                                                                                                                                 
+            }     
+          
+            
+            
+////////////////////////////
+        }
+    }
+    
+    
+    
+}
+
+
+
+
     
 //end new added
 //////////////////////////////
@@ -2287,20 +7596,38 @@ public void checkbuysellordertypeone(int SymPos)throws JFException
     
     public void onTick(Instrument instrument, ITick tick) throws JFException {
     	
-    	int number= 100;
-    	int timep = 100;
+    	int SymPos= 100;
+    	int timeperiodnum = 100;
+    	Period my_timeperiod;
     	///////////////////////////////////////////
     	//new added
     	
         console.getOut().println("hello world!!!!");      	
     	calculateindicator(instrument);    
     	
-    	number = getsympos(instrument);
+    	SymPos = getsympos(instrument);
     	
-    	orderbuyselltypeone(number);
-    	timep = gettimeperiod(timeperiod[3] );
-        String s =  "test = " + instrument +":good:"+number+"HH"+timep;
-        console.getOut().println(s);         
+    	orderbuyselltypeone(SymPos);
+    	orderbuyselltypetwo(SymPos);
+    	orderbuyselltypethree(SymPos);   	
+    	
+
+        checkbuysellordertypeone(SymPos);
+        checkbuysellordertypetwo(SymPos);
+        checkbuysellordertypethree(SymPos);
+        
+		for(timeperiodnum = 0; timeperiodnum < TimePeriodNum;timeperiodnum++)
+		{
+			my_timeperiod = timeperiod[timeperiodnum];		
+			BoolCrossRecord[SymPos][timeperiodnum].ChartEvent = iBars(instrument,my_timeperiod);
+		}   
+		
+    	timeperiodnum = gettimeperiod(timeperiod[3] );
+        String s =  "test = " + instrument +":good:"+SymPos+"HH"+timeperiodnum;
+        console.getOut().println(s);  
+        
+                
+        
         //end new added
         ///////////////////////////////////////////////
         
