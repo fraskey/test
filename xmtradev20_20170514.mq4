@@ -70,12 +70,21 @@ int TimePeriodNum = 6;
 
 /*重大重要数据时间，每个周末落实第二周的情况*/
 //重大重要数据期间，现有所有订单以一分钟周期重新设置止损，放大止盈，不做额外的买卖
-datetime feinongtime= D'1980.07.19 12:30:27';  // Year Month Day Hours Minutes Seconds
-int feilongtimeoffset = 0;
-datetime yixitime =   D'1980.07.19 12:30:27'; 
-int yixitimeoffset = 0;
+
+datetime feinongtime1= D'1980.07.19 12:30:27';  // Year Month Day Hours Minutes Seconds
+int feilongtimeoffset1 = 30*60;
+
+datetime feinongtime2= D'1980.07.19 12:30:27';  // Year Month Day Hours Minutes Seconds
+int feilongtimeoffset2 = 30*60;
+
+datetime yixitime1 =   D'1980.07.19 12:30:27'; 
+int yixitimeoffset1 = 2*60*60;
+
+datetime yixitime2 =   D'1980.07.19 12:30:27'; 
+int yixitimeoffset2 = 2*60*60;
+
 datetime bigeventstime = D'1980.07.19 12:30:27'; 
-int bigeventstimeoffset = 0;
+int bigeventstimeoffset = 12*60*60;
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -142,6 +151,7 @@ struct stBuySellPosRecord
 {	
 	int TradeTimePos[20];
 	int NextModifyPos[20];
+	double CurrentOpenPrice[20];
 	double NextModifyValue1[20];
 	double NextModifyValue2[20];
 	int ticket;
@@ -479,14 +489,16 @@ void InitBuySellPos()
 	int i ;
 	string my_symbol;
 	int my_timeperiod;
+	double vbid;
 	for(SymPos = 0; SymPos < symbolNum;SymPos++)
 	{
 		
 		my_symbol =   MySymbol[SymPos];
-		
+		vbid    = MarketInfo(my_symbol,MODE_BID);	
 		for(i = 0; i < 20;i++)
 		{			
 			BuySellPosRecord[SymPos].NextModifyPos[i] = 1000000000;
+			BuySellPosRecord[SymPos].CurrentOpenPrice[i] = vbid;
 			
 		}
 
@@ -1032,6 +1044,27 @@ double orderprofitall()
 	return profit;
 }
 
+
+double profitorderprofitall()
+{
+	double profit = 0;
+	int i;
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		{
+			if(OrderProfit()>0)
+			{			
+				profit = profit + OrderProfit();
+			}
+			
+		}
+	}
+	return profit;
+}
+
+
+
 int ordercountwithprofit(double myprofit)
 {
 	int count = 0;
@@ -1208,8 +1241,17 @@ void monitoraccountprofit()
 	/*短线获利清盘，长线后面再考虑*/
 	//if(1 == Period())
 	{
+		
+		
+		
+		/*盈利单的盈利总和超过500美金，直接关掉所有盈利订单，落袋为安，完成一次循环*/
+		if(profitorderprofitall() > 5000*MyLotsH)
+		{			
+			ordercloseallwithprofit(0);
+			Print("1、This turn Own more than "+5000*MyLotsH+" USD,Close all");
+		}
 			
-		/*超过250美金，直接关掉所有盈利订单，落袋为安，完成一次循环*/
+		/*所有单的盈利总和超过250美金，直接关掉所有盈利订单，落袋为安，完成一次循环*/
 		if(orderprofitall() > 2500*MyLotsH)
 		{
 			
@@ -1889,10 +1931,12 @@ void orderbuyselltypeone(int SymPos)
 
 			orderStopless =MinValue3- bool_length*4; 	
 
-			BuySellPosRecord[SymPos].NextModifyValue1[2] = orderStopless;
+			BuySellPosRecord[SymPos].NextModifyValue1[0] = orderStopless;
 			
 			orderStopless =MinValue3- bool_length*2; 	
-			BuySellPosRecord[SymPos].NextModifyValue2[2] = orderStopless;
+			BuySellPosRecord[SymPos].NextModifyValue2[0] = orderStopless;
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[0] = orderPrice;
 			
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
@@ -2029,6 +2073,7 @@ void orderbuyselltypeone(int SymPos)
 			orderStopless =MinValue3- bool_length*3; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[2] = orderStopless;
 			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[2] = orderPrice;
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -2146,7 +2191,9 @@ void orderbuyselltypeone(int SymPos)
 			
 			
 			orderStopless =MinValue3- bool_length*2; 	
-			BuySellPosRecord[SymPos].NextModifyValue2[2] = orderStopless;				
+			BuySellPosRecord[SymPos].NextModifyValue2[2] = orderStopless;		
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[2] = orderPrice;		
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -2455,7 +2502,7 @@ void orderbuyselltypeone(int SymPos)
 		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)		
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)
-		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFour))==true)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwo))==true)
 		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwo))==true)))
 	{
 		
@@ -2498,7 +2545,9 @@ void orderbuyselltypeone(int SymPos)
 			
 			orderStopless =MaxValue4 + bool_length*2; 
 			
-			BuySellPosRecord[SymPos].NextModifyValue2[1] = orderStopless;				
+			BuySellPosRecord[SymPos].NextModifyValue2[1] = orderStopless;	
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[1] = orderPrice;			
 			
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
@@ -2596,7 +2645,7 @@ void orderbuyselltypeone(int SymPos)
 					
 		&&(opendaycheck(SymPos) == true)
 		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFour))==true)
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwo))==true)))
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFour))==true)))
 	{
 		
 
@@ -2638,7 +2687,9 @@ void orderbuyselltypeone(int SymPos)
 			
 			orderStopless =MaxValue4 + bool_length*3; 
 			
-			BuySellPosRecord[SymPos].NextModifyValue2[3] = orderStopless;				
+			BuySellPosRecord[SymPos].NextModifyValue2[3] = orderStopless;		
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[3] = orderPrice;		
 			
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
@@ -2763,6 +2814,9 @@ void orderbuyselltypeone(int SymPos)
 			
 			orderStopless =MaxValue4 + bool_length*2; 
 			BuySellPosRecord[SymPos].NextModifyValue2[3] = orderStopless;
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[3] = orderPrice;
+
 			
 							
 			/*
@@ -3217,6 +3271,8 @@ void orderbuyselltypetwo(int SymPos)
 			orderStopless =MinValue3- bool_length*2; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[4] = orderStopless;
 			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[4] = orderPrice;
+			
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -3315,7 +3371,8 @@ void orderbuyselltypetwo(int SymPos)
 		&&(0.8<BoolCrossRecord[SymPos][timeperiodnum+3].CrossStrongWeak[1])	
 		
 		&&(opendaycheck(SymPos) == true)
-		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)))
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)))
 	{
 		
 		
@@ -3354,6 +3411,8 @@ void orderbuyselltypetwo(int SymPos)
 			
 			orderStopless =MinValue3- bool_length*2; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[6] = orderStopless;
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[6] = orderPrice;
 			
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
@@ -3462,7 +3521,9 @@ void orderbuyselltypetwo(int SymPos)
 			
 			
 			orderStopless =MinValue3- bool_length*2; 	
-			BuySellPosRecord[SymPos].NextModifyValue2[6] = orderStopless;				
+			BuySellPosRecord[SymPos].NextModifyValue2[6] = orderStopless;		
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[6] = orderPrice;		
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -3584,7 +3645,9 @@ void orderbuyselltypetwo(int SymPos)
 			
 			orderStopless =boll_low_B-bool_length; 
 			
-			BuySellPosRecord[SymPos].NextModifyValue2[12] = orderStopless;				
+			BuySellPosRecord[SymPos].NextModifyValue2[12] = orderStopless;		
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[12] = orderPrice;		
 			
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
@@ -3980,7 +4043,9 @@ void orderbuyselltypetwo(int SymPos)
 			
 			orderStopless =MaxValue4 + bool_length*2; 
 			
-			BuySellPosRecord[SymPos].NextModifyValue2[5] = orderStopless;				
+			BuySellPosRecord[SymPos].NextModifyValue2[5] = orderStopless;			
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[5] = orderPrice;	
 			
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
@@ -4079,7 +4144,8 @@ void orderbuyselltypetwo(int SymPos)
 		&&(0.2>BoolCrossRecord[SymPos][timeperiodnum+3].CrossStrongWeak[1])
 							
 		&&(opendaycheck(SymPos) == true)
-		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)))
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)
+		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)))
 	{
 		
 
@@ -4121,7 +4187,9 @@ void orderbuyselltypetwo(int SymPos)
 			
 			orderStopless =MaxValue4 + bool_length*2; 
 			
-			BuySellPosRecord[SymPos].NextModifyValue2[7] = orderStopless;				
+			BuySellPosRecord[SymPos].NextModifyValue2[7] = orderStopless;		
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[7] = orderPrice;		
 			
 			/*
 			if(( orderStopless- orderPrice)>bool_length*2)
@@ -4235,6 +4303,8 @@ void orderbuyselltypetwo(int SymPos)
 			
 			orderStopless =MaxValue4 + bool_length*2; 
 			BuySellPosRecord[SymPos].NextModifyValue2[7] = orderStopless;
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[7] = orderPrice;
 			
 							
 			/*
@@ -4362,6 +4432,8 @@ void orderbuyselltypetwo(int SymPos)
 			
 			orderStopless =boll_mid_B; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[13] = orderStopless;
+			
+			BuySellPosRecord[SymPos].CurrentOpenPrice[13] = orderPrice;
 			
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
@@ -4582,7 +4654,7 @@ void checkbuysellordertypeone()
 					/*高周期上涨加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((vbid-OrderOpenPrice())> bool_length*6)			
+						&&((vbid-BuySellPosRecord[SymPos].CurrentOpenPrice[0])> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -4700,7 +4772,7 @@ void checkbuysellordertypeone()
 					/*高周期下跌加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((OrderOpenPrice()-vbid)> bool_length*6)			
+						&&((BuySellPosRecord[SymPos].CurrentOpenPrice[1]-vbid)> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -4817,7 +4889,7 @@ void checkbuysellordertypeone()
 					/*高周期上涨加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((vbid-OrderOpenPrice())> bool_length*6)			
+						&&((vbid-BuySellPosRecord[SymPos].CurrentOpenPrice[2])> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -4932,7 +5004,7 @@ void checkbuysellordertypeone()
 					/*高周期下跌加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((OrderOpenPrice()-vbid)> bool_length*6)			
+						&&((BuySellPosRecord[SymPos].CurrentOpenPrice[3]-vbid)> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -5121,7 +5193,7 @@ void checkbuysellordertypetwo()
 					/*高周期上涨加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((vbid-OrderOpenPrice())> bool_length*6)			
+						&&((vbid-BuySellPosRecord[SymPos].CurrentOpenPrice[4])> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -5238,7 +5310,7 @@ void checkbuysellordertypetwo()
 					/*高周期下跌加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((OrderOpenPrice()-vbid)> bool_length*6)			
+						&&((BuySellPosRecord[SymPos].CurrentOpenPrice[5]-vbid)> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -5358,7 +5430,7 @@ void checkbuysellordertypetwo()
 					/*高周期上涨加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((vbid-OrderOpenPrice())> bool_length*6)			
+						&&((vbid-BuySellPosRecord[SymPos].CurrentOpenPrice[6])> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -5475,7 +5547,7 @@ void checkbuysellordertypetwo()
 					/*高周期下跌加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((OrderOpenPrice()-vbid)> bool_length*6)			
+						&&((BuySellPosRecord[SymPos].CurrentOpenPrice[7]-vbid)> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -5594,7 +5666,7 @@ void checkbuysellordertypetwo()
 					/*高周期上涨加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((vbid-OrderOpenPrice())> bool_length*6)			
+						&&((vbid-BuySellPosRecord[SymPos].CurrentOpenPrice[12])> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -5713,7 +5785,7 @@ void checkbuysellordertypetwo()
 					/*高周期下跌加速，分批出货*/
 					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
 						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
-						&&((OrderOpenPrice()-vbid)> bool_length*6)			
+						&&((BuySellPosRecord[SymPos].CurrentOpenPrice[13]-vbid)> bool_length*6)			
 						&&(OrderProfit()>200*OrderLots()))						
 					{
 						orderLots = OrderLots()/2;
@@ -5879,7 +5951,56 @@ void OnTick(void)
 		}
 	}
 	
+
+
 	
+	//美国非农数据发布时间 
+	//原则上持有订单，但是订单设置为1分钟止损类型，期间不做任何其他处理，时间周期一般在1个小时	
+	if(importantdatatimeoptall(feinongtime1,feilongtimeoffset1,1)==true)
+	{
+		return;
+	}
+
+
+
+	
+	//美国非农数据发布时间 
+	//原则上持有订单，但是订单设置为1分钟止损类型，期间不做任何其他处理，时间周期一般在1个小时	
+	if(importantdatatimeoptall(feinongtime2,feilongtimeoffset2,1)==true)
+	{
+		return;
+	}
+
+
+
+	//联储议息会议结果发布期间，
+	//原则上持有订单，但是订单设置为1分钟止损类型，期间不做任何其他处理，时间周期一般在4个小时
+	
+	if(importantdatatimeoptall(yixitime1,yixitimeoffset1,1)==true)
+	{
+		return;
+	}
+
+	if(importantdatatimeoptall(yixitime2,yixitimeoffset2,1)==true)
+	{
+		return;
+	}
+
+
+
+
+
+	
+
+	//重大黑天鹅事件期间，原则上关闭所有订单，期间不做任何交易；期间至少在16个小时以上
+	//诸如美国总统大选、法国总统大选、意大利总统大选等时间点可预测事件
+	if(importantdatatimeoptall(bigeventstime,bigeventstimeoffset,0)==true)
+	{
+		return;
+	}
+
+
+
 
 	
 	/*所有货币对所有周期指标计算*/	
