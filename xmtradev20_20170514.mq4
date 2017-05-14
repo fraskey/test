@@ -1085,6 +1085,7 @@ int ordercountwithprofit(double myprofit)
 }
 
 
+
 int ordercountall( )
 {
 	int count = 0;
@@ -1102,6 +1103,25 @@ int ordercountall( )
 	}
 	return count;
 }
+
+
+int profitordercountall( double myprofit)
+{
+	int count = 0;
+	int i;
+	for (i = 0; i < OrdersTotal(); i++)
+	{
+		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+		{
+			if(OrderProfit()>myprofit)
+			{
+				count++;
+			}			
+		}
+	}
+	return count;
+}
+
 
 
 void ordercloseallwithprofit(double myprofit)
@@ -1243,12 +1263,21 @@ void monitoraccountprofit()
 	{
 		
 		
+		/*超过5个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
+		if((ordercountall()>5)&&(ordercountall() == profitordercountall(0)))
+		{
+			ordercloseallwithprofit(0);
+			Print("1、This turn Own more than "+ordercountall()+" all profit order,Close all");			
+			
+		}
+			
+		
 		
 		/*盈利单的盈利总和超过500美金，直接关掉所有盈利订单，落袋为安，完成一次循环*/
 		if(profitorderprofitall() > 5000*MyLotsH)
 		{			
 			ordercloseallwithprofit(0);
-			Print("1、This turn Own more than "+5000*MyLotsH+" USD,Close all");
+			Print("2、This turn Own more than "+5000*MyLotsH+" USD,Close all");
 		}
 			
 		/*所有单的盈利总和超过250美金，直接关掉所有盈利订单，落袋为安，完成一次循环*/
@@ -1256,7 +1285,7 @@ void monitoraccountprofit()
 		{
 			
 			ordercloseallwithprofit(100*MyLotsH);
-			Print("1、This turn Own more than "+2500*MyLotsH+" USD,Close all");
+			Print("3、This turn Own more than "+2500*MyLotsH+" USD,Close all");
 		}
 
 		/*三个以上50美金订单，直接关掉所有盈利订单，落袋为安，完成一次循环*/
@@ -1264,7 +1293,7 @@ void monitoraccountprofit()
 		{
 			
 			ordercloseallwithprofit(100*MyLotsH);
-			Print("2、This turn Own more than three "+500*MyLotsH+" USD,Close all");
+			Print("4、This turn Own more than three "+500*MyLotsH+" USD,Close all");
 		}
 
 		/*两个以上70美金订单，直接关掉所有盈利订单，落袋为安，完成一次循环*/
@@ -1272,35 +1301,42 @@ void monitoraccountprofit()
 		{
 			
 			ordercloseallwithprofit(200*MyLotsH);
-			Print("3、This turn Own more than two "+700*MyLotsH+" USD,Close all");
+			Print("5、This turn Own more than two "+700*MyLotsH+" USD,Close all");
 		}
 
 		/*一个以上100美金订单，直接关掉所有盈利订单，落袋为安，完成一次循环*/
 		if(ordercountwithprofit(1000*MyLotsH)>= 1)
 		{		
 			ordercloseallwithprofit(200*MyLotsH);
-			Print("4、This turn Own more than one "+1000*MyLotsH+" USD,Close all");
+			Print("6、This turn Own more than one "+1000*MyLotsH+" USD,Close all");
 		}
+
+		/*订单数量5个，且获利超过180美元，落袋为安*/
+		if((ordercountwithprofit(2)==5)&&(orderprofitall()>1800*MyLotsH))
+		{
+			ordercloseallwithprofit(100*MyLotsH);		
+			Print("7、This turn Own more than one "+1800*MyLotsH+" USD,equal 5 order Close all");		
+		}	
 
 		/*订单数量4个，且获利超过150美元，落袋为安*/
 		if((ordercountwithprofit(2)==4)&&(orderprofitall()>1500*MyLotsH))
 		{
 			ordercloseallwithprofit(100*MyLotsH);		
-			Print("5、This turn Own more than one "+1500*MyLotsH+" USD,equal 4 order Close all");		
+			Print("8、This turn Own more than one "+1500*MyLotsH+" USD,equal 4 order Close all");		
 		}	
 		
 		/*订单数量3个，且获利超过120美元，落袋为安*/
 		if((ordercountwithprofit(2)==3)&&(orderprofitall()>1200*MyLotsH))
 		{
 			ordercloseallwithprofit(100*MyLotsH);		
-			Print("6、This turn Own more than one "+1200*MyLotsH+" USD,equal 3 order Close all");		
+			Print("9、This turn Own more than one "+1200*MyLotsH+" USD,equal 3 order Close all");		
 		}
 		
 		/*订单数量1\2个，且获利超过80美元，落袋为安*/
 		if((ordercountwithprofit(2) <= 2)&&(orderprofitall()>800*MyLotsH))
 		{
 			ordercloseallwithprofit(100*MyLotsH);		
-			Print("7、This turn Own more than one "+800*MyLotsH+" USD,equal1 or 2 order Close all");		
+			Print("10、This turn Own more than one "+800*MyLotsH+" USD,equal1 or 2 order Close all");		
 		}	
 	}	
 	
@@ -1875,7 +1911,101 @@ void orderbuyselltypeone(int SymPos)
 	
 	}
 	
+
+	if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==false)))		
+	{
+		vask    = MarketInfo(my_symbol,MODE_ASK);
+		vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+		MinValue3 = 100000;
+		for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		{
+			if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
+			{
+				MinValue3 = iLow(my_symbol,my_timeperiod,i);
+			}
+			
+		}				
+		orderPrice = vask;				 
+		//orderStopless =MinValue3- bool_length*4; 	
+		orderStopless = boll_low_B-bool_length*2;		
+		/*
+		if((orderPrice - orderStopless)>bool_length*2)
+		{
+			orderStopless = orderPrice - bool_length*2;
+		}
+		*/
+		orderTakeProfit	= 	orderPrice + bool_length*8;
+		/*参数修正*/ 
+		orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+		orderpoint = MarketInfo(my_symbol,MODE_POINT);
+		orderStopLevel = 1.2*orderStopLevel;
+		 if ((orderPrice - orderStopless) < orderStopLevel*orderpoint)
+		 {
+				orderStopless = orderPrice - orderStopLevel*orderpoint;
+		 }
+		 if ((orderTakeProfit - orderPrice) < orderStopLevel*orderpoint)
+		 {
+				orderTakeProfit = orderPrice + orderStopLevel*orderpoint;
+		 }
 		
+		orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+		orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+		orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+		//orderTakeProfit = 0;
+		
+
+		for (j = 0; j < OrdersTotal(); j++)
+		{
+			if (OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+			{				
+				if((((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberNine))
+					||(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberNine)))			
+				{
+
+					if(orderStopless >OrderStopLoss() )
+					{
+						
+						Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+						
+						
+
+							
+						Print(my_symbol+" MagicNumberNine Modify:" + "orderLots=" + orderLots +"orderPrice ="
+										+orderPrice+"orderStopless="+orderStopless);									
+						
+						res=OrderModify(OrderTicket(),OrderOpenPrice(),
+							   orderStopless,orderTakeProfit,0,clrPurple);
+							   
+						 if(false == res)
+						 {
+
+							Print("Error in MagicNumberNine OrderModify. Error code=",GetLastError());									
+						 }
+						 else
+						 {          			 								 
+							Print("OrderModify MagicNumberNine  successfully " + OrderMagicNumber());
+						 }	
+						Sleep(1000);
+					
+					}
+				
+				}
+			}
+		  
+		}		
+	
+	}
+	
+				
 	
 	
 	//上上上周期为多头上上周期并未处于空头，通常是震荡上行，上周期处于空头市场，本周期持续下跌，出现第一次上涨突破的背驰，通常是突破上轨
@@ -2033,7 +2163,7 @@ void orderbuyselltypeone(int SymPos)
 		&&(0.8<BoolCrossRecord[SymPos][timeperiodnum+3].CrossStrongWeak[1])				
 		&&(opendaycheck(SymPos) == true)
 		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberThree))==true)
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberThree))==true))
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==true))
 		)
 	{
 		
@@ -2048,7 +2178,9 @@ void orderbuyselltypeone(int SymPos)
 			&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <0.15)		
 											
 			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberThree))==true)			
+			)			
 			
 		{
 			
@@ -2109,17 +2241,17 @@ void orderbuyselltypeone(int SymPos)
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
 				
 			
-			Print(my_symbol+" MagicNumberThree3 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+			Print(my_symbol+" MagicNumberThree OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
 						+orderPrice+"orderStopless="+orderStopless);	
 			
 			if(true == accountcheck())
 			{
 				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   my_symbol+"MagicNumberThree3",MakeMagic(SymPos,MagicNumberThree),0,Blue);
+							   my_symbol+"MagicNumberThree",MakeMagic(SymPos,MagicNumberThree),0,Blue);
 	
 				 if(ticket <0)
 				 {
-					Print("OrderSend MagicNumberThree3 failed with error #",GetLastError());
+					Print("OrderSend MagicNumberThree failed with error #",GetLastError());
 					if(GetLastError()!=134)
 					{
 						 //---- 5 seconds wait
@@ -2142,7 +2274,7 @@ void orderbuyselltypeone(int SymPos)
 					ThirtyM_Freq++;	
 					BuySellPosRecord[SymPos].NextModifyPos[2] = iBars(my_symbol,my_timeperiod)+22;					 
 					BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend MagicNumberThree3  successfully");
+					Print("OrderSend MagicNumberThree  successfully");
 				 }													
 				Sleep(1000);
 			}					
@@ -2166,7 +2298,9 @@ void orderbuyselltypeone(int SymPos)
 									
 			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)			
 			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==true)				
+			)			
 					
 		{
 			
@@ -2187,13 +2321,13 @@ void orderbuyselltypeone(int SymPos)
 			orderStopless =MinValue3- bool_length*4; 	
 
 
-			BuySellPosRecord[SymPos].NextModifyValue1[2] = orderStopless;
+			BuySellPosRecord[SymPos].NextModifyValue1[8] = orderStopless;
 			
 			
 			orderStopless =MinValue3- bool_length*2; 	
-			BuySellPosRecord[SymPos].NextModifyValue2[2] = orderStopless;		
+			BuySellPosRecord[SymPos].NextModifyValue2[8] = orderStopless;		
 			
-			BuySellPosRecord[SymPos].CurrentOpenPrice[2] = orderPrice;		
+			BuySellPosRecord[SymPos].CurrentOpenPrice[8] = orderPrice;		
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -2231,17 +2365,17 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 
 			
-			Print(my_symbol+" MagicNumberThree4 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+			Print(my_symbol+" MagicNumberNine OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
 						+orderPrice+"orderStopless="+orderStopless);	
 						
 			if(true == accountcheck())
 			{					
 				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   my_symbol+"MagicNumberThree4",MakeMagic(SymPos,MagicNumberThree),0,Blue);
+							   my_symbol+"MagicNumberNine",MakeMagic(SymPos,MagicNumberNine),0,Blue);
 	
 				 if(ticket <0)
 				 {
-					Print("OrderSend MagicNumberThree4 failed with error #",GetLastError());
+					Print("OrderSend MagicNumberNine failed with error #",GetLastError());
 					
 					if(GetLastError()!=134)
 					{
@@ -2262,9 +2396,9 @@ void orderbuyselltypeone(int SymPos)
 					ThirtyS_Freq++;
 					FiveM_Freq++;
 					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[2] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend MagicNumberThree4  successfully");
+					BuySellPosRecord[SymPos].NextModifyPos[8] = iBars(my_symbol,my_timeperiod)+22;					 
+					BuySellPosRecord[SymPos].TradeTimePos[8] = iBars(my_symbol,my_timeperiod);				 				 
+					Print("OrderSend MagicNumberNine  successfully");
 				 }													
 				Sleep(1000);	
 			}
@@ -2483,6 +2617,107 @@ void orderbuyselltypeone(int SymPos)
 	}	
 	
 
+	if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(-5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)	
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==false)))
+	{
+		
+		vbid    = MarketInfo(my_symbol,MODE_BID);	
+		vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+		
+		MaxValue4 = -1;
+		for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		{
+			if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
+			{
+				MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
+			}					
+		}				
+	
+
+		orderPrice = vbid;						 
+		//orderStopless =MaxValue4 + bool_length*4; 
+		orderStopless = boll_up_B + bool_length*2;
+		
+		/*
+		if(( orderStopless- orderPrice)>bool_length*2)
+		{
+			orderStopless = orderPrice + bool_length*2;
+		}
+		*/
+
+			
+		orderTakeProfit	= 	orderPrice - bool_length*8;
+		
+		/*参数修正*/ 
+		orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+		orderpoint = MarketInfo(my_symbol,MODE_POINT);
+		orderStopLevel = 1.2*orderStopLevel;
+		 if ((orderStopless - orderPrice) < orderStopLevel*orderpoint)
+		 {
+				orderStopless = orderPrice + orderStopLevel*orderpoint;
+		 }
+		 if ((orderPrice - orderTakeProfit) < orderStopLevel*orderpoint)
+		 {
+				orderTakeProfit = orderPrice - orderStopLevel*orderpoint;
+		 }
+		orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+		orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+		orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+		
+
+		//orderTakeProfit = 0;
+			
+		for (j = 0; j < OrdersTotal(); j++)
+		{
+			if (OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+			{		
+				if((((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberTen))
+					||(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberTen)))				
+
+				{
+
+					if(orderStopless < OrderStopLoss() )
+					{
+						
+						Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+						
+
+
+																		
+						Print(my_symbol+" MagicNumberTen Modify:" + "orderLots=" + orderLots +"orderPrice ="
+						+	 orderPrice+"orderStopless="+orderStopless);	
+										
+						res=OrderModify(OrderTicket(),OrderOpenPrice(),
+							   orderStopless,orderTakeProfit,0,clrPurple);
+							   
+						 if(false == res)
+						 {
+
+							Print("Error in MagicNumberTen OrderModify. Error code=",GetLastError());									
+						 }
+						 else
+						 {       
+							//BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod)				 									 
+							Print("OrderModify MagicNumberTen  successfully " + OrderMagicNumber());
+						 }								
+						Sleep(1000);
+					}
+				
+				}
+			}
+		  
+		}			
+		
+		
+	}	
+	
 
 
 
@@ -2645,7 +2880,7 @@ void orderbuyselltypeone(int SymPos)
 					
 		&&(opendaycheck(SymPos) == true)
 		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFour))==true)
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFour))==true)))
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==true)))
 	{
 		
 
@@ -2662,7 +2897,9 @@ void orderbuyselltypeone(int SymPos)
 			&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex > -0.15)		
 											
 			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))	
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberFour))==true)			
+			)	
 
 		{
 			vbid    = MarketInfo(my_symbol,MODE_BID);	
@@ -2787,7 +3024,9 @@ void orderbuyselltypeone(int SymPos)
 											
 			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)			
 			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==true)				
+			)
 		{
 			vbid    = MarketInfo(my_symbol,MODE_BID);	
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
@@ -2809,13 +3048,13 @@ void orderbuyselltypeone(int SymPos)
 			orderStopless =MaxValue4 + bool_length*4; 
 			
 
-			BuySellPosRecord[SymPos].NextModifyValue1[3] = orderStopless;	
+			BuySellPosRecord[SymPos].NextModifyValue1[9] = orderStopless;	
 
 			
 			orderStopless =MaxValue4 + bool_length*2; 
-			BuySellPosRecord[SymPos].NextModifyValue2[3] = orderStopless;
+			BuySellPosRecord[SymPos].NextModifyValue2[9] = orderStopless;
 			
-			BuySellPosRecord[SymPos].CurrentOpenPrice[3] = orderPrice;
+			BuySellPosRecord[SymPos].CurrentOpenPrice[9] = orderPrice;
 
 			
 							
@@ -2857,18 +3096,18 @@ void orderbuyselltypeone(int SymPos)
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
 											
 					
-			Print(my_symbol+" MagicNumberFour4 OrderSend" + "orderLots=" + orderLots +"orderPrice ="
+			Print(my_symbol+" MagicNumberTen OrderSend" + "orderLots=" + orderLots +"orderPrice ="
 			+	 orderPrice+"orderStopless="+orderStopless);	
 			
 			if(true == accountcheck())
 			{					
 			 
 				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   my_symbol+"MagicNumberFour4",MakeMagic(SymPos,MagicNumberFour),0,Blue);
+								   my_symbol+"MagicNumberTen",MakeMagic(SymPos,MagicNumberTen),0,Blue);
 		
 				 if(ticket <0)
 				 {
-					Print("OrderSend MagicNumberFour4 failed with error #",GetLastError());
+					Print("OrderSend MagicNumberTen failed with error #",GetLastError());
 					if(GetLastError()!=134)
 					{
 						 //---- 5 seconds wait
@@ -2888,9 +3127,9 @@ void orderbuyselltypeone(int SymPos)
 					ThirtyS_Freq++;
 					FiveM_Freq++;
 					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[3] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend MagicNumberFour4  successfully");
+					BuySellPosRecord[SymPos].NextModifyPos[9] = iBars(my_symbol,my_timeperiod)+22;					 
+					BuySellPosRecord[SymPos].TradeTimePos[9] = iBars(my_symbol,my_timeperiod);				 					 
+					Print("OrderSend MagicNumberTen  successfully");
 				 }
 													 
 				 Sleep(1000);	
@@ -3208,7 +3447,90 @@ void orderbuyselltypetwo(int SymPos)
 	
 	}
 	
+	if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
+			
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==false)
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==false)
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==false)))		
+	{
+		vask    = MarketInfo(my_symbol,MODE_ASK);
+		vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+		MinValue3 = 100000;
+		for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		{
+			if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
+			{
+				MinValue3 = iLow(my_symbol,my_timeperiod,i);
+			}
+			
+		}				
 
+		orderPrice = vask;				 
+		//orderStopless =MinValue3- bool_length*4; 
+		orderStopless = boll_low_B - bool_length*2;
+		/*
+		if((orderPrice - orderStopless)>bool_length*2)
+		{
+			orderStopless = orderPrice - bool_length*2;
+		}
+		*/
+		orderTakeProfit	= 	orderPrice + bool_length*8;
+		
+		orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+		orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+		orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+		//orderTakeProfit = 0;
+		
+
+		for (j = 0; j < OrdersTotal(); j++)
+		{
+			if (OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+			{				
+				if((((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberEleven))
+					||(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberEleven))
+					||(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberEleven)))					
+				{
+
+					if(orderStopless >OrderStopLoss() )
+					{
+						
+						Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+						
+
+
+						Print(my_symbol+" MagicNumberEleven Modify:" + "orderLots=" + orderLots +"orderPrice ="
+										+orderPrice+"orderStopless="+orderStopless);									
+						
+						res=OrderModify(OrderTicket(),OrderOpenPrice(),
+							   orderStopless,orderTakeProfit,0,clrPurple);
+							   
+						 if(false == res)
+						 {
+
+							Print("Error in MagicNumberEleven OrderModify. Error code=",GetLastError());									
+						 }
+						 else
+						 {          			 								 
+							Print("OrderModify MagicNumberEleven  successfully "+OrderMagicNumber());
+						 }								
+						Sleep(1000);
+					}
+				
+				}
+			}
+		  
+		}
+		
+	
+	}
+	
 
 			
 	//上上上周期为多头上上周期并未处于空头，通常是震荡上行，上周期处于空头市场，本周期持续下跌，出现第一次上涨突破的背驰，通常是突破上轨
@@ -3372,7 +3694,7 @@ void orderbuyselltypetwo(int SymPos)
 		
 		&&(opendaycheck(SymPos) == true)
 		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)))
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==true)))
 	{
 		
 		
@@ -3387,7 +3709,9 @@ void orderbuyselltypetwo(int SymPos)
 			&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex <0.15)		
 											
 			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))			
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberSeven))==true)			
+			)			
 			
 		{
 			
@@ -3497,7 +3821,9 @@ void orderbuyselltypetwo(int SymPos)
 									
 			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)			
 			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))	
+			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEleven))==true)			
+			)	
 		{
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
@@ -3517,13 +3843,13 @@ void orderbuyselltypetwo(int SymPos)
 			orderStopless =MinValue3- bool_length*4; 	
 
 
-			BuySellPosRecord[SymPos].NextModifyValue1[6] = orderStopless;
+			BuySellPosRecord[SymPos].NextModifyValue1[10] = orderStopless;
 			
 			
 			orderStopless =MinValue3- bool_length*2; 	
-			BuySellPosRecord[SymPos].NextModifyValue2[6] = orderStopless;		
+			BuySellPosRecord[SymPos].NextModifyValue2[10] = orderStopless;		
 			
-			BuySellPosRecord[SymPos].CurrentOpenPrice[6] = orderPrice;		
+			BuySellPosRecord[SymPos].CurrentOpenPrice[10] = orderPrice;		
 			/*
 			if((orderPrice - orderStopless)>bool_length*2)
 			{
@@ -3549,17 +3875,17 @@ void orderbuyselltypetwo(int SymPos)
 																				
 			
 			
-			Print(my_symbol+" MagicNumberSeven4 OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+			Print(my_symbol+" MagicNumberEleven OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
 						+orderPrice+"orderStopless="+orderStopless);	
 			
 			if(true == accountcheck())
 			{
 				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   my_symbol+"MagicNumberSeven4",MakeMagic(SymPos,MagicNumberSeven),0,Blue);
+							   my_symbol+"MagicNumberEleven",MakeMagic(SymPos,MagicNumberEleven),0,Blue);
 	
 				 if(ticket <0)
 				 {
-					Print("OrderSend MagicNumberSeven4 failed with error #",GetLastError());
+					Print("OrderSend MagicNumberEleven failed with error #",GetLastError());
 					
 					if(GetLastError()!=134)
 					{
@@ -3580,9 +3906,9 @@ void orderbuyselltypetwo(int SymPos)
 					ThirtyS_Freq++;
 					FiveM_Freq++;
 					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[6] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend MagicNumberSeven4  successfully");
+					BuySellPosRecord[SymPos].NextModifyPos[10] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);				 				 
+					Print("OrderSend MagicNumberEleven  successfully");
 				 }													
 				Sleep(1000);	
 			}
@@ -3982,6 +4308,94 @@ void orderbuyselltypetwo(int SymPos)
 		
 	}	
 	
+	if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+		&&(-5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)		
+		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==false)
+			||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==false)))
+	{
+		
+		vbid    = MarketInfo(my_symbol,MODE_BID);	
+		vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+		
+		MaxValue4 = -1;
+		for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
+		{
+			if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
+			{
+				MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
+			}					
+		}				
+	
+
+		orderPrice = vbid;						 
+		//orderStopless =MaxValue4 + bool_length*4; 
+		orderStopless = boll_up_B + bool_length*2;
+		
+		/*
+		if(( orderStopless- orderPrice)>bool_length*2)
+		{
+			orderStopless = orderPrice + bool_length*2;
+		}
+		*/
+
+			
+		orderTakeProfit	= 	orderPrice - bool_length*8;
+		
+		orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+		orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+		orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+		
+
+		//orderTakeProfit = 0;
+			
+		for (j = 0; j < OrdersTotal(); j++)
+		{
+			if (OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+			{				
+				if((((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberTwelve))
+					||(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberTwelve))
+					||(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberTwelve)))					
+				{
+
+					if(orderStopless < OrderStopLoss() )
+					{
+						
+						Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+						
+	
+																		
+						Print(my_symbol+" MagicNumberTwelve Modify:" + "orderLots=" 
+						+ orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless);	
+										
+						res=OrderModify(OrderTicket(),OrderOpenPrice(),
+							   orderStopless,orderTakeProfit,0,clrPurple);
+							   
+						 if(false == res)
+						 {
+
+							Print("Error in MagicNumberTwelve OrderModify. Error code=",GetLastError());									
+						 }
+						 else
+						 {       			 									 
+							Print("OrderModify MagicNumberTwelve  successfully "+OrderMagicNumber());
+						 }								
+						Sleep(1000);
+					}
+				
+				}
+			}
+		  
+		}			
+		
+		
+	}	
+	
 
 
 
@@ -4145,7 +4559,7 @@ void orderbuyselltypetwo(int SymPos)
 							
 		&&(opendaycheck(SymPos) == true)
 		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)))
+		||(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==true)))
 	{
 		
 
@@ -4162,7 +4576,9 @@ void orderbuyselltypetwo(int SymPos)
 			&&(BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex > -0.15)		
 											
 			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))	
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberEight))==true)			
+			)	
 
 		{
 			vbid    = MarketInfo(my_symbol,MODE_BID);	
@@ -4275,7 +4691,9 @@ void orderbuyselltypetwo(int SymPos)
 											
 			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)			
 			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0]))
+			&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
+			&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwelve))==true)				
+			)
 
 		{
 			vbid    = MarketInfo(my_symbol,MODE_BID);	
@@ -4298,13 +4716,13 @@ void orderbuyselltypetwo(int SymPos)
 			orderStopless =MaxValue4 + bool_length*4; 
 			
 
-			BuySellPosRecord[SymPos].NextModifyValue1[7] = orderStopless;	
+			BuySellPosRecord[SymPos].NextModifyValue1[11] = orderStopless;	
 
 			
 			orderStopless =MaxValue4 + bool_length*2; 
-			BuySellPosRecord[SymPos].NextModifyValue2[7] = orderStopless;
+			BuySellPosRecord[SymPos].NextModifyValue2[11] = orderStopless;
 			
-			BuySellPosRecord[SymPos].CurrentOpenPrice[7] = orderPrice;
+			BuySellPosRecord[SymPos].CurrentOpenPrice[11] = orderPrice;
 			
 							
 			/*
@@ -4335,18 +4753,18 @@ void orderbuyselltypetwo(int SymPos)
 			
 										
 					
-			Print(my_symbol+" MagicNumberEight4 OrderSend" + "orderLots=" + orderLots +"orderPrice ="
+			Print(my_symbol+" MagicNumberTwelve OrderSend" + "orderLots=" + orderLots +"orderPrice ="
 			+	 orderPrice+"orderStopless="+orderStopless);							
 			 
 			 if(true == accountcheck())
 			 {
 					 
 				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   my_symbol+"MagicNumberEight4",MakeMagic(SymPos,MagicNumberEight),0,Blue);
+								   my_symbol+"MagicNumberTwelve",MakeMagic(SymPos,MagicNumberTwelve),0,Blue);
 		
 				 if(ticket <0)
 				 {
-					Print("OrderSend MagicNumberEight4 failed with error #",GetLastError());
+					Print("OrderSend MagicNumberTwelve failed with error #",GetLastError());
 					if(GetLastError()!=134)
 					{
 						 //---- 5 seconds wait
@@ -4366,9 +4784,9 @@ void orderbuyselltypetwo(int SymPos)
 					ThirtyS_Freq++;
 					FiveM_Freq++;
 					ThirtyM_Freq++;				 
-					BuySellPosRecord[SymPos].NextModifyPos[7] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend MagicNumberEight4  successfully");
+					BuySellPosRecord[SymPos].NextModifyPos[11] = iBars(my_symbol,my_timeperiod)+20;					 
+					BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);				 					 
+					Print("OrderSend MagicNumberTwelve  successfully");
 				 }
 													 
 				 Sleep(1000);	
@@ -5039,6 +5457,243 @@ void checkbuysellordertypeone()
 			
 				
 				}  
+			
+				if(NowMagicNumber == MagicNumberNine)
+				{
+				
+					  
+					if((SymPos>=0)&&(SymPos<symbolNum))
+					{
+						;
+					}
+					else
+					{
+						Print("SymPos error 9");
+					}
+				   
+						
+					/*一分钟1200个周期，理论上应该走完了,960周期开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>1200)
+					{
+						ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+						
+						if(ticket <0)
+						{
+							Print("OrderClose MagicNumberNine 333 failed with error #",GetLastError());
+						}
+						else
+						{            
+							Print("OrderClose MagicNumberNine 333  successfully,Usually lose");
+						}    
+						Sleep(1000);  	   
+					}
+					
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[8])>960)
+					{  
+						 	   
+						if( OrderProfit()> 0)
+						{
+						 ticket = OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+							if(ticket <0)
+							{
+								Print("OrderClose MagicNumberNine 444 failed with error #",GetLastError());
+							}
+							else
+							{            
+								Print("OrderClose MagicNumberNine 444  successfully,no profit and no lose");
+							}    
+							Sleep(1000);     	           
+						} 
+						  
+						if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+						{
+							 ticket = OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+							 if(ticket <0)
+							 {
+								Print("OrderClose MagicNumberNine 000 failed with error #",GetLastError());
+							 }
+							 else
+							 {            
+								Print("OrderClose MagicNumberNine 000  successfully,Usually lose");
+							 }    
+							 Sleep(1000); 																		
+						
+						}	
+					
+					}  
+					else
+					{
+						;
+					}
+					
+				  /*多头之下保持持有时间加长*/
+					if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)
+						&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))
+					{
+							//持平一个时间周期
+							BuySellPosRecord[SymPos].TradeTimePos[8] = BuySellPosRecord[SymPos].TradeTimePos[8]+
+								1;																						
+					}
+
+
+					/*高周期上涨加速，分批出货*/
+					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
+						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+						&&((vbid-BuySellPosRecord[SymPos].CurrentOpenPrice[8])> bool_length*6)			
+						&&(OrderProfit()>200*OrderLots()))						
+					{
+						orderLots = OrderLots()/2;
+						
+						/*三次完成出货*/
+						if (orderLots <= MyLotsL*9/64)
+						{
+							orderLots = OrderLots();
+						}
+													
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = OrderLots();
+							orderLots = NormalizeDouble(orderLots,2);
+						}
+													
+						  ticket = OrderClose(OrderTicket(),orderLots,vbid,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberNine 555 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberNine 555  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}					
+							
+
+
+			
+				}
+				
+				if(NowMagicNumber == MagicNumberTen)
+				{
+				
+		   
+	
+				   if((SymPos>=0)&&(SymPos<symbolNum))
+				   {
+						;
+				   }
+				   else
+				   {
+					  Print("SymPos error 10");
+				   }
+	
+	
+					/*一分钟1200个周期，理论上应该走完了,960周期开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>1200)
+					{
+						ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+						
+						if(ticket <0)
+						{
+							Print("OrderClose MagicNumberTen 333 failed with error #",GetLastError());
+						}
+						else
+						{            
+							Print("OrderClose MagicNumberTen 333  successfully,Usually lose");
+						}    
+						Sleep(1000);  	   
+					}
+					
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[9])>960)
+					{  
+						 	   
+						if( OrderProfit()> 0)
+						{
+						 ticket = OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+							if(ticket <0)
+							{
+								Print("OrderClose MagicNumberTen 444 failed with error #",GetLastError());
+							}
+							else
+							{            
+								Print("OrderClose MagicNumberTen 444  successfully,no profit and no lose");
+							}    
+							Sleep(1000);     	           
+						} 
+						  
+						if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+						{
+							 ticket = OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+							 if(ticket <0)
+							 {
+								Print("OrderClose MagicNumberTen 000 failed with error #",GetLastError());
+							 }
+							 else
+							 {            
+								Print("OrderClose MagicNumberTen 000  successfully,Usually lose");
+							 }    
+							 Sleep(1000); 																		
+						
+						}	
+					
+					}  
+					else
+					{
+						;
+					}
+					
+				  /*空头之下保持持有时间加长*/
+					if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)
+						&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))
+					{
+							//持平一个时间周期
+							BuySellPosRecord[SymPos].TradeTimePos[9] = BuySellPosRecord[SymPos].TradeTimePos[9]+
+								1;																						
+					}
+
+
+					/*高周期下跌加速，分批出货*/
+					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
+						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+						&&((BuySellPosRecord[SymPos].CurrentOpenPrice[9]-vbid)> bool_length*6)			
+						&&(OrderProfit()>200*OrderLots()))						
+					{
+						orderLots = OrderLots()/2;
+						
+						/*三次完成出货*/
+						if (orderLots <= MyLotsL*9/64)
+						{
+							orderLots = OrderLots();
+						}
+													
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = OrderLots();
+							orderLots = NormalizeDouble(orderLots,2);
+						}
+													
+						  ticket = OrderClose(OrderTicket(),orderLots,vask,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberTen 555 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberTen 555  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}					
+							
+				   						   			   
+				   
+				}
+								
+			
+			
 			}		
 
 		
@@ -5583,6 +6238,245 @@ void checkbuysellordertypetwo()
 				   
 				}			
 			
+
+
+				if(NowMagicNumber == MagicNumberEleven)
+				{
+				 
+					if((SymPos>=0)&&(SymPos<symbolNum))
+					{
+						;
+					}
+					else
+					{
+						Print("SymPos error 11");
+					}
+	
+									
+					/*一分钟1200个周期，理论上应该走完了,960周期开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[10])>1200)
+					{
+						ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+						
+						if(ticket <0)
+						{
+							Print("OrderClose MagicNumberEleven 333 failed with error #",GetLastError());
+						}
+						else
+						{            
+							Print("OrderClose MagicNumberEleven 333  successfully,Usually lose");
+						}    
+						Sleep(1000);  	   
+					}
+					
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[10])>960)
+					{  
+						 	   
+						if( OrderProfit()> 0)
+						{
+						 ticket = OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+							if(ticket <0)
+							{
+								Print("OrderClose MagicNumberEleven 444 failed with error #",GetLastError());
+							}
+							else
+							{            
+								Print("OrderClose MagicNumberEleven 444  successfully,no profit and no lose");
+							}    
+							Sleep(1000);     	           
+						} 
+						  
+						if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+						{
+							 ticket = OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
+							 if(ticket <0)
+							 {
+								Print("OrderClose MagicNumberEleven 000 failed with error #",GetLastError());
+							 }
+							 else
+							 {            
+								Print("OrderClose MagicNumberEleven 000  successfully,Usually lose");
+							 }    
+							 Sleep(1000); 																		
+						
+						}	
+					
+					}  
+					else
+					{
+						;
+					}
+					
+				  /*多头之下保持持有时间加长*/
+					if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8)
+						&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8))
+					{
+							//持平一个时间周期
+							BuySellPosRecord[SymPos].TradeTimePos[10] = BuySellPosRecord[SymPos].TradeTimePos[10]+
+								1;																						
+					}
+
+
+					/*高周期上涨加速，分批出货*/
+					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
+						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+						&&((vbid-BuySellPosRecord[SymPos].CurrentOpenPrice[10])> bool_length*6)			
+						&&(OrderProfit()>200*OrderLots()))						
+					{
+						orderLots = OrderLots()/2;
+						
+						/*三次完成出货*/
+						if (orderLots <= MyLotsL*9/64)
+						{
+							orderLots = OrderLots();
+						}
+													
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = OrderLots();
+							orderLots = NormalizeDouble(orderLots,2);
+						}
+													
+						  ticket = OrderClose(OrderTicket(),orderLots,vbid,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberEleven 555 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberEleven 555  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}					
+							
+					
+				   
+	
+					
+				}			
+						
+				
+				if(NowMagicNumber == MagicNumberTwelve)
+				{
+				
+				   if((SymPos>=0)&&(SymPos<symbolNum))
+				   {
+						;
+				   }
+				   else
+				   {
+					  Print("SymPos error 12");
+				   }
+	
+					/*一分钟1200个周期，理论上应该走完了,960周期开始监控时间控制*/
+					if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[11])>1200)
+					{
+						ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+						
+						if(ticket <0)
+						{
+							Print("OrderClose MagicNumberTwelve 333 failed with error #",GetLastError());
+						}
+						else
+						{            
+							Print("OrderClose MagicNumberTwelve 333  successfully,Usually lose");
+						}    
+						Sleep(1000);  	   
+					}
+					
+					else if((iBars(my_symbol,my_timeperiod)-BuySellPosRecord[SymPos].TradeTimePos[11])>960)
+					{  
+						 	   
+						if( OrderProfit()> 0)
+						{
+						 ticket = OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+							if(ticket <0)
+							{
+								Print("OrderClose MagicNumberTwelve 444 failed with error #",GetLastError());
+							}
+							else
+							{            
+								Print("OrderClose MagicNumberTwelve 444  successfully,no profit and no lose");
+							}    
+							Sleep(1000);     	           
+						} 
+						  
+						if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])
+						{
+							 ticket = OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
+							 if(ticket <0)
+							 {
+								Print("OrderClose MagicNumberTwelve 000 failed with error #",GetLastError());
+							 }
+							 else
+							 {            
+								Print("OrderClose MagicNumberTwelve 000  successfully,Usually lose");
+							 }    
+							 Sleep(1000); 																		
+						
+						}	
+					
+					}  
+					else
+					{
+						;
+					}
+					
+				  /*空头之下保持持有时间加长*/
+					if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2)
+						&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2))
+					{
+							//持平一个时间周期
+							BuySellPosRecord[SymPos].TradeTimePos[11] = BuySellPosRecord[SymPos].TradeTimePos[11]+
+								1;																						
+					}
+
+
+
+					/*高周期下跌加速，分批出货*/
+					if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChange)						
+						&&( BoolCrossRecord[SymPos][timeperiodnum+1].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum+1]))
+						&&((BuySellPosRecord[SymPos].CurrentOpenPrice[11]-vbid)> bool_length*6)			
+						&&(OrderProfit()>200*OrderLots()))						
+					{
+						orderLots = OrderLots()/2;
+						
+						/*三次完成出货*/
+						if (orderLots <= MyLotsL*9/64)
+						{
+							orderLots = OrderLots();
+						}
+													
+						orderLots = NormalizeDouble(orderLots,2);
+						if (orderLots <= 0.008)
+						{
+							orderLots = OrderLots();
+							orderLots = NormalizeDouble(orderLots,2);
+						}
+													
+						  ticket = OrderClose(OrderTicket(),orderLots,vask,5,Red);
+						 if(ticket <0)
+						 {
+							Print("OrderClose MagicNumberTwelve 555 failed with error #",GetLastError());
+						 }
+						 else
+						 {            
+							Print("OrderClose MagicNumberTwelve 555  successfully");
+						 }    
+						 Sleep(1000); 																		
+						
+					}					
+							
+					
+				   
+				}				   				  	  					
+			
+
+
+
+
 					
 				if(NowMagicNumber == MagicNumberThirteen)
 				{
