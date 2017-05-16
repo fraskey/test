@@ -1269,15 +1269,16 @@ void monitoraccountprofit()
 	{
 		
 		
-		/*超过5个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
-		/*
-		if((ordercountall()>5)&&(ordercountall() == profitordercountall(0)))
+		/*超过8个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
+		
+		if((ordercountall()>8)&&(ordercountall() == profitordercountall(0)))
 		{
 			ordercloseallwithprofit(0);
-			Print("1、This turn Own more than "+ordercountall()+" all profit order,Close all");			
+			Print("1、This turn Own more than eight orders witch is "+ordercountall()+" all profit order,Close all");			
 			
 		}
-			*/
+
+			
 		
 		
 		/*盈利单的盈利总和超过500美金，直接关掉所有盈利订单，落袋为安，完成一次循环*/
