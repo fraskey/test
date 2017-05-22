@@ -21,7 +21,7 @@
 //外汇商专用宏定义
 //////////////////////////////////////////
 /*程序运行时，选择外汇服务商*/
-#define HMARKETS
+#define HEXNESS
 
 
 
@@ -97,6 +97,23 @@ double MyLotsL          =0.01;
 	
 #endif 	
 
+
+
+/*定义外汇服务商HFXPRO的宏特性*/
+#ifdef HEXNESS
+
+	#define HTIMEZONEEXNESSDIFF 8
+	#define HTIMEZONEDIFF HTIMEZONEEXNESSDIFF
+	
+//全局变量定义
+//////////////////////////////////////////
+//input double TakeProfit    =50;
+double MyLotsH          =0.02;
+double MyLotsL          =0.02; 
+//input double TrailingStop  =30;	
+	
+	
+#endif 	
 
 
 
@@ -464,7 +481,47 @@ void initsymbol()
 			
 	symbolNum = 29;
 #endif	
+
 	
+	
+#ifdef HEXNESS
+	MySymbol[0] = "AUDCADe";
+	MySymbol[1] = "AUDCHFe";
+	MySymbol[2] = "AUDJPYe";         
+	MySymbol[3] = "AUDNZDe";         
+	MySymbol[4] = "AUDUSDe";         
+	MySymbol[5] = "CADCHFe"; 
+	MySymbol[6] = "CADJPYe"; 	
+	MySymbol[7] = "CHFJPYe"; 	
+	MySymbol[8] = "EURAUDe";         
+	MySymbol[9] = "EURCADe"; 
+	MySymbol[10] = "EURCHFe"; 	
+	MySymbol[11] = "EURGBPe"; 
+	MySymbol[12] = "EURJPYe"; 	
+	MySymbol[13] = "EURNZDe"; 
+	MySymbol[14] = "EURUSDe"; 
+	MySymbol[15] = "GBPAUDe"; 
+	MySymbol[16] = "GBPCADe"; 
+	MySymbol[17] = "GBPCHFe"; 	
+	MySymbol[18] = "GBPJPYe"; 
+	MySymbol[19] = "GBPNZDe"; 
+	MySymbol[20] = "GBPUSDe"; 	
+	MySymbol[21] = "NZDJPYe"; 	
+	MySymbol[22] = "NZDUSDe"; 	
+	MySymbol[23] = "USDCADe"; 	
+	MySymbol[24] = "USDCHFe"; 	
+	MySymbol[25] = "USDJPYe"; 	
+	MySymbol[26] = "USDSGDe"; 		
+				
+	//MySymbol[26] = "XAUUSDe";  
+				
+	
+	//MySymbol[28] = "NZDCADe"; 
+			
+	symbolNum = 27;
+#endif	
+		
+			
 	
 		
 }
