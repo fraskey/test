@@ -857,6 +857,29 @@ void initglobaltradeflag()
 		setglobaltradeflag(false);				
 	}
 	
+	if (((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <=24 )) ||(TimeHour(timelocal) <3 ))
+	{
+		
+		/*在对冲盘已经清空的情况下设置Flag*/
+		if((ordercountall()>4)&&(anti_ordercountall()<2))
+		{		
+			setglobaltradeflag(true);		
+			anti_setglobaltradeflag(false);		
+			Print("initglobaltradeflag  setglobaltradeflag true and anti_setglobaltradeflag set false");						
+		}
+		
+		/*在对冲盘已经清空的情况下设置Flag*/
+		if((ordercountall()<2)&&(anti_ordercountall()>4))
+		{		
+			setglobaltradeflag(false);		
+			anti_setglobaltradeflag(true);		
+			Print("initglobaltradeflag  setglobaltradeflag false and anti_setglobaltradeflag set true");						
+		}
+								
+	}		
+	
+	
+	
 }
 
 
@@ -2352,7 +2375,7 @@ void monitoraccountprofit()
 			
 		}
 
-		else if (((TimeHour(timelocal) > 0 )&& (TimeHour(timelocal) <= 3 )) ||(TimeHour(timelocal) == 0 ))
+		else if (((TimeHour(timelocal) == 24 ) || (TimeHour(timelocal) == 0 )) ||(TimeHour(timelocal) == 1 ))
 		{
 			
 			/*超过12个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
@@ -2368,7 +2391,7 @@ void monitoraccountprofit()
 			
 		}				
 		
-		else
+		else if ((TimeHour(timelocal) == 2 ) ||(TimeHour(timelocal) == 3 ))
 		{
 			
 			/*超过12个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
@@ -2382,7 +2405,22 @@ void monitoraccountprofit()
 			mylots0 = MyLotsH*1.5*0.5*0.75*0.75;	
 			mylots = MyLotsH*1.5*0.75*0.75*0.75*0.75;					
 			
-		}				
+		}		
+		else
+		{
+			
+			/*超过15个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
+			
+			if((ordercountall()>=(symbolNum/15))&&(ordercountall() == profitordercountall(0)))
+			{
+				Print("1.4 This turn win more than  "+(symbolNum/15)+"  orders witch is "+ordercountall()+" all profit order,Close all");					
+				turnoffflag = true;		
+				
+			}		
+			mylots0 = MyLotsH*1.5*0.5*0.75*0.75*0.75;	
+			mylots = MyLotsH*1.5*0.75*0.75*0.75*0.75*0.75;					
+			
+		}						
 
 		//对冲盘已经获利清空的情况下，降低本盘的获利标准
 		if(false == anti_getglobaltradeflag())
@@ -3025,7 +3063,7 @@ void orderbuyselltypeone(int SymPos)
 	double orderPrice;
 	
 	int i,j,res,ticket;
- 
+ 	int ttick;
 	int    vdigits ;
 	
 	/*一分钟周期寻找买卖点*/
@@ -3350,38 +3388,53 @@ void orderbuyselltypeone(int SymPos)
 						+orderPrice+"orderStopless="+orderStopless);	
 						
 			if(true == anti_accountcheck())
-			{					
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "MagicNumberOne"+my_symbol,MakeMagic(SymPos,MagicNumberOne),0,Blue);
-	
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberOne failed with error #",GetLastError());
-					
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {            
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[0] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[0] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend MagicNumberOne  successfully");
-				 }													
-				Sleep(1000);	
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "MagicNumberOne"+my_symbol,MakeMagic(SymPos,MagicNumberOne),0,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend MagicNumberOne failed with error #",GetLastError());
+						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[0] = iBars(my_symbol,my_timeperiod)+22;					 
+						BuySellPosRecord[SymPos].TradeTimePos[0] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend MagicNumberOne  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
 			}
 
 
@@ -3468,37 +3521,52 @@ void orderbuyselltypeone(int SymPos)
 			
 			if(true == anti_accountcheck())
 			{
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "MagicNumberThree"+my_symbol,MakeMagic(SymPos,MagicNumberThree),0,Blue);
+				
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;		
+								
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "MagicNumberThree"+my_symbol,MakeMagic(SymPos,MagicNumberThree),0,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend MagicNumberThree failed with error #",GetLastError());
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}
 	
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberThree failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}
-
-				 }
-				 else
-				 {     
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[2] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend MagicNumberThree  successfully");
-				 }													
-				Sleep(1000);
+					 }
+					 else
+					 {     
+					 	ttick = 100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[2] = iBars(my_symbol,my_timeperiod)+22;					 
+						BuySellPosRecord[SymPos].TradeTimePos[2] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend MagicNumberThree  successfully");
+					 }													
+					Sleep(1000);
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}					
 			}					
 				
 		}			
@@ -3819,39 +3887,54 @@ void orderbuyselltypeone(int SymPos)
 			+	 orderPrice+"orderStopless="+orderStopless);	
 			
 			if(true == anti_accountcheck())
-			{					
+			{		
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vbid    = MarketInfo(my_symbol,MODE_BID);	
+					orderPrice = vbid;		
+															
 			 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "MagicNumberTwo"+my_symbol,MakeMagic(SymPos,MagicNumberTwo),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberTwo failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[1] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[1] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend MagicNumberTwo  successfully");
-				 }
-													 
-				 Sleep(1000);	
+					 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+									   "MagicNumberTwo"+my_symbol,MakeMagic(SymPos,MagicNumberTwo),0,Blue);
+			
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend MagicNumberTwo failed with error #",GetLastError());
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {   
+					 	ttick = 100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[1] = iBars(my_symbol,my_timeperiod)+22;					 
+						BuySellPosRecord[SymPos].TradeTimePos[1] = iBars(my_symbol,my_timeperiod);				 					 
+						Print("OrderSend MagicNumberTwo  successfully");
+					 }
+														 
+					 Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}					
+				
 			}					 
 							
 		}
@@ -3945,39 +4028,55 @@ void orderbuyselltypeone(int SymPos)
 			
 			 if(true == anti_accountcheck())
 			 {
-			 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "MagicNumberFour"+my_symbol,MakeMagic(SymPos,MagicNumberFour),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberFour failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[3] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend MagicNumberFour  successfully");
-				 }
-													 
-				 Sleep(1000);		
-			 }					 
+			 	
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vbid    = MarketInfo(my_symbol,MODE_BID);	
+					orderPrice = vbid;		
+																		 
+					 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+									   "MagicNumberFour"+my_symbol,MakeMagic(SymPos,MagicNumberFour),0,Blue);
+			
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend MagicNumberFour failed with error #",GetLastError());
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {   
+					 	ttick = 100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[3] = iBars(my_symbol,my_timeperiod)+22;					 
+						BuySellPosRecord[SymPos].TradeTimePos[3] = iBars(my_symbol,my_timeperiod);				 					 
+						Print("OrderSend MagicNumberFour  successfully");
+					 }
+														 
+					 Sleep(1000);		
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}					
+								
+				
+			}					 
 							
 		
 		}					
@@ -4003,14 +4102,13 @@ void orderbuyselltypetwo(int SymPos)
 	double MaxValue4=-1;
 
 	double orderStopLevel;
-	double orderpoint;
 	double orderLots ;   
 	double orderStopless ;
 	double orderTakeProfit;
 	double orderPrice;
 	
 	int i,j,res,ticket;
- 
+ 	int ttick;
 	int    vdigits ;
 	
 	/*五分钟周期寻找买卖点，用到日线指标*/
@@ -4064,7 +4162,7 @@ void orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vask;				 
 		//orderStopless =MinValue3- bool_length*4; 
-		orderStopless = boll_low_B - bool_length*10;
+		orderStopless = boll_low_B - bool_length*18;
 		/*
 		if((orderPrice - orderStopless)>bool_length*2)
 		{
@@ -4146,7 +4244,7 @@ void orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vask;				 
 		//orderStopless =MinValue3- bool_length*4; 
-		orderStopless = boll_low_B - bool_length*10;
+		orderStopless = boll_low_B - bool_length*18;
 		/*
 		if((orderPrice - orderStopless)>bool_length*2)
 		{
@@ -4196,88 +4294,6 @@ void orderbuyselltypetwo(int SymPos)
 						 else
 						 {          			 								 
 							Print("OrderModify MagicNumberSeven  successfully "+OrderMagicNumber());
-						 }								
-						Sleep(1000);
-					}
-				
-				}
-			}
-		  
-		}
-		
-	
-	}
-	
-	if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-		&&(5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
-			
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==false)
-		)		
-	{
-		vask    = MarketInfo(my_symbol,MODE_ASK);
-		vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-		MinValue3 = 100000;
-		for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
-		{
-			if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
-			{
-				MinValue3 = iLow(my_symbol,my_timeperiod,i);
-			}
-			
-		}				
-
-		orderPrice = vask;				 
-		//orderStopless =MinValue3- bool_length*4; 
-		orderStopless = boll_low_B - bool_length*4;
-		/*
-		if((orderPrice - orderStopless)>bool_length*2)
-		{
-			orderStopless = orderPrice - bool_length*2;
-		}
-		*/
-		orderTakeProfit	= 	orderPrice + bool_length*48;
-		
-		orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
-		orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-		orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
-
-		//orderTakeProfit = 0;
-		
-
-		for (j = 0; j < OrdersTotal(); j++)
-		{
-			if (OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
-			{				
-				if(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberNine))
-				
-				{
-
-					if(orderStopless >OrderStopLoss() )
-					{
-						
-						Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
-						
-
-
-						Print(my_symbol+" MagicNumberNine Modify:" + "orderLots=" + orderLots +"orderPrice ="
-										+orderPrice+"orderStopless="+orderStopless);									
-						
-						res=OrderModify(OrderTicket(),OrderOpenPrice(),
-							   orderStopless,orderTakeProfit,0,clrPurple);
-							   
-						 if(false == res)
-						 {
-
-							Print("Error in MagicNumberNine OrderModify. Error code=",GetLastError());									
-						 }
-						 else
-						 {          			 								 
-							Print("OrderModify MagicNumberNine  successfully "+OrderMagicNumber());
 						 }								
 						Sleep(1000);
 					}
@@ -4348,7 +4364,7 @@ void orderbuyselltypetwo(int SymPos)
 			BuySellPosRecord[SymPos].NextModifyValue1[4] = orderStopless;
 			
 			
-			orderStopless =MinValue3- bool_length*8; 	
+			orderStopless =MinValue3- bool_length*16; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[4] = orderStopless;		
 			
 			BuySellPosRecord[SymPos].CurrentOpenPrice[4] = orderPrice;		
@@ -4382,37 +4398,53 @@ void orderbuyselltypetwo(int SymPos)
 			
 			if(true == anti_accountcheck())
 			{
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "MagicNumberFive"+my_symbol,MakeMagic(SymPos,MagicNumberFive),0,Blue);
-	
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberFive failed with error #",GetLastError());
-					
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {            
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[4] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[4] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend MagicNumberFive  successfully");
-				 }													
-				Sleep(1000);	
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;						
+				
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "MagicNumberFive"+my_symbol,MakeMagic(SymPos,MagicNumberFive),0,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend MagicNumberFive failed with error #",GetLastError());
+						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {    
+					 	ttick =100;        
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[4] = iBars(my_symbol,my_timeperiod)+20;					 
+						BuySellPosRecord[SymPos].TradeTimePos[4] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend MagicNumberFive  successfully");
+					 }													
+					 Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}									
+				
+				
 			}
 
 
@@ -4456,7 +4488,7 @@ void orderbuyselltypetwo(int SymPos)
 
 			BuySellPosRecord[SymPos].NextModifyValue1[6] = orderStopless;
 			
-			orderStopless =MinValue3- bool_length*8; 	
+			orderStopless =MinValue3- bool_length*16; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[6] = orderStopless;
 			
 			BuySellPosRecord[SymPos].CurrentOpenPrice[6] = orderPrice;
@@ -4491,36 +4523,53 @@ void orderbuyselltypetwo(int SymPos)
 			
 			if(true == anti_accountcheck())
 			{
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "MagicNumberSeven"+my_symbol,MakeMagic(SymPos,MagicNumberSeven),0,Blue);
-	
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberSeven failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {     
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[6] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend MagicNumberSeven  successfully");
-				 }													
-				Sleep(1000);	
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;					
+				
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "MagicNumberSeven"+my_symbol,MakeMagic(SymPos,MagicNumberSeven),0,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend MagicNumberSeven failed with error #",GetLastError());
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {     
+					 	ttick = 100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[6] = iBars(my_symbol,my_timeperiod)+20;					 
+						BuySellPosRecord[SymPos].TradeTimePos[6] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend MagicNumberSeven  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}									
+								
+				
 			}					
 			
 		}			
@@ -4529,155 +4578,6 @@ void orderbuyselltypetwo(int SymPos)
 	}			
 	
 
-
-
-	//上上上周期为多头,上上周期并未处于空头，通常是深度调整，上周期处于空头市场，本周期持续下跌，出现第一次上涨突破的背驰，通常是突破上轨
-	//小周期突破，大周期回调结束
-	//属于中周期深度调整型
-	//做多的时间控制在下午4点到晚上7点之间，这个时间段通常能形成趋势，对冲高点买入的风险
-	//小周期突破的中周期深度回调型买点
-	
-	if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.8)
-		&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])			
-
-		&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeak[1])							
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.2)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].BoolFlag >-3.5)					  
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].BoolIndex >-0.95)	
-			
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)		
-		&& 0
-		&&(opendaycheck(SymPos) == true)
-		&&(tradetimecheck(SymPos) ==true)
-		
-		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==true)
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberNine))==true)))
-	{
-		if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-			&&(5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
-			&& (1 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1])	
-						
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])		
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3])		
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])		
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5])		
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6])		
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7])		
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8])		
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9])	
-			&& (3 >BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[10])							
-			
-			)			
-			
-		{
-			
-			vask    = MarketInfo(my_symbol,MODE_ASK);
-			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-			MinValue3 = 100000;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
-			{
-				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
-				{
-					MinValue3 = iLow(my_symbol,my_timeperiod,i);
-				}
-				
-			}				
-			orderLots = NormalizeDouble(MyLotsL,2);
-			orderPrice = vask;				 
-
-			orderStopless =MinValue3- bool_length*8; 	
-
-			BuySellPosRecord[SymPos].NextModifyValue1[8] = orderStopless;
-			
-			orderStopless =boll_low_B- bool_length; 	
-			BuySellPosRecord[SymPos].NextModifyValue2[8] = orderStopless;
-			
-			BuySellPosRecord[SymPos].CurrentOpenPrice[8] = orderPrice;
-			
-			/*
-			if((orderPrice - orderStopless)>bool_length*2)
-			{
-				orderStopless = orderPrice - bool_length*2;
-			}
-			*/
-			orderTakeProfit	= 	orderPrice + bool_length*48;
-			
-			/*参数修正*/ 
-			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
-			orderpoint = MarketInfo(my_symbol,MODE_POINT);
-			orderStopLevel = 1.2*orderStopLevel;
-			 if ((orderPrice - orderStopless) < orderStopLevel*orderpoint)
-			 {
-					orderStopless = orderPrice - orderStopLevel*orderpoint;
-			 }
-			 if ((orderTakeProfit - orderPrice) < orderStopLevel*orderpoint)
-			 {
-					orderTakeProfit = orderPrice + orderStopLevel*orderpoint;
-			 }
-			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
-			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
-			
-
-			
-			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
-																				
-
-						
-			Print(my_symbol+" MagicNumberNine OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless);	
-								
-			if(true == accountcheck())
-			{
-			
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "MagicNumberNine"+my_symbol,MakeMagic(SymPos,MagicNumberNine),0,Blue);
-	
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberNine failed with error #",GetLastError());
-					
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 { 
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[8] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[8] = iBars(my_symbol,my_timeperiod);						            				 			 
-					Print("OrderSend MagicNumberNine  successfully");
-				 }								
-				 
-				 Sleep(1000);	
-			}					 
-						
-		}
-					
-		else
-		{
-		;
-		}		
-	
-	}
-	
 	
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////		
@@ -4711,7 +4611,7 @@ void orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vbid;						 
 		//orderStopless =MaxValue4 + bool_length*4; 
-		orderStopless = boll_up_B + bool_length*10;
+		orderStopless = boll_up_B + bool_length*18;
 		
 		/*
 		if(( orderStopless- orderPrice)>bool_length*2)
@@ -4797,7 +4697,7 @@ void orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vbid;						 
 		//orderStopless =MaxValue4 + bool_length*4; 
-		orderStopless = boll_up_B + bool_length*10;
+		orderStopless = boll_up_B + bool_length*18;
 		
 		/*
 		if(( orderStopless- orderPrice)>bool_length*2)
@@ -4849,92 +4749,6 @@ void orderbuyselltypetwo(int SymPos)
 						 else
 						 {       			 									 
 							Print("OrderModify MagicNumberEight  successfully "+OrderMagicNumber());
-						 }								
-						Sleep(1000);
-					}
-				
-				}
-			}
-		  
-		}			
-		
-		
-	}	
-	
-	
-	if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-		&&(-5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)		
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==false)
-			)
-	{
-		
-		vbid    = MarketInfo(my_symbol,MODE_BID);	
-		vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-		
-		MaxValue4 = -1;
-		for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
-		{
-			if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
-			{
-				MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
-			}					
-		}				
-	
-
-		orderPrice = vbid;						 
-		//orderStopless =MaxValue4 + bool_length*4; 
-		orderStopless = boll_up_B + bool_length*4;
-		
-		/*
-		if(( orderStopless- orderPrice)>bool_length*2)
-		{
-			orderStopless = orderPrice + bool_length*2;
-		}
-		*/
-
-			
-		orderTakeProfit	= 	orderPrice - bool_length*48;
-		
-		orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
-		orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-		orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
-		
-
-		//orderTakeProfit = 0;
-			
-		for (j = 0; j < OrdersTotal(); j++)
-		{
-			if (OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
-			{				
-				if(((int)OrderMagicNumber()) == MakeMagic(SymPos,MagicNumberTen))				
-				{
-
-					if(orderStopless < OrderStopLoss() )
-					{
-						
-						Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
-						+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
-						
-	
-																		
-						Print(my_symbol+" MagicNumberTen Modify:" + "orderLots=" 
-						+ orderLots +"orderPrice ="+	 orderPrice+"orderStopless="+orderStopless);	
-										
-						res=OrderModify(OrderTicket(),OrderOpenPrice(),
-							   orderStopless,orderTakeProfit,0,clrPurple);
-							   
-						 if(false == res)
-						 {
-
-							Print("Error in MagicNumberTen OrderModify. Error code=",GetLastError());									
-						 }
-						 else
-						 {       			 									 
-							Print("OrderModify MagicNumberTen  successfully "+OrderMagicNumber());
 						 }								
 						Sleep(1000);
 					}
@@ -5007,7 +4821,7 @@ void orderbuyselltypetwo(int SymPos)
 			BuySellPosRecord[SymPos].NextModifyValue1[5] = orderStopless;	
 
 			
-			orderStopless =MaxValue4 + bool_length*8; 
+			orderStopless =MaxValue4 + bool_length*16; 
 			BuySellPosRecord[SymPos].NextModifyValue2[5] = orderStopless;
 			
 			BuySellPosRecord[SymPos].CurrentOpenPrice[5] = orderPrice;
@@ -5046,38 +4860,53 @@ void orderbuyselltypetwo(int SymPos)
 			 
 			 if(true == anti_accountcheck())
 			 {
+					ttick = 0;
+					ticket = -1;
+					while((ticket<0)&&(ttick<20))
+					{
+						vbid    = MarketInfo(my_symbol,MODE_BID);	
+						orderPrice = vbid;					
+										
 					 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "MagicNumberSix"+my_symbol,MakeMagic(SymPos,MagicNumberSix),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberSix failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
+						 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+										   "MagicNumberSix"+my_symbol,MakeMagic(SymPos,MagicNumberSix),0,Blue);
+				
+						 if(ticket <0)
+						 {
+						 	ttick++;
+							Print("OrderSend MagicNumberSix failed with error #",GetLastError());
+							if(GetLastError()!=134)
+							{
+								 //---- 5 seconds wait
+								 Sleep(5000);
+								 //---- refresh price data
+								 RefreshRates();						
+							}
+							else 
+							{
+								Print("There is no enough money!");						
+							}					
+						 }
+						 else
+						 {   
+						 	ttick = 100;
+							TwentyS_Freq++;
+							OneM_Freq++;
+							ThirtyS_Freq++;
+							FiveM_Freq++;
+							ThirtyM_Freq++;				 
+							BuySellPosRecord[SymPos].NextModifyPos[5] = iBars(my_symbol,my_timeperiod)+20;					 
+							BuySellPosRecord[SymPos].TradeTimePos[5] = iBars(my_symbol,my_timeperiod);				 					 
+							Print("OrderSend MagicNumberSix  successfully");
+						 }
+															 
+						 Sleep(1000);	
 					}
-					else 
+					if((ttick>= 19)	&&(ttick<25))
 					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;				 
-					BuySellPosRecord[SymPos].NextModifyPos[5] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[5] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend MagicNumberSix  successfully");
-				 }
-													 
-				 Sleep(1000);	
+							Print("!!Fatel error encouter please check your platform right now!");					
+					}									
+									
 			 }					 
 							
 		}
@@ -5121,7 +4950,7 @@ void orderbuyselltypetwo(int SymPos)
 
 			BuySellPosRecord[SymPos].NextModifyValue1[7] = orderStopless;
 			
-			orderStopless =MaxValue4 + bool_length*8; 
+			orderStopless =MaxValue4 + bool_length*16; 
 			
 			BuySellPosRecord[SymPos].NextModifyValue2[7] = orderStopless;		
 			
@@ -5155,37 +4984,53 @@ void orderbuyselltypetwo(int SymPos)
 			 if(true == anti_accountcheck())
 			 {
 				 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "MagicNumberEight"+my_symbol,MakeMagic(SymPos,MagicNumberEight),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberEight failed with error #",GetLastError());
-					if(GetLastError()!=134)
+					ttick = 0;
+					ticket = -1;
+					while((ticket<0)&&(ttick<20))
 					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
+						vbid    = MarketInfo(my_symbol,MODE_BID);	
+						orderPrice = vbid;					
+														 
+				 
+						 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+										   "MagicNumberEight"+my_symbol,MakeMagic(SymPos,MagicNumberEight),0,Blue);
+				
+						 if(ticket <0)
+						 {
+						 	ttick++;
+							Print("OrderSend MagicNumberEight failed with error #",GetLastError());
+							if(GetLastError()!=134)
+							{
+								 //---- 5 seconds wait
+								 Sleep(5000);
+								 //---- refresh price data
+								 RefreshRates();						
+							}
+							else 
+							{
+								Print("There is no enough money!");						
+							}					
+						 }
+						 else
+						 {   
+						 	ttick = 100;
+							TwentyS_Freq++;
+							OneM_Freq++;
+							ThirtyS_Freq++;
+							FiveM_Freq++;
+							ThirtyM_Freq++;				 
+							BuySellPosRecord[SymPos].NextModifyPos[7] = iBars(my_symbol,my_timeperiod)+20;					 
+							BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);				 					 
+							Print("OrderSend MagicNumberEight  successfully");
+						 }
+															 
+						 Sleep(1000);	
 					}
-					else 
+					if((ttick>= 19)	&&(ttick<25))
 					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;				 
-					BuySellPosRecord[SymPos].NextModifyPos[7] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[7] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend MagicNumberEight  successfully");
-				 }
-													 
-				 Sleep(1000);	
+							Print("!!Fatel error encouter please check your platform right now!");					
+					}						
+					
 			 }					 
 								
 		
@@ -5194,162 +5039,6 @@ void orderbuyselltypetwo(int SymPos)
 		
 		
 	}						
-
-
-
-	//上上上周期处于空头，上上周期并未处于多头，通常是震荡，上周期处于多头市场，本周期持续上涨，出现第一次下跌突破的背驰，通常是突破下轨
-	//小周期突破，中周期追顶摸底，大周期顺势
-	//做空的时间控制在下午2点到晚上10点之间，这个时间段通常能形成趋势，对冲低点卖出的风险
-	//小周期突破的中周期转折型卖点
-	if((BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.2)
-		&&(0.2<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[1])		
-		
-		&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeak[1])			
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.8)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].BoolFlag <3.5)						  
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].BoolIndex <0.95)
-		
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)	
-		&& 0					
-		&&(opendaycheck(SymPos) == true)
-		&&(tradetimecheck(SymPos) ==true)
-		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==true)
-		&&(OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTen))==true)))
-	{
-		
-		if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-			&&(-5==BoolCrossRecord[SymPos][timeperiodnum].BoolFlag)
-			&& (-1 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1])	
-						
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[10])		
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[11])	
-			&& (-3 <BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[12])				
-																			
-			)			
-	
-		{
-			
-
-			
-			vbid    = MarketInfo(my_symbol,MODE_BID);	
-			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-			
-			MaxValue4 = -1;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[1]+5);i++)
-			{
-				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
-				{
-					MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
-				}					
-			}				
-		
-			orderLots = NormalizeDouble(MyLotsL,2);
-			orderPrice = vbid;		
-			
-			orderStopless =MaxValue4 + bool_length*4; 
-			
-
-			BuySellPosRecord[SymPos].NextModifyValue1[9] = orderStopless;
-			
-			orderStopless =boll_up_B+ bool_length; 
-			
-			BuySellPosRecord[SymPos].NextModifyValue2[9] = orderStopless;			
-			
-			BuySellPosRecord[SymPos].CurrentOpenPrice[9] = orderPrice;	
-			
-			/*
-			if(( orderStopless- orderPrice)>bool_length*2)
-			{
-				orderStopless = orderPrice + bool_length*2;
-			}
-			*/
-
-				
-			orderTakeProfit	= 	orderPrice - bool_length*48;
-			/*参数修正*/ 
-			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
-			orderpoint = MarketInfo(my_symbol,MODE_POINT);
-			orderStopLevel = 1.2*orderStopLevel;
-			 if ((orderStopless - orderPrice) < orderStopLevel*orderpoint)
-			 {
-					orderStopless = orderPrice + orderStopLevel*orderpoint;
-			 }
-			 if ((orderPrice - orderTakeProfit) < orderStopLevel*orderpoint)
-			 {
-					orderTakeProfit = orderPrice - orderStopLevel*orderpoint;
-			 }
-			
-			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
-			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
-			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
-			
-			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
-			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
-			
-																			
-
-	
-													
-			Print(my_symbol+" MagicNumberTen OrderSend" + "orderLots=" + orderLots +"orderPrice ="
-			+	 orderPrice+"orderStopless="+orderStopless);							
-			 
-			 if(true == accountcheck())
-			 {
-				 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "MagicNumberTen"+my_symbol,MakeMagic(SymPos,MagicNumberTen),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend MagicNumberTen failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[9] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[9] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend MagicNumberTen  successfully");
-				 }					
-				 
-				Sleep(1000);
-			 }
-											
-		}
-					
-		else
-		{
-		;
-		}		
-	
-	}	
-	
 
 						
 	
@@ -5400,6 +5089,30 @@ void anti_initglobaltradeflag()
 	{
 		anti_setglobaltradeflag(false);				
 	}
+	
+	if (((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <=24 )) ||(TimeHour(timelocal) <3 ))
+	{
+		
+		/*在对冲盘已经清空的情况下设置Flag*/
+		if((ordercountall()>4)&&(anti_ordercountall()<2))
+		{		
+			setglobaltradeflag(true);		
+			anti_setglobaltradeflag(false);		
+			Print("anti_initglobaltradeflag  setglobaltradeflag true and anti_setglobaltradeflag set false");						
+		}
+		
+		/*在对冲盘已经清空的情况下设置Flag*/
+		if((ordercountall()<2)&&(anti_ordercountall()>4))
+		{		
+			setglobaltradeflag(false);		
+			anti_setglobaltradeflag(true);		
+			Print("anti_initglobaltradeflag  setglobaltradeflag false and anti_setglobaltradeflag set true");						
+		}
+								
+	}		
+		
+	
+	
 	
 }
 
@@ -5853,7 +5566,7 @@ void anti_forcecloseall(int hour,int minute)
   timelocal = TimeCurrent() + globaltimezonediff*60*60;
 	
 	/*确保交易时间段，来临前开启全局交易交易标记*/
-	if ((TimeHour(timelocal) >= 4 )&& (TimeHour(timelocal) <=  11)) 
+	if (((TimeHour(timelocal) > 4 )&& (TimeHour(timelocal) <=  11)) ||((TimeHour(timelocal) == 4 )&& (TimeMinute(timelocal) >=  25)))
 	{			
 		//确保是每个周期五分钟计算一次，而不是每个tick计算一次
 		if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,my_timeperiod))
@@ -6053,7 +5766,7 @@ void anti_monitoraccountprofit()
 		if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <=20 )) 
 		{
 					
-			/*超过9个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
+			/*超过3个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
 			
 			if((anti_ordercountall()>=(symbolNum/3))&&(anti_ordercountall() == anti_profitordercountall(0)))
 			{
@@ -6069,7 +5782,7 @@ void anti_monitoraccountprofit()
 		else if ((TimeHour(timelocal) > 20 )&& (TimeHour(timelocal) <= 23 )) 
 		{
 			
-			/*超过8个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
+			/*超过6个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
 			
 			if((anti_ordercountall()>=(symbolNum/6))&&(anti_ordercountall() == anti_profitordercountall(0)))
 			{
@@ -6083,10 +5796,10 @@ void anti_monitoraccountprofit()
 			
 		}
 
-		else if (((TimeHour(timelocal) > 0 )&& (TimeHour(timelocal) <= 3 )) ||(TimeHour(timelocal) == 0 ))
+		else if (((TimeHour(timelocal) == 24 ) || (TimeHour(timelocal) == 0 )) ||(TimeHour(timelocal) == 1 ))
 		{
 			
-			/*超过12个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
+			/*超过9个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
 			
 			if((anti_ordercountall()>=(symbolNum/9))&&(anti_ordercountall() == anti_profitordercountall(0)))
 			{
@@ -6100,7 +5813,7 @@ void anti_monitoraccountprofit()
 			
 		}				
 		
-		else
+		else if ((TimeHour(timelocal) == 2 )  ||(TimeHour(timelocal) == 3 ))
 		{
 			
 			/*超过12个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/			
@@ -6113,6 +5826,21 @@ void anti_monitoraccountprofit()
 			}		
 			mylots0 = MyLotsH*1.5*0.5*0.75*0.75;	
 			mylots = MyLotsH*1.5*0.75*0.75*0.75*0.75;					
+			
+		}				
+		else
+		{
+			
+			/*超过15个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/			
+			if((anti_ordercountall()>=(symbolNum/15))&&(anti_ordercountall() == anti_profitordercountall(0)))
+			{
+				Print("1.5 This turn win more than  "+(symbolNum/15)+"  orders witch is "+anti_ordercountall()+" all profit order,Close all");					
+				/*一波做完后，手工禁止交易；第二天继续做*/
+				anti_turnoffflag = true;									
+				
+			}		
+			mylots0 = MyLotsH*1.5*0.5*0.75*0.75*0.75;	
+			mylots = MyLotsH*1.5*0.75*0.75*0.75*0.75*0.75;					
 			
 		}				
 
@@ -6408,7 +6136,7 @@ void anti_orderbuyselltypeone(int SymPos)
 	double orderPrice;
 	
 	int i,j,res,ticket;
- 
+ 	int ttick=0 ;
 	int    vdigits ;
 	
 	/*一分钟周期寻找买卖点*/
@@ -6744,39 +6472,54 @@ void anti_orderbuyselltypeone(int SymPos)
 			+	 orderPrice+"orderStopless="+orderStopless);	
 			
 			if(true == anti_accountcheck())
-			{					
-			 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "AntiMEleven"+my_symbol,MakeMagic(SymPos,AntiMagicNumberEleven),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumberEleven failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[10] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend AntiMagicNumberEleven  successfully");
-				 }
-													 
-				 Sleep(1000);	
+			{			
+
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vbid    = MarketInfo(my_symbol,MODE_BID);	
+					orderPrice = vbid;							
+				 
+					 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+									   "AntiMEleven"+my_symbol,MakeMagic(SymPos,AntiMagicNumberEleven),0,Blue);
+			
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend AntiMagicNumberEleven failed with error #",GetLastError());
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {   
+					 	ttick = 100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[10] = iBars(my_symbol,my_timeperiod)+22;					 
+						BuySellPosRecord[SymPos].TradeTimePos[10] = iBars(my_symbol,my_timeperiod);				 					 
+						Print("OrderSend AntiMagicNumberEleven  successfully");
+					 }
+														 
+					 Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}					
+				
 			}					 
 							
 		}
@@ -6868,39 +6611,54 @@ void anti_orderbuyselltypeone(int SymPos)
 			
 			 if(true == anti_accountcheck())
 			 {
+			 	
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vbid    = MarketInfo(my_symbol,MODE_BID);	
+					orderPrice = vbid;				 	
 			 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "AntiMThirteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberThirteen),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumberThirteen failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[12] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[12] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend AntiMagicNumberThirteen  successfully");
-				 }
-													 
-				 Sleep(1000);		
-			 }					 
+					 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+									   "AntiMThirteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberThirteen),0,Blue);
+			
+					 if(ticket <0)
+					 {
+						 	ttick++;
+							Print("OrderSend AntiMagicNumberThirteen failed with error #",GetLastError());
+							if(GetLastError()!=134)
+							{
+								 //---- 5 seconds wait
+								 Sleep(5000);
+								 //---- refresh price data
+								 RefreshRates();						
+							}
+							else 
+							{
+								Print("There is no enough money!");						
+							}					
+					 }
+					 else
+					 {  
+						 	ttick = 100; 
+							TwentyS_Freq++;
+							OneM_Freq++;
+							ThirtyS_Freq++;
+							FiveM_Freq++;
+							ThirtyM_Freq++;	
+							BuySellPosRecord[SymPos].NextModifyPos[12] = iBars(my_symbol,my_timeperiod)+22;					 
+							BuySellPosRecord[SymPos].TradeTimePos[12] = iBars(my_symbol,my_timeperiod);				 					 
+							Print("OrderSend AntiMagicNumberThirteen  successfully");
+					 }
+														 
+					 Sleep(1000);		
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}						
+				
+			}					 
 							
 		
 		}					
@@ -7201,38 +6959,53 @@ void anti_orderbuyselltypeone(int SymPos)
 						+orderPrice+"orderStopless="+orderStopless);	
 						
 			if(true == anti_accountcheck())
-			{					
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "AntiMTwelve"+my_symbol,MakeMagic(SymPos,AntiMagicNumberTwelve),0,Blue);
-	
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumberTwelve failed with error #",GetLastError());
-					
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {            
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[11] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend AntiMagicNumberTwelve  successfully");
-				 }													
-				Sleep(1000);	
+			{	
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;					
+								
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "AntiMTwelve"+my_symbol,MakeMagic(SymPos,AntiMagicNumberTwelve),0,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend AntiMagicNumberTwelve failed with error #",GetLastError());
+						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {    
+					 	ttick=100;        
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[11] = iBars(my_symbol,my_timeperiod)+22;					 
+						BuySellPosRecord[SymPos].TradeTimePos[11] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend AntiMagicNumberTwelve  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}						
+				
 			}
 
 
@@ -7322,43 +7095,56 @@ void anti_orderbuyselltypeone(int SymPos)
 			
 			if(true == anti_accountcheck())
 			{
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "AntiMFourteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberFourteen),0,Blue);
+				
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;					
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "AntiMFourteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberFourteen),0,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend AntiMagicNumberFourteen failed with error #",GetLastError());
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}
 	
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumberFourteen failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}
-
-				 }
-				 else
-				 {     
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[13] = iBars(my_symbol,my_timeperiod)+22;					 
-					BuySellPosRecord[SymPos].TradeTimePos[13] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend AntiMagicNumberFourteen  successfully");
-				 }													
-				Sleep(1000);
+					 }
+					 else
+					 {     
+					 	ttick=100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[13] = iBars(my_symbol,my_timeperiod)+22;					 
+						BuySellPosRecord[SymPos].TradeTimePos[13] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend AntiMagicNumberFourteen  successfully");
+					 }													
+					Sleep(1000);
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}						
+				
 			}					
 				
 		}			
-					
-
-		
+							
 					
 	}	
 						
@@ -7385,7 +7171,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 	double orderPrice;
 	
 	int i,j,res,ticket;
- 
+ 	int ttick;
 	int    vdigits ;
 	
 	/*五分钟周期寻找买卖点，用到日线指标*/
@@ -7438,7 +7224,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vbid;						 
 		//orderStopless =MaxValue4 + bool_length*4; 
-		orderStopless = boll_up_B + bool_length*10;
+		orderStopless = boll_up_B + bool_length*18;
 		
 		/*
 		if(( orderStopless- orderPrice)>bool_length*2)
@@ -7524,7 +7310,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vbid;						 
 		//orderStopless =MaxValue4 + bool_length*4; 
-		orderStopless = boll_up_B + bool_length*10;
+		orderStopless = boll_up_B + bool_length*18;
 		
 		/*
 		if(( orderStopless- orderPrice)>bool_length*2)
@@ -7649,7 +7435,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 			BuySellPosRecord[SymPos].NextModifyValue1[14] = orderStopless;	
 
 			
-			orderStopless =MaxValue4 + bool_length*8; 
+			orderStopless =MaxValue4 + bool_length*16; 
 			BuySellPosRecord[SymPos].NextModifyValue2[14] = orderStopless;
 			
 			BuySellPosRecord[SymPos].CurrentOpenPrice[14] = orderPrice;
@@ -7689,38 +7475,53 @@ void anti_orderbuyselltypetwo(int SymPos)
 			 if(true == anti_accountcheck())
 			 {
 					 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "AntiMFifteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberFifteen),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumberFifteen failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;				 
-					BuySellPosRecord[SymPos].NextModifyPos[14] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[14] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend AntiMagicNumberFifteen  successfully");
-				 }
-													 
-				 Sleep(1000);	
-			 }					 
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+						vbid    = MarketInfo(my_symbol,MODE_BID);	
+						orderPrice = vbid;							 
+						
+						ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+									   "AntiMFifteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberFifteen),0,Blue);
+						
+						if(ticket <0)
+						{
+							ttick++;
+							Print("OrderSend AntiMagicNumberFifteen failed with error #",GetLastError());
+							if(GetLastError()!=134)
+							{
+								 //---- 5 seconds wait
+								 Sleep(5000);
+								 //---- refresh price data
+								 RefreshRates();						
+							}
+							else 
+							{
+								Print("There is no enough money!");						
+							}					
+						}
+						else
+						{   
+							ttick = 100;
+							TwentyS_Freq++;
+							OneM_Freq++;
+							ThirtyS_Freq++;
+							FiveM_Freq++;
+							ThirtyM_Freq++;				 
+							BuySellPosRecord[SymPos].NextModifyPos[14] = iBars(my_symbol,my_timeperiod)+20;					 
+							BuySellPosRecord[SymPos].TradeTimePos[14] = iBars(my_symbol,my_timeperiod);				 					 
+							Print("OrderSend AntiMagicNumberFifteen  successfully");
+						}
+														 
+						Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}							
+				
+			}					 
 							
 		}
 			
@@ -7765,7 +7566,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 
 			BuySellPosRecord[SymPos].NextModifyValue1[16] = orderStopless;
 			
-			orderStopless =MaxValue4 + bool_length*8; 
+			orderStopless =MaxValue4 + bool_length*16; 
 			
 			BuySellPosRecord[SymPos].NextModifyValue2[16] = orderStopless;		
 			
@@ -7796,39 +7597,53 @@ void anti_orderbuyselltypetwo(int SymPos)
 			 
 			 if(true == anti_accountcheck())
 			 {
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+						vbid    = MarketInfo(my_symbol,MODE_BID);	
+						orderPrice = vbid;				 	
 				 
-				 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "AntiMseventeen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberseventeen),0,Blue);
-		
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumberseventeen failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {   
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;				 
-					BuySellPosRecord[SymPos].NextModifyPos[16] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[16] = iBars(my_symbol,my_timeperiod);				 					 
-					Print("OrderSend AntiMagicNumberseventeen  successfully");
-				 }
-													 
-				 Sleep(1000);	
-			 }					 
+					 ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+									   "AntiMseventeen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberseventeen),0,Blue);
+			
+					 if(ticket <0)
+					 {
+					 		ttick++;
+							Print("OrderSend AntiMagicNumberseventeen failed with error #",GetLastError());
+							if(GetLastError()!=134)
+							{
+								 //---- 5 seconds wait
+								 Sleep(5000);
+								 //---- refresh price data
+								 RefreshRates();						
+							}
+							else 
+							{
+								Print("There is no enough money!");						
+							}					
+					 }
+					 else
+					 {   
+					 	ttick = 100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;				 
+						BuySellPosRecord[SymPos].NextModifyPos[16] = iBars(my_symbol,my_timeperiod)+20;					 
+						BuySellPosRecord[SymPos].TradeTimePos[16] = iBars(my_symbol,my_timeperiod);				 					 
+						Print("OrderSend AntiMagicNumberseventeen  successfully");
+					 }
+														 
+					 Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}						
+				
+			}					 
 								
 		
 		}			
@@ -7866,7 +7681,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vask;				 
 		//orderStopless =MinValue3- bool_length*4; 
-		orderStopless = boll_low_B - bool_length*10;
+		orderStopless = boll_low_B - bool_length*18;
 		/*
 		if((orderPrice - orderStopless)>bool_length*2)
 		{
@@ -7947,7 +7762,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 
 		orderPrice = vask;				 
 		//orderStopless =MinValue3- bool_length*4; 
-		orderStopless = boll_low_B - bool_length*10;
+		orderStopless = boll_low_B - bool_length*18;
 		/*
 		if((orderPrice - orderStopless)>bool_length*2)
 		{
@@ -8067,7 +7882,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 			BuySellPosRecord[SymPos].NextModifyValue1[15] = orderStopless;
 			
 			
-			orderStopless =MinValue3- bool_length*8; 	
+			orderStopless =MinValue3- bool_length*16; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[15] = orderStopless;		
 			
 			BuySellPosRecord[SymPos].CurrentOpenPrice[15] = orderPrice;		
@@ -8101,37 +7916,52 @@ void anti_orderbuyselltypetwo(int SymPos)
 			
 			if(true == anti_accountcheck())
 			{
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "AntiMSixteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberSixteen),0,Blue);
-	
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumberSixteen failed with error #",GetLastError());
-					
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {            
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[15] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[15] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend AntiMagicNumberSixteen  successfully");
-				 }													
-				Sleep(1000);	
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;		
+							 									
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "AntiMSixteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumberSixteen),0,Blue);
+		
+					 if(ticket <0)
+					 {
+						 	ttick++;
+							Print("OrderSend AntiMagicNumberSixteen failed with error #",GetLastError());
+							
+							if(GetLastError()!=134)
+							{
+								 //---- 5 seconds wait
+								 Sleep(5000);
+								 //---- refresh price data
+								 RefreshRates();						
+							}
+							else 
+							{
+								Print("There is no enough money!");						
+							}					
+					 }
+					 else
+					 {        
+					 	ttick = 100;    
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[15] = iBars(my_symbol,my_timeperiod)+20;					 
+						BuySellPosRecord[SymPos].TradeTimePos[15] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend AntiMagicNumberSixteen  successfully");
+					 }	
+					Sleep(1000);						 
+				}		
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}									
+
 			}
 
 
@@ -8174,7 +8004,7 @@ void anti_orderbuyselltypetwo(int SymPos)
 
 			BuySellPosRecord[SymPos].NextModifyValue1[17] = orderStopless;
 			
-			orderStopless =MinValue3- bool_length*8; 	
+			orderStopless =MinValue3- bool_length*16; 	
 			BuySellPosRecord[SymPos].NextModifyValue2[17] = orderStopless;
 			
 			BuySellPosRecord[SymPos].CurrentOpenPrice[17] = orderPrice;
@@ -8209,36 +8039,55 @@ void anti_orderbuyselltypetwo(int SymPos)
 			
 			if(true == anti_accountcheck())
 			{
-				ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-							   "AntiMeighteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumbereighteen),0,Blue);
-	
-				 if(ticket <0)
-				 {
-					Print("OrderSend AntiMagicNumbereighteen failed with error #",GetLastError());
-					if(GetLastError()!=134)
-					{
-						 //---- 5 seconds wait
-						 Sleep(5000);
-						 //---- refresh price data
-						 RefreshRates();						
-					}
-					else 
-					{
-						Print("There is no enough money!");						
-					}					
-				 }
-				 else
-				 {     
-					TwentyS_Freq++;
-					OneM_Freq++;
-					ThirtyS_Freq++;
-					FiveM_Freq++;
-					ThirtyM_Freq++;	
-					BuySellPosRecord[SymPos].NextModifyPos[17] = iBars(my_symbol,my_timeperiod)+20;					 
-					BuySellPosRecord[SymPos].TradeTimePos[17] = iBars(my_symbol,my_timeperiod);				 				 
-					Print("OrderSend AntiMagicNumbereighteen  successfully");
-				 }													
-				Sleep(1000);	
+				
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					orderPrice = vask;									 													
+				
+				
+					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   "AntiMeighteen"+my_symbol,MakeMagic(SymPos,AntiMagicNumbereighteen),0,Blue);
+		
+					 if(ticket <0)
+					 {
+						 	ttick++;
+							Print("OrderSend AntiMagicNumbereighteen failed with error #",GetLastError());
+							if(GetLastError()!=134)
+							{
+								 //---- 5 seconds wait
+								 Sleep(5000);
+								 //---- refresh price data
+								 RefreshRates();						
+							}
+							else 
+							{
+								Print("There is no enough money!");						
+							}					
+					 }
+					 else
+					 {     
+					 	ttick = 100;
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos].NextModifyPos[17] = iBars(my_symbol,my_timeperiod)+20;					 
+						BuySellPosRecord[SymPos].TradeTimePos[17] = iBars(my_symbol,my_timeperiod);				 				 
+						Print("OrderSend AntiMagicNumbereighteen  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}						
+				
+				
 			}					
 			
 		}			
@@ -8250,7 +8099,6 @@ void anti_orderbuyselltypetwo(int SymPos)
 						
 	
 }
-
 
 
 
