@@ -2338,24 +2338,32 @@ void monitoraccountprofit()
 	/*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/	
 	timelocal = TimeCurrent() + globaltimezonediff*60*60;
 
-
-	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓*/
-	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )) 
-	{
-		return;	
-	}
 	
 	/*当天订单已经平掉的情况下就不走这个分支了*/
 	if(ordercountall()<=2)
 	{
 		return;
 	}
+
+	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓，尤其是订单数量比较少的情况下*/
+	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )
+	&&(ordercountall()<=(symbolNum/2))) 
+	{
+	   return;
+	}		
+
 	
 	/*短线获利清盘，长线后面再考虑*/
 	//if(1 == Period())
 	{
-		
-		if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
+	
+   	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓*/
+   	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )) 
+   	{
+			mylots0 = MyLotsH*1.5;
+			mylots = MyLotsH*1.5*0.75;
+   	}			
+		else if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
 		{
 					
 			/*超过9个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
@@ -2367,8 +2375,6 @@ void monitoraccountprofit()
 				turnoffflag = true;			
 				
 			}
-			mylots0 = MyLotsH*1.5;
-			mylots = MyLotsH*1.5*0.75;
 				
 		}	
 		else if ((TimeHour(timelocal) >= 0 )&& (TimeHour(timelocal) <= 3 )) 
@@ -3421,7 +3427,7 @@ void orderbuyselltypeone(int SymPos)
 					orderPrice = vask;		
 								
 					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
-								   "MagicNumberThree"+my_symbol,MakeMagic(SymPos,MagicNumberThree),0,Blue);
+								   "MagicNumberThree"+IntegerToString(subvalue)+my_symbol,MakeMagic(SymPos,MagicNumberThree),0,Blue);
 		
 					 if(ticket <0)
 					 {
@@ -5074,24 +5080,30 @@ void anti_monitoraccountprofit()
 
 	
 	/*当天订单已经平掉的情况下就不走这个分支了*/
-	if(ordercountall()<=2)
+	if(anti_ordercountall()<=2)
 	{
 		return;
 	}
 	
-	mylots0 = MyLotsH*1.5;
-	mylots = MyLotsH*1.5*0.75;	
+	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓，尤其是订单数量比较少的情况下*/
+	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )
+	&&(anti_ordercountall()<=(symbolNum/2))) 
+	{
+	   return;
+	}		
+
 	
-	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓全为正的操作*/
-	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )&&(anti_ordercountall()<=8)) 
+
+//	else
 	{
-			mylots0 = MyLotsH*1.5;
-			mylots = MyLotsH*1.5*0.75;
-	}
-	else
-	{
-		
-		if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
+
+   	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓全为正的操作*/
+   	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )) 
+   	{
+   			mylots0 = MyLotsH*1.5;
+   			mylots = MyLotsH*1.5*0.75;
+   	}		
+		else if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
 		{
 					
 			/*超过3个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/			
@@ -6783,7 +6795,7 @@ void OnTick(void)
 	/*异常大量交易检测*/
 	Freq_Count++;
 
-	if(TwentyS_Freq > 5)
+	if(TwentyS_Freq > 9)
 	{
 		 Print("detect ordersend unnormal");
 		 return;
@@ -6796,9 +6808,9 @@ void OnTick(void)
 		}
 	}
 
-	if(ThirtyS_Freq > 8)
+	if(ThirtyS_Freq > 15)
 	{
-      Print("detect ordersend unnormal");
+      Print("detect ordersend unnorma2");
 		 return;
 	}
 	else
@@ -6809,9 +6821,9 @@ void OnTick(void)
 		}
 	}
 
-	if(OneM_Freq > 10)
+	if(OneM_Freq > 21)
 	{
-      Print("detect ordersend unnormal");
+      Print("detect ordersend unnorma3");
 		 return;
 	}
 	else
@@ -6822,9 +6834,9 @@ void OnTick(void)
 		}
 	}
 
-	if(FiveM_Freq > 20)
+	if(FiveM_Freq > 37)
 	{
-      Print("detect ordersend unnormal");
+      Print("detect ordersend unnorma4");
 		 return;
 	}
 	else
@@ -6835,9 +6847,9 @@ void OnTick(void)
 		}
 	}
 
-	if(ThirtyM_Freq > 30)
+	if(ThirtyM_Freq > 55)
 	{
-      Print("detect ordersend unnormal");
+      Print("detect ordersend unnorma5");
 		 return;
 	}
 	else
@@ -6848,7 +6860,6 @@ void OnTick(void)
 		}
 	}
 	
-
 
 	
 	//美国非农数据发布时间 
