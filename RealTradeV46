@@ -2343,24 +2343,31 @@ void monitoraccountprofit()
 	/*原则上采用服务器交易时间，为了便于人性化处理，做了一个转换*/	
 	timelocal = TimeCurrent() + globaltimezonediff*60*60;
 
-
-	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓*/
-	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )) 
-	{
-		return;	
-	}
-	
 	/*当天订单已经平掉的情况下就不走这个分支了*/
 	if(ordercountall()<=2)
 	{
 		return;
 	}
+
+	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓，尤其是订单数量比较少的情况下*/
+	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )
+	&&(ordercountall()<=(symbolNum/2))) 
+	{
+	   return;
+	}		
+
 	
 	/*短线获利清盘，长线后面再考虑*/
 	//if(1 == Period())
 	{
-		
-		if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
+	
+   	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓*/
+   	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )) 
+   	{
+			mylots0 = MyLotsH*1.5;
+			mylots = MyLotsH*1.5*0.75;
+   	}	
+		else if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
 		{
 					
 			/*超过9个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/
@@ -5079,24 +5086,32 @@ void anti_monitoraccountprofit()
 
 	
 	/*当天订单已经平掉的情况下就不走这个分支了*/
-	if(ordercountall()<=2)
+	if(anti_ordercountall()<=2)
 	{
 		return;
 	}
 	
-	mylots0 = MyLotsL*1.5;
-	mylots = MyLotsL*1.5*0.75;	
+	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓，尤其是订单数量比较少的情况下*/
+	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )
+	&&(anti_ordercountall()<=(symbolNum/2))) 
+	{
+	   return;
+	}		
 	
-	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓全为正的操作*/
-	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )&&(anti_ordercountall()<=10)) 
+	
+
+//	else
 	{
-			mylots0 = MyLotsL*1.5;
-			mylots = MyLotsL*1.5*0.75;
-	}
-	else
-	{
-		
-		if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
+	
+	
+   	/*20:00之前的涨跌都没有充分因此不在这个时间段平仓全为正的操作*/
+   	if ((TimeHour(timelocal) >= 13 )&& (TimeHour(timelocal) <20 )) 
+   	{		
+   		
+   			mylots0 = MyLotsL*1.5;
+   			mylots = MyLotsL*1.5*0.75;
+   	}		
+		else if ((TimeHour(timelocal) >= 20 )&& (TimeHour(timelocal) <=23 )) 
 		{
 					
 			/*超过3个订单，且每个订单都盈利的情况下，直接关掉所有盈利订单*/			
