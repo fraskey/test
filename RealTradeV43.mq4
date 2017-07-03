@@ -2375,7 +2375,8 @@ void monitoraccountprofit()
 				turnoffflag = true;			
 				
 			}
-				
+			mylots0 = MyLotsH*1.5;
+			mylots = MyLotsH*1.5*0.75;				
 		}	
 		else if ((TimeHour(timelocal) >= 0 )&& (TimeHour(timelocal) <= 3 )) 
 		{
