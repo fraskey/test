@@ -1,0 +1,10 @@
+; DLLSample.def : 声明 DLL 的模块参数。
+
+LIBRARY DLLSample
+
+EXPORTS
+    GetTestIntValue
+    MyDllFindFile
+    MyDllCreateFile
+    MyDllWriteFileIntFirst
+    MyDllReadFileIntFirst
