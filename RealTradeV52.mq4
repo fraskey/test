@@ -904,7 +904,7 @@ void initfile()
 		{
 			
 
-				ForceWriteFileInt(MyAntiTradeFlag[curtradefileNum],FILETRADINGFLAG);						
+				ForceWriteFileInt(MyAntiTradeFile[curtradefileNum],FILETRADINGFLAG);						
 
 		}		
 	
@@ -991,7 +991,7 @@ void autoadjestfile()
 							if(FILETRADEDFLAG == ReadFileInt(MyAntiTradeFlag[i]))
 							{
 								Sleep(1000);
-								ForceWriteFileInt(MyAntiTradeFlag[i],FILENOTRADEFLAG);
+								ForceWriteFileInt(MyAntiTradeFile[i],FILENOTRADEFLAG);
 								Print("something maybe is wrong with antitrade file: ", MyAntiTradeFlag[i]);																			
 								
 							}
@@ -1030,7 +1030,7 @@ void autoadjestfile()
 					{
 						
 			
-							ForceWriteFileInt(MyAntiTradeFlag[curtradefileNum],FILETRADINGFLAG);						
+							ForceWriteFileInt(MyAntiTradeFile[curtradefileNum],FILETRADINGFLAG);						
 			
 					}		
 				
@@ -1112,7 +1112,11 @@ void transferfiletoflag()
 				
 				if ((TimeMinute(timelocal) == 25 )||(TimeMinute(timelocal) == 27 )	||(TimeMinute(timelocal) == 29 ))		
 				{
-					ForceWriteFileInt(MyTradeFile[curtradefileNum],FILETRADINGFLAG);						
+					ForceWriteFileInt(MyTradeFile[curtradefileNum],FILETRADINGFLAG);	
+					
+					Print("transferfiletoflag 1 MyTradeFlag[curtradefileNum]= "+MyTradeFlag[curtradefileNum]+";curtradefileNum="+ curtradefileNum
+					 +";MyTradeFile="+MyTradeFile[curtradefileNum]);						
+										
 					
 				}	
 				
@@ -1128,7 +1132,10 @@ void transferfiletoflag()
 				
 				if ((TimeMinute(timelocal) == 25 )||(TimeMinute(timelocal) == 27 )	||(TimeMinute(timelocal) == 29 ))		
 				{
-					ForceWriteFileInt(MyAntiTradeFlag[curtradefileNum],FILETRADINGFLAG);						
+					ForceWriteFileInt(MyAntiTradeFile[curtradefileNum],FILETRADINGFLAG);	
+					
+					Print("transferfiletoflag 2 MyAntiTradeFlag[curtradefileNum]= "+MyAntiTradeFlag[curtradefileNum]+";curtradefileNum="+ curtradefileNum
+					 +";MyAntiTradeFile="+MyAntiTradeFile[curtradefileNum]);												
 					
 				}	
 				
@@ -1145,7 +1152,10 @@ void transferfiletoflag()
 				
 				if ((TimeMinute(timelocal) == 25 )||(TimeMinute(timelocal) == 27 )	||(TimeMinute(timelocal) == 29 ))		
 				{
-					ForceWriteFileInt(MyALLTradeFile[curtradefileNum],FILETRADINGFLAG);						
+					ForceWriteFileInt(MyALLTradeFile[curtradefileNum],FILETRADINGFLAG);	
+					
+					Print("transferfiletoflag 3 MyALLTradeFlag[curtradefileNum]= "+MyALLTradeFlag[curtradefileNum]+";curtradefileNum="+ curtradefileNum
+					 +";MyALLTradeFile="+MyALLTradeFile[curtradefileNum]);											
 					
 				}	
 				
@@ -1157,7 +1167,7 @@ void transferfiletoflag()
 		
 	}
 
-	//当没有处于交易中的平台时，设置初始状态
+	//当所有平台都没有处于交易中时，设置本平台为NoTrade初始状态
 	if((0<=curtradefileNum)&&(tradefileNum>curtradefileNum))	
 	{
 		flag = true;
@@ -1178,7 +1188,10 @@ void transferfiletoflag()
 			if(FILENOTRADEFLAG != MyTradeFlag[curtradefileNum])
 			{
 				
-					ForceWriteFileInt(MyTradeFile[curtradefileNum],FILENOTRADEFLAG);					
+					ForceWriteFileInt(MyTradeFile[curtradefileNum],FILENOTRADEFLAG);	
+					Print("transferfiletoflag 4 MyTradeFlag[curtradefileNum]= "+MyTradeFlag[curtradefileNum]+";curtradefileNum="+ curtradefileNum
+					 +";MyTradeFile="+MyTradeFile[curtradefileNum]);						
+									
 			}
 
 			
@@ -1203,7 +1216,9 @@ void transferfiletoflag()
 			if(FILENOTRADEFLAG != MyAntiTradeFlag[curtradefileNum])
 			{
 				
-					ForceWriteFileInt(MyAntiTradeFile[curtradefileNum],FILENOTRADEFLAG);					
+					ForceWriteFileInt(MyAntiTradeFile[curtradefileNum],FILENOTRADEFLAG);	
+					Print("transferfiletoflag 5 MyAntiTradeFlag[curtradefileNum]= "+MyAntiTradeFlag[curtradefileNum]+";curtradefileNum="+ curtradefileNum
+					 +";MyAntiTradeFile="+MyAntiTradeFile[curtradefileNum]);											
 			}
 
 			
@@ -1228,13 +1243,14 @@ void transferfiletoflag()
 			if(FILENOTRADEFLAG != MyALLTradeFlag[curtradefileNum])
 			{
 				
-					ForceWriteFileInt(MyALLTradeFile[curtradefileNum],FILENOTRADEFLAG);					
+					ForceWriteFileInt(MyALLTradeFile[curtradefileNum],FILENOTRADEFLAG);	
+					Print("transferfiletoflag 6 MyALLTradeFlag[curtradefileNum]= "+MyALLTradeFlag[curtradefileNum]+";curtradefileNum="+ curtradefileNum
+					 +";MyALLTradeFile="+MyALLTradeFile[curtradefileNum]);										
 			}
 
 			
 		}
 				
-		
 		
 		
 		
@@ -8754,6 +8770,7 @@ void mydlltest()
    }
 
 }
+
 
 
 /////////////////////
