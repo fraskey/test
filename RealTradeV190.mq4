@@ -2920,7 +2920,10 @@ void orderbuyselltypeone(int SymPos)
 			||(1 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[0])
 			||(5 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlag[0])
 			)
-				
+		&&((-4 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(1 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(5 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])
+			)				
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberOne))==true)
@@ -2953,7 +2956,7 @@ void orderbuyselltypeone(int SymPos)
 			}				
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = (vask+MinValue3)/2;				 			
-			orderStopless =MinValue3 - bool_length*2; 		
+			orderStopless =MinValue3 - bool_length*8; 		
 			orderTakeProfit	= vask + bool_length_upperiod*8;
 			
 			/*参数修正*/ 
@@ -3073,7 +3076,7 @@ void orderbuyselltypeone(int SymPos)
 			orderLots = NormalizeDouble(MyLotsH,2);
 
 			orderPrice = MinValue3;				 			
-			orderStopless =MinValue3 - bool_length*4; 		
+			orderStopless =MinValue3 - bool_length*8; 		
 			orderTakeProfit	= vask + bool_length_upperiod*8;
 			
 			/*参数修正*/ 
@@ -3191,6 +3194,11 @@ void orderbuyselltypeone(int SymPos)
 			||(-5 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlag[0])
 			)		
 
+		&&((4 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(-1 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(-5 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])
+			)	
+
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)		
 		&&((OneMOrderCloseStatus(MakeMagic(SymPos,MagicNumberTwo))==true)
@@ -3222,7 +3230,7 @@ void orderbuyselltypeone(int SymPos)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = (vbid+MaxValue4)/2;		
 
-			orderStopless =MaxValue4 + bool_length*2; 		
+			orderStopless =MaxValue4 + bool_length*8; 		
 			orderTakeProfit	= vbid - bool_length_upperiod*8;			
 
 			/*参数修正*/ 
@@ -3340,7 +3348,7 @@ void orderbuyselltypeone(int SymPos)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = MaxValue4;						 
 
-			orderStopless =MaxValue4 + bool_length*4; 		
+			orderStopless =MaxValue4 + bool_length*8; 		
 			orderTakeProfit	= vbid - bool_length_upperiod*8;			
 
 			/*参数修正*/ 
@@ -3513,6 +3521,11 @@ void orderbuyselltypetwo(int SymPos)
 			||(5 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlag[0])
 			)		
 
+		&&((-4 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(1 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(5 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])
+			)	
+
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) == true)
 				
@@ -3545,7 +3558,7 @@ void orderbuyselltypetwo(int SymPos)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = (vask+MinValue3)/2;	
 
-			orderStopless =MinValue3 - bool_length*1; 		
+			orderStopless =MinValue3 - bool_length*4; 		
 			orderTakeProfit	= vask + bool_length_upperiod*8;
 			
 			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
@@ -3652,7 +3665,7 @@ void orderbuyselltypetwo(int SymPos)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = MinValue3;				 
 
-			orderStopless =MinValue3 - bool_length*3; 		
+			orderStopless =MinValue3 - bool_length*4; 		
 			orderTakeProfit	= vask + bool_length_upperiod*8;
 			
 			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
@@ -3752,6 +3765,12 @@ void orderbuyselltypetwo(int SymPos)
 			||(-1 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[0])
 			||(-5 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlag[0])
 			)
+		&&((4 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(-1 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlagL[0])
+			||(-5 == BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])
+			)
+		
+
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) == true)
 				
@@ -3788,7 +3807,7 @@ void orderbuyselltypetwo(int SymPos)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = (vbid+MaxValue4)/2;						 
 			
-			orderStopless =MaxValue4 + bool_length*1; 		
+			orderStopless =MaxValue4 + bool_length*4; 		
 			orderTakeProfit	= vbid - bool_length_upperiod*8;	
 			
 			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
@@ -3893,7 +3912,7 @@ void orderbuyselltypetwo(int SymPos)
 			orderLots = NormalizeDouble(MyLotsH,2);
 			orderPrice = MaxValue4;						 
 			
-			orderStopless =MaxValue4 + bool_length*3; 		
+			orderStopless =MaxValue4 + bool_length*4; 		
 			orderTakeProfit	= vbid - bool_length_upperiod*8;	
 			
 			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
