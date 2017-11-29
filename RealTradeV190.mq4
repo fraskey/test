@@ -2994,7 +2994,7 @@ void orderbuyselltypeone(int SymPos)
 			vask    = MarketInfo(my_symbol,MODE_ASK);
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 			MinValue3 = 100000;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[8]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
 				{
@@ -3143,7 +3143,7 @@ void orderbuyselltypeone(int SymPos)
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 			
 			MaxValue4 = -1;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
 				{
@@ -3260,7 +3260,7 @@ void orderbuyselltypeone(int SymPos)
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 			
 			MaxValue4 = -1;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[8]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
 				{
@@ -3444,7 +3444,7 @@ void orderbuyselltypetwo(int SymPos)
 			||(1 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[0])
 			||(5 == BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlag[0])
 			)		
-		
+
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) == true)
 				
@@ -3573,7 +3573,7 @@ void orderbuyselltypetwo(int SymPos)
 			vask    = MarketInfo(my_symbol,MODE_ASK);
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 			MinValue3 = 100000;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[8]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
 				{
@@ -3813,7 +3813,7 @@ void orderbuyselltypetwo(int SymPos)
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 			
 			MaxValue4 = -1;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[8]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
 				{
