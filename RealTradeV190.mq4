@@ -1288,6 +1288,8 @@ int  InitcrossValue(int SymPos,int timeperiodnum)
 		return -1;
 	}
 
+
+	j = 0;
 	for (i = 2; i< countnumber;i++)
 	{
 		
@@ -1336,6 +1338,65 @@ int  InitcrossValue(int SymPos,int timeperiodnum)
 				BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[j] = crossflag;
 				//BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[j] = TimeCurrent() - i*Period()*60;
 				BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[j] = iBars(my_symbol,my_timeperiod)-i;
+				j++;
+				if (j >= (HCROSSNUMBER-1))
+				{
+					break;
+				}
+		}
+
+	}
+	
+
+	j = 0;
+	for (i = 2; i< countnumber;i++)
+	{
+		
+		crossflag = 0;     
+		myma=iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,i-1);  
+		myboll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,1.7,0,PRICE_CLOSE,MODE_UPPER,i-1);   
+		myboll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,1.7,0,PRICE_CLOSE,MODE_LOWER,i-1);
+		myboll_mid_B = (	myboll_up_B +  myboll_low_B)/2;
+
+		myma_pre = iMA(my_symbol,my_timeperiod,Move_Av,0,MODE_SMA,PRICE_CLOSE,i); 
+		myboll_up_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,1.7,0,PRICE_CLOSE,MODE_UPPER,i);      
+		myboll_low_B_pre = iBands(my_symbol,my_timeperiod,iBoll_B,1.7,0,PRICE_CLOSE,MODE_LOWER,i);
+		myboll_mid_B_pre = (myboll_up_B_pre + myboll_low_B_pre)/2;
+
+		if((myma >myboll_up_B) && (myma_pre < myboll_up_B_pre ) )
+		{
+				crossflag = 5;		
+		}
+		
+		if((myma <myboll_up_B) && (myma_pre > myboll_up_B_pre ) )
+		{
+				crossflag = 4;
+		}
+			
+		if((myma < myboll_low_B) && (myma_pre > myboll_low_B_pre ) )
+		{
+				crossflag = -5;
+		}
+			
+		if((myma > myboll_low_B) && (myma_pre < myboll_low_B_pre ) )
+		{
+				crossflag = -4;	
+		}
+	
+		if((myma > myboll_mid_B) && (myma_pre < myboll_mid_B_pre ))
+		{
+				crossflag = 1;				
+		}	
+		if( (myma < myboll_mid_B) && (myma_pre > myboll_mid_B_pre ))
+		{
+				crossflag = -1;								
+		}			
+		
+		if(0 != 	crossflag)		
+		{
+				BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[j] = crossflag;
+				//BoolCrossRecord[SymPos][timeperiodnum].CrossDatetime[j] = TimeCurrent() - i*Period()*60;
+				BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPosL[j] = iBars(my_symbol,my_timeperiod)-i;
 				j++;
 				if (j >= (HCROSSNUMBER-1))
 				{
@@ -2371,6 +2432,13 @@ int init()
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);			
+
+			Print(my_symbol+"BoolCrossRecordL["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[9]);		
 			
 		}
 	
