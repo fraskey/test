@@ -1250,7 +1250,8 @@ int  InitcrossValue(int SymPos,int timeperiodnum)
 	if(iBars(my_symbol,my_timeperiod) <countnumber)
 	{
 		Print(my_symbol + ":"+my_timeperiod+":Bar Number less than "+countnumber+"which is :" + iBars(my_symbol,my_timeperiod));
-		return -1;
+		countnumber = iBars(my_symbol,my_timeperiod) - 100;
+		//return -1;
 	}
 
 
