@@ -136,7 +136,7 @@ struct stBuySellPosRecord
 	int magicnumber;
 	int timeperiodnum;
 
-	//设置为1为买，设置为2为卖
+	//设置为1为买类型，设置为-1为卖类型
 	int buysellflag;
 
 	datetime opentime;
@@ -191,26 +191,6 @@ struct stBoolCrossRecord
 
 
 stBoolCrossRecord BoolCrossRecord[50][16];
-
-
-
-////////////////////////////////////////////////////////
-// 废弃掉了
-/*
-struct stOrderRecord
-{
-	int ticket;
-	int SymPos;
-	int buyselltype;
-	int buysellminor;
-	
-	double stopless;
-	int number;
-};
-
-stOrderRecord OrderRecord[100];
-*/
-////////////////////////////////////////////
 
 
 
@@ -1183,7 +1163,7 @@ void autoadjustglobalamount()
 }
 
 // 判断MagicNumber是否已经存在交易，没有交易时返回true
-// 确保每个买卖点只有一个交易存在
+// 确保每个买卖点只有一个交易存在,包含挂掉也放在里面，确保不会出现重复挂单
 bool OneMOrderCloseStatus(int MagicNumber)
 {
 	bool status;
@@ -1487,6 +1467,7 @@ void InitBuySellPos()
 	int buysellpoint;
 	int subbuysellpoint;
 	int magicnumber,NowMagicNumber;
+
 	for(SymPos = 0; SymPos < symbolNum;SymPos++)
 	{
 		
@@ -1988,7 +1969,7 @@ bool isvalidmagicnumber(int magicnumber)
 	}	
 	
 	NowMagicNumber = ((int)NowMagicNumber) /10;
-	if((NowMagicNumber<=0)||(NowMagicNumber>=20))
+	if((NowMagicNumber<=0)||(NowMagicNumber>20))
 	{
 	 	flag = false;
 	}	
@@ -2030,7 +2011,7 @@ double  ordersrealprofitall( )
 				vbid    = MarketInfo(my_symbol,MODE_BID);						  
 				vask    = MarketInfo(my_symbol,MODE_ASK);	
 
-				//当去掉止盈的时候，程序对该单放弃监控，转为手动监控，通常是指那些基本面同步发生了重大同方向的变化，且适合长期持有的单子；改为手工持单
+				//当去掉止盈的时候，程序对该单放弃监控，转为手动监控，通常是指那些基本面同步发生了重大同方向的变化，且适合长期持有的单子；改为手工持单，可动态改变止损值
 				//一般情况下不触发
 				if(OrderTakeProfit()>0.01)
 				{
@@ -2062,8 +2043,6 @@ double  ordersrealprofitall( )
 	return profit;
 }
 
-
-
 // 期望最大止盈值，是按照盈利百分比来计算的，设想每个单都达到了止盈值的盈利百分比。sum(|ordertakeprofit-orderopenprice|/orderopenprice)
 //去除近期成交单和设置成无止盈的手工单
 double  ordersexpectedmaxprofitall( )
@@ -2094,7 +2073,7 @@ double  ordersexpectedmaxprofitall( )
 				vbid    = MarketInfo(my_symbol,MODE_BID);						  
 				vask    = MarketInfo(my_symbol,MODE_ASK);	
 
-				//当去掉止盈的时候，程序对该单放弃监控，转为手动监控，通常是指那些基本面同步发生了重大同方向的变化，且适合长期持有的单子；改为手工持单
+				//当去掉止盈的时候，程序对该单放弃监控，转为手动监控，通常是指那些基本面同步发生了重大同方向的变化，且适合长期持有的单子；改为手工持单，可以手动改变止损值
 				//一般情况下不触发
 				if(OrderTakeProfit()>0.01)
 				{
@@ -2222,10 +2201,16 @@ int profitedordercountall(double  myprofit)
 				{
 					if((TimeCurrent()-OrderOpenTime())>BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].keepperiod)
 					{
-						if((OrderProfit()+OrderCommission())>myprofit)
+						if((OrderType()==OP_BUY)||(OrderType()==OP_SELL))
 						{
-							count++;
-						}	
+
+							if((OrderProfit()+OrderCommission())>myprofit)
+							{
+								count++;
+							}	
+
+						}
+
 
 					}
 
@@ -2282,11 +2267,11 @@ void ordercloseall()
 							  
 							 if(ticket <0)
 							 {
-								Print("OrderClose buy ordercloseall with vbid failed with error #",GetLastError());
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy ordercloseall with vbid failed with error #",GetLastError());
 							 }
 							 else
 							 {            
-								Print("OrderClose buy ordercloseall with vbid  successfully");
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy ordercloseall with vbid  successfully");
 							 }    	
 							Sleep(1000); 
 					
@@ -2298,11 +2283,11 @@ void ordercloseall()
 							  
 							 if(ticket <0)
 							 {
-								Print("OrderClose sell ordercloseall with vask  failed with error #",GetLastError());
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose sell ordercloseall with vask  failed with error #",GetLastError());
 							 }
 							 else
 							 {            
-								Print("OrderClose sell ordercloseall with vask   successfully");
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose sell ordercloseall with vask   successfully");
 							 }  
 							Sleep(1000);				 
 					
@@ -2360,14 +2345,14 @@ void ordercloseall2()
 						{
 							ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
 							  
-							 if(ticket <0)
-							 {
-								Print("OrderClose buy ordercloseall with vbid failed with error #",GetLastError());
-							 }
-							 else
-							 {            
-								Print("OrderClose buy ordercloseall with vbid  successfully");
-							 }    	
+							if(ticket <0)
+							{
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy ordercloseall with vbid failed with error #",GetLastError());
+							}
+							else
+							{            
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy ordercloseall with vbid  successfully");
+							}    	
 							Sleep(1000); 
 					
 						}
@@ -2376,14 +2361,14 @@ void ordercloseall2()
 						{
 							ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
 							  
-							 if(ticket <0)
-							 {
-								Print("OrderClose sell ordercloseall with vask  failed with error #",GetLastError());
-							 }
-							 else
-							 {            
-								Print("OrderClose sell ordercloseall with vask   successfully");
-							 }  
+							if(ticket <0)
+							{
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose sell ordercloseall with vask  failed with error #",GetLastError());
+							}
+							else
+							{            
+								Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose sell ordercloseall with vask   successfully");
+							}  
 							Sleep(1000);				 
 					
 						}
@@ -2445,8 +2430,6 @@ void monitoraccountprofit()
 	}
 	
 	
-
-	
 	
 	
 	/*关闭所有在监控的货币，去掉止盈的货币和近期刚进入的货币不在监控范围内*/
@@ -2473,7 +2456,7 @@ void monitoraccountprofit()
 		if(k>=(j-1))
 		{		
 			Print("!!monitoraccountprofit Something Serious Error by colse all order,pls close handly");			
-			SendMail( "!!monitoraccountprofit Something Serious Error by colse all order,pls close handly","");		
+			//SendMail( "!!monitoraccountprofit Something Serious Error by colse all order,pls close handly","");		
 		}
 						
 	}
@@ -3029,6 +3012,13 @@ void orderbuyselltypeone(int SymPos)
 	orderTakeProfit = 0;
 	orderPrice = 0;
 	
+	
+	//确保寻找买卖点是每个周期计算一次，而不是每个tick计算一次
+	if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent == iBars(my_symbol,my_timeperiod))
+	{
+		return;
+	}
+
 
 	/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
 	timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
@@ -3036,13 +3026,7 @@ void orderbuyselltypeone(int SymPos)
 	
 	my_symbol =   MySymbol[SymPos];
 	my_timeperiod = timeperiod[timeperiodnum];	
-	
-	
-	//确保寻找买卖点是每个周期计算一次，而不是每个tick计算一次
-	if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent == iBars(my_symbol,my_timeperiod))
-	{
-		return;
-	}
+
 	
 	boll_up_B = iBands(my_symbol,timeperiod[timeperiodnum+1],iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
 	boll_low_B = iBands(my_symbol,timeperiod[timeperiodnum+1],iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);	
@@ -4263,7 +4247,6 @@ void orderbuyselltypeone(int SymPos)
 }
 
 
-
 /*五分钟具有相当的不稳定性，因此1分钟交易是有时间段的，主要在交易活跃期间进行，这个期间容易形成小周期的趋势*/
 void orderbuyselltypetwo(int SymPos)
 {
@@ -4937,9 +4920,6 @@ void orderbuyselltypetwo(int SymPos)
 
 	}			
 	
-
-
-
 	
 	////////////////////////////////////////////////////////////////////////
 	//多空分界线
