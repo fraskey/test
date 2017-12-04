@@ -80,6 +80,7 @@ int symbolNum;
 
 
 
+
 /*重大重要数据时间，每个周末落实第二周的情况*/
 //重大重要数据期间，现有所有订单以一分钟周期重新设置止损，放大止盈，不做额外的买卖
 
@@ -147,6 +148,8 @@ struct stBuySellPosRecord
 	//设置为2.1倍的stopless，将止损值降低为零
 	double stoptailing; 
 
+	//挂单超时设置
+	int timeexp;
 	//录入订单经过一段时间以后再进入monitor程序；避免订单一直持有，寻找退出机制
 	int keepperiod;
 };
@@ -155,9 +158,9 @@ struct stBuySellPosRecord
 //第一维度是外汇，第二维度是第几买卖点，当前共有16个买卖点
 //第三个维度是每个买卖点最多可以交易几次？原则上可以交易5次，每天最多交易一次，确保不会出现密集交易点。
 
-stBuySellPosRecord BuySellPosRecord[50][21][6];
+stBuySellPosRecord BuySellPosRecord[50][21][8];
 
-
+string SubMagicName[21];
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -1468,30 +1471,66 @@ void InitBuySellPos()
 	int subbuysellpoint;
 	int magicnumber,NowMagicNumber;
 
+
+	SubMagicName[1] = "MagicNumberOne";
+	SubMagicName[2] = "MagicNumberTwo";
+	SubMagicName[3] = "MagicNumberThree";
+	SubMagicName[4] = "MagicNumberFour";
+	SubMagicName[5] = "MagicNumberFive";
+	SubMagicName[6] = "MagicNumberSix";
+	SubMagicName[7] = "MagicNumberSeven";
+	SubMagicName[8] = "MagicNumberEight";
+	SubMagicName[9] = "MagicNumberNine";
+	SubMagicName[10] = "MagicNumberTen";
+	SubMagicName[11] = "MagicNumberEleven";
+	SubMagicName[12] = "MagicNumberTwelve";
+	SubMagicName[13] = "MagicNumberThirteen";
+	SubMagicName[14] = "MagicNumberFourteen";
+	SubMagicName[15] = "MagicNumberFifteen";
+	SubMagicName[16] = "MagicNumberSixteen";
+	SubMagicName[17] = "MagicNumberseventeen";
+	SubMagicName[18] = "MagicNumbereighteen";
+	SubMagicName[19] = "MagicNumbernineteen";
+	SubMagicName[20] = "MagicNumbertwenty";
+
+
 	for(SymPos = 0; SymPos < symbolNum;SymPos++)
 	{
 		
 		my_symbol =   MySymbol[SymPos];
 		vbid    = MarketInfo(my_symbol,MODE_BID);	
-		for(subbuysellpoint = 1; subbuysellpoint <= 5;subbuysellpoint++)
+		for(subbuysellpoint = 0; subbuysellpoint <= 7;subbuysellpoint++)
 		{
 			for(buysellpoint = 1; buysellpoint <= 20;buysellpoint++)
 			{
 
+
+				//定义买卖点名称
+				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName =SubMagicName[buysellpoint]+IntegerToString(subbuysellpoint)+my_symbol;
+
+				//定义 MagicNumber
 				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber = SymPos*1000 + buysellpoint + subbuysellpoint;;
 
 				//定义时间周期，五分钟的买卖点
-				if(subbuysellpoint <= 10)
+				if(buysellpoint <= 10)
 				{
 					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeperiodnum = PERIOD_M5;
+
+					//挂单超时时间设置4个小时
+					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp = 60*60*4;						
 					//持用6个小时以后进入monitor
 					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].keepperiod = 60*60*6;									
 
 				}
 				//定义时间周期，一分钟的买卖点
-				else if ((subbuysellpoint <= 20)&&(subbuysellpoint > 10))
+				else if ((buysellpoint <= 20)&&(buysellpoint > 10))
 				{
 					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeperiodnum = PERIOD_M1;
+
+					//挂单超时时间设置1个小时
+					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp = 60*60;	
+					
+
 					//持用2个小时以后进入monitor
 					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].keepperiod = 60*60*2;					
 
@@ -1502,7 +1541,7 @@ void InitBuySellPos()
 				}
 
 				//奇数定义为买点，偶数定义为卖点
-				if((subbuysellpoint%2) ==1)
+				if((buysellpoint%2) ==1)
 				{
 					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag = 1;
 
@@ -1516,27 +1555,6 @@ void InitBuySellPos()
 
 			}
 
-			//定义买卖点名称
-			BuySellPosRecord[SymPos][1][subbuysellpoint].MagicName ="MagicNumberOne"+IntegerToString(1)+my_symbol;
-			BuySellPosRecord[SymPos][2][subbuysellpoint].MagicName ="MagicNumberTwo"+IntegerToString(2)+my_symbol;
-			BuySellPosRecord[SymPos][3][subbuysellpoint].MagicName ="MagicNumberThree"+IntegerToString(3)+my_symbol;
-			BuySellPosRecord[SymPos][4][subbuysellpoint].MagicName ="MagicNumberFour"+IntegerToString(4)+my_symbol;
-			BuySellPosRecord[SymPos][5][subbuysellpoint].MagicName ="MagicNumberFive"+IntegerToString(5)+my_symbol;
-			BuySellPosRecord[SymPos][6][subbuysellpoint].MagicName ="MagicNumberSix"+IntegerToString(6)+my_symbol;
-			BuySellPosRecord[SymPos][7][subbuysellpoint].MagicName ="MagicNumberSeven"+IntegerToString(7)+my_symbol;
-			BuySellPosRecord[SymPos][8][subbuysellpoint].MagicName ="MagicNumberEight"+IntegerToString(8)+my_symbol;
-			BuySellPosRecord[SymPos][9][subbuysellpoint].MagicName ="MagicNumberNine"+IntegerToString(9)+my_symbol;
-			BuySellPosRecord[SymPos][10][subbuysellpoint].MagicName ="MagicNumberTen"+IntegerToString(10)+my_symbol;
-			BuySellPosRecord[SymPos][11][subbuysellpoint].MagicName ="AntiMagicNumberEleven"+IntegerToString(11)+my_symbol;
-			BuySellPosRecord[SymPos][12][subbuysellpoint].MagicName ="AntiMagicNumberTwelve"+IntegerToString(12)+my_symbol;
-			BuySellPosRecord[SymPos][13][subbuysellpoint].MagicName ="AntiMagicNumberThirteen"+IntegerToString(13)+my_symbol;
-			BuySellPosRecord[SymPos][14][subbuysellpoint].MagicName ="AntiMagicNumberFourteen"+IntegerToString(14)+my_symbol;
-			BuySellPosRecord[SymPos][15][subbuysellpoint].MagicName ="AntiMagicNumberFifteen"+IntegerToString(15)+my_symbol;
-			BuySellPosRecord[SymPos][16][subbuysellpoint].MagicName ="AntiMagicNumberSixteen"+IntegerToString(16)+my_symbol;
-			BuySellPosRecord[SymPos][17][subbuysellpoint].MagicName ="AntiMagicNumberseventeen"+IntegerToString(17)+my_symbol;
-			BuySellPosRecord[SymPos][18][subbuysellpoint].MagicName ="AntiMagicNumbereighteen"+IntegerToString(18)+my_symbol;
-			BuySellPosRecord[SymPos][19][subbuysellpoint].MagicName ="AntiMagicNumbernineteen"+IntegerToString(19)+my_symbol;
-			BuySellPosRecord[SymPos][20][subbuysellpoint].MagicName ="AntiMagicNumbertwenty"+IntegerToString(20)+my_symbol;
 
 
 		}	
@@ -1560,7 +1578,7 @@ void InitBuySellPos()
 				my_symbol = MySymbol[SymPos];
 
 				subbuysellpoint = (NowMagicNumber%10);  
-				if((subbuysellpoint>= 1)&&(subbuysellpoint<= 5))
+				if((subbuysellpoint>= 0)&&(subbuysellpoint<= 7))
 				{
 					buysellpoint = ((int)NowMagicNumber) /10;
 					if((buysellpoint>=1)&&(buysellpoint<=20))
@@ -1570,9 +1588,10 @@ void InitBuySellPos()
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = OrderOpenPrice();
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = OrderStopLoss();
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = OrderTakeProfit();
+
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(OrderOpenPrice()-OrderStopLoss())*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																		
-
-
+						Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderLoad:" + "openprice=" + OrderOpenPrice() +"OrderStopLoss ="
+									+OrderStopLoss()+"OrderTakeProfit="+OrderTakeProfit()+"stoptailing="+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing);	
 					}
 
 				}	
@@ -1938,6 +1957,12 @@ bool accountcheck()
 	if(false == getglobaltradeflag())
 	{
 		//accountflag = false;
+	}
+
+	//账户低于100美金的时候直接交易
+	if(AccountFreeMargin()<100)
+	{
+		accountflag = true;
 	}
 
 	return accountflag;	
@@ -2546,6 +2571,8 @@ int init()
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);		
 
+			//注释掉部分供测试使用
+			/*
 			Print(my_symbol+"CrossStrongWeak["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[0]+":" 
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[2]+":"
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeak[4]+":"
@@ -2569,7 +2596,7 @@ int init()
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeakL[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeakL[8]+":"
 			+ BoolCrossRecord[SymPos][timeperiodnum].CrossStrongWeakL[9]);	
 
-			
+			*/
 		}
 	
 	}
@@ -2993,7 +3020,6 @@ void orderbuyselltypeone(int SymPos)
 	double orderTakeProfit;
 	double orderPrice;
 	datetime timelocal,timeexp;	
-	int subvalue;
 	double bool_length_upperiod;
 
 	int buysellpoint;
@@ -3021,8 +3047,10 @@ void orderbuyselltypeone(int SymPos)
 
 
 	/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-	timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-	subbuysellpoint = (TimeDayOfWeek(timelocal))%5;  		
+	//timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
+
+	timelocal = TimeCurrent() ;
+	subbuysellpoint = (TimeDayOfWeek(timelocal))%7;  		
 	
 	my_symbol =   MySymbol[SymPos];
 	my_timeperiod = timeperiod[timeperiodnum];	
@@ -3108,11 +3136,8 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -3125,7 +3150,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -3256,12 +3281,8 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
-
 			//orderTakeProfit = 0;
 																
 			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
@@ -3273,7 +3294,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -3404,11 +3425,8 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -3421,7 +3439,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -3552,11 +3570,9 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			
 
 			//orderTakeProfit = 0;
 																
@@ -3569,7 +3585,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -3709,11 +3725,8 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -3726,7 +3739,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -3861,11 +3874,8 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+						
 
 			//orderTakeProfit = 0;
 																
@@ -3878,7 +3888,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);		
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);		
 						
 			if(true == accountcheck())
 			{			
@@ -4013,11 +4023,9 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+ 			
 
 			//orderTakeProfit = 0;
 																
@@ -4030,7 +4038,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -4165,11 +4173,8 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -4182,7 +4187,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -4267,7 +4272,6 @@ void orderbuyselltypetwo(int SymPos)
 	double orderTakeProfit;
 	double orderPrice;
 	datetime timelocal,timeexp;	
-	int subvalue;
 	double bool_length_upperiod;
 
 	int buysellpoint;
@@ -4288,8 +4292,9 @@ void orderbuyselltypetwo(int SymPos)
 	
 		
 	/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-	timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-	subbuysellpoint = (TimeDayOfWeek(timelocal))%5;  
+//	timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
+	timelocal = TimeCurrent(); 	
+	subbuysellpoint = (TimeDayOfWeek(timelocal))%7;  
 
 	my_symbol =   MySymbol[SymPos];
 	my_timeperiod = timeperiod[timeperiodnum];	
@@ -4383,11 +4388,8 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -4400,7 +4402,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -4537,11 +4539,9 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+		
 
 			//orderTakeProfit = 0;
 																
@@ -4554,7 +4554,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -4688,12 +4688,8 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
-
 			//orderTakeProfit = 0;
 																
 			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
@@ -4705,7 +4701,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -4840,12 +4836,8 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
-
 			//orderTakeProfit = 0;
 																
 			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
@@ -4857,7 +4849,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -4997,11 +4989,8 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -5014,7 +5003,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -5151,11 +5140,8 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
-			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -5168,7 +5154,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -5304,11 +5290,9 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+			
 
 			//orderTakeProfit = 0;
 																
@@ -5321,7 +5305,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -5459,11 +5443,9 @@ void orderbuyselltypetwo(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单4个小时，尽量成交
-			timeexp = TimeCurrent() + 60*60*4;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
 			
-			/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-			timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-			subvalue = (TimeDayOfWeek(timelocal))%5;  			
+		
 
 			//orderTakeProfit = 0;
 																
@@ -5476,7 +5458,7 @@ void orderbuyselltypetwo(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"subvalue="+subvalue);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
 						
 			if(true == accountcheck())
 			{			
@@ -5780,7 +5762,7 @@ void checkbuysellorder()
 				my_symbol = MySymbol[SymPos];
 
 				subbuysellpoint = (NowMagicNumber%10);  
-				if((subbuysellpoint>= 1)&&(subbuysellpoint<= 5))
+				if((subbuysellpoint>= 0)&&(subbuysellpoint<= 7))
 				{
 					buysellpoint = ((int)NowMagicNumber) /10;
 					if((buysellpoint>=1)&&(buysellpoint<=20))
@@ -5828,9 +5810,11 @@ void checkbuysellorder()
 										 }
 										 else
 										 {        
-										   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;						 
-											Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
-												"orderStopless successfully "+OrderMagicNumber());
+										   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+											//经常性修改，只有在测试期间打开
+											//Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+											//	"orderStopless successfully "+OrderMagicNumber());
 										 }								
 										Sleep(1000);		
 
@@ -5895,6 +5879,4 @@ void checkbuysellorder()
 }
 	
 
-/////////////////////
-/////////////////////
 /////////////////////
