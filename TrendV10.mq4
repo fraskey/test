@@ -14,9 +14,7 @@
 //////////////////////////////////////////
 // 定义boolcross数组的长度
 #define HCROSSNUMBER  50
-
-//通过不同的MAINMAGIC定义不同的策略文件，这些文件的交易互不影响。
-#define MAINMAGIC  100000
+#define MAINMAGIC  1000
 
 //外汇商专用宏定义
 //定义外汇商的交易服务器
@@ -1401,6 +1399,7 @@ void InitBuySellPos()
 			for(buysellpoint = 1; buysellpoint <= 20;buysellpoint++)
 			{
 
+
 				//定义买卖点名称
 				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName =SubMagicName[buysellpoint]+IntegerToString(subbuysellpoint)+my_symbol;
 
@@ -1417,8 +1416,9 @@ void InitBuySellPos()
 					//持用6个小时以后进入monitor
 					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].keepperiod = 60*60*6;		
 
-					//每单允许损失的最大账户金额比例2%，考虑是不设置止损的问题，尽量的小
-					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].maxlose = 0.02;		
+					//每单允许损失的最大账户金额比例5%
+					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].maxlose = 0.05;		
+
 
 				}
 				//定义时间周期，一分钟的买卖点
@@ -1433,8 +1433,8 @@ void InitBuySellPos()
 					//持用2个小时以后进入monitor
 					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].keepperiod = 60*60*2;	
 
-					//每单允许损失的最大账户金额比例0.5%，考虑是不设置止损的问题，尽量的小
-					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].maxlose = 0.0005;											
+					//每单允许损失的最大账户金额比例2%
+					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].maxlose = 0.02;											
 
 				}
 				else
@@ -1897,6 +1897,7 @@ bool isvalidmagicnumber(int magicnumber)
 	
 }
 
+
 // 当前实际盈亏值，按照盈亏的百分比求和来计算。sum((ask-orderopenprice)/orderopenprice)
 //去除近期成交单和设置成无止盈的手工单
 double  ordersrealprofitall( )
@@ -2021,64 +2022,6 @@ double  ordersexpectedmaxprofitall( )
 	return profit;
 }
 
-//所有单的盈亏之和
-double  ordersrealprofitvalueall( )
-{
-	double profit = 0;
-	int i,SymPos,NowMagicNumber;
-	string my_symbol;
-	double vbid,vask;
-
-	int buysellpoint;
-	int subbuysellpoint;
-
-	for (i = 0; i < OrdersTotal(); i++)
-	{
-		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-		{
-			if(isvalidmagicnumber((int)OrderMagicNumber()) == true)
-			{			
-
-				SymPos = ((int)OrderMagicNumber()) /MAINMAGIC;
-				NowMagicNumber = OrderMagicNumber() - SymPos *MAINMAGIC;
-
-				buysellpoint = ((int)NowMagicNumber) /10;				
-				subbuysellpoint = (NowMagicNumber%10);  	
-					
-				my_symbol = MySymbol[SymPos];
-				
-				vbid    = MarketInfo(my_symbol,MODE_BID);						  
-				vask    = MarketInfo(my_symbol,MODE_ASK);	
-
-				//当去掉止盈的时候，程序对该单放弃监控，转为手动监控，通常是指那些基本面同步发生了重大同方向的变化，且适合长期持有的单子；改为手工持单，可动态改变止损值
-				//一般情况下不触发
-				if(OrderTakeProfit()>0.01)
-				{
-					if((TimeCurrent()-OrderOpenTime())>BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].keepperiod)
-					{
-						if(OrderType()==OP_BUY)
-						{
-							profit += OrderProfit()+OrderCommission();
-						}
-						
-						if(OrderType()==OP_SELL)
-						{
-			 
-							profit += OrderProfit()+OrderCommission();				
-						}
-
-					}
-
-				}				
-
-			
-			}
-			
-		}
-	}
-
-	return profit;
-}
 
 
 // 交易单的总数量，去除近期成交单和设置成无止盈的手工单
@@ -2395,8 +2338,7 @@ void monitoraccountprofit()
 
 	
 	/*订单数量11个，且获利超过300美元，落袋为安*/
-	if((ordersrealprofitall()>(ordersexpectedmaxprofitall()*100/(allordernumbers*allordernumbers+10*allordernumbers+100)))
-		&&(ordersrealprofitvalueall()>0))
+	if(ordersrealprofitall()>(ordersexpectedmaxprofitall()*100/(allordernumbers*allordernumbers+10*allordernumbers+100)))
 	{
 		
 		turnoffflag = true;						
@@ -3017,41 +2959,31 @@ void orderbuyselltypeone(int SymPos)
 	bool_length =(boll_up_B - boll_low_B )/2;	
 	
 
-
 	buysellpoint = 11;
-
-
-	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点	
-	//趋势回调低点型买点，小周期低点衰竭
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.4)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
-		
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak>0.2)
-		&& (0 < BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])	
-												
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[0]<0.55)
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[0])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[1])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[2])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[3])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[4])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[5])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[6])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[7])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[8])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[9])								
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
-		/*三十分钟强势，五分钟不若失，一分钟bool背驰，空头陷阱*/
 		
-		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-									
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.55)			
-			&&(0.55 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.20 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
@@ -3071,10 +3003,11 @@ void orderbuyselltypeone(int SymPos)
 			}						
 
 
-			//突破新高后下单		
-			orderPrice =  vask;			
-			orderStopless =vask - bool_length*3; 		
-			orderTakeProfit	= orderPrice + bool_length*3;
+
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
 
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
@@ -3099,8 +3032,8 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;					
-			timeexp = 0;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -3124,7 +3057,7 @@ void orderbuyselltypeone(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
 					 if(ticket <0)
@@ -3175,45 +3108,38 @@ void orderbuyselltypeone(int SymPos)
 	
 
 	buysellpoint = 13;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[1]<0.55)
+		&& (5== BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[1])			
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[2])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[3])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[4])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[5])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[6])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[7])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[8])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[9])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[10])	
 
-	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点	
-	//趋势回调低点型买点，小周期低点衰竭
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.4)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
-		
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak>0.2)
-		&& (0 < BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])	
-												
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
-		/*三十分钟强势，五分钟不若失，一分钟bool背驰，空头陷阱*/
 		
-		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-									
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.55)			
-			&&(0.55 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.20 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
 		{
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
-			vbid    = MarketInfo(my_symbol,MODE_BID);			
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 
 			MaxValue4 = -1;
@@ -3225,16 +3151,15 @@ void orderbuyselltypeone(int SymPos)
 				}					
 			}						
 
-
-			orderPrice =  vask;				
-			orderStopless =vask - bool_length*3; 		
-			orderTakeProfit	= orderPrice + bool_length*3;
-
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
 			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
-
+			
 			/*参数修正*/ 
 			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
 			orderpoint = MarketInfo(my_symbol,MODE_POINT);
@@ -3253,8 +3178,154 @@ void orderbuyselltypeone(int SymPos)
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
 			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;					
-			timeexp = 0;
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}			
+	
+
+	buysellpoint = 15;
+
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]<0.55)
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[0])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])								
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
+		
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MaxValue4 = -1;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			{
+				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
+				{
+					MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
+				}					
+			}						
+
+
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+			 if ((orderPrice - orderStopless) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice - orderStopLevel*orderpoint;
+			 }
+			 if ((orderTakeProfit - orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice + orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单1个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -3278,9 +3349,158 @@ void orderbuyselltypeone(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);	
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}			
+	
+
+	buysellpoint = 17;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[1]<0.55)
+		&& (5== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])			
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[10])	
+
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
+		
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MaxValue4 = -1;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			{
+				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
+				{
+					MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
+				}					
+			}						
+
+
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+			 if ((orderPrice - orderStopless) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice - orderStopLevel*orderpoint;
+			 }
+			 if ((orderTakeProfit - orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice + orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单4个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+			
+
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+
 					 if(ticket <0)
 					 {
 					 	ttick++;
@@ -3329,6 +3549,7 @@ void orderbuyselltypeone(int SymPos)
 	
 
 
+
 	
 	////////////////////////////////////////////////////////////////////////
 	//多空分界线
@@ -3337,40 +3558,30 @@ void orderbuyselltypeone(int SymPos)
 	
 
 	buysellpoint = 12;
-
-	//大周期处于空头市场，本周期在上涨背驰阶段卖出，趋势交易，目的是为了优化比较好的入场点，和止损点
-	//趋势回调高点型卖点	
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.6)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
-
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak<0.8)
-		&& (0 > BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])								
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[0]>0.45)
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[0])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[1])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[2])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[3])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[4])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[5])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[6])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[7])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[8])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[9])								
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
-
+		
 		/*五分钟超级强势势，等待再次突破，挂单小止损*/
-		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-
-											
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.45)			
-			&&(0.45<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
-
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
@@ -3389,11 +3600,10 @@ void orderbuyselltypeone(int SymPos)
 				
 			}		
 
-
-			orderPrice = vask;		 			
-			orderStopless =orderPrice + bool_length*3; 		
-			orderTakeProfit	= orderPrice - bool_length*3;
-
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
@@ -3418,8 +3628,7 @@ void orderbuyselltypeone(int SymPos)
 
 			//挂单1个小时，尽量成交
 			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
-			timeexp = 0;
-
+					
 
 			//orderTakeProfit = 0;
 																
@@ -3443,7 +3652,7 @@ void orderbuyselltypeone(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
 		
@@ -3496,40 +3705,33 @@ void orderbuyselltypeone(int SymPos)
 	
 
 	buysellpoint = 14;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[1]>0.45)
+		&& (-5== BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[1])			
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[2])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[3])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[4])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[5])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[6])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[7])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[8])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[9])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagL[10])	
 
-	//大周期处于空头市场，本周期在上涨背驰阶段卖出，趋势交易，目的是为了优化比较好的入场点，和止损点
-	//趋势回调高点型卖点	
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.6)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
-
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak<0.8)
-		&& (0 > BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])								
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
+		
 
 		/*五分钟超级强势势，等待再次突破，挂单小止损*/
-		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-
-											
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.45)			
-			&&(0.45<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
-
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
@@ -3546,13 +3748,12 @@ void orderbuyselltypeone(int SymPos)
 					MinValue3 = iLow(my_symbol,my_timeperiod,i);
 				}
 				
-			}		
+			}					
 
-
-			orderPrice = vask;		 			
-			orderStopless =orderPrice + bool_length*3; 		
-			orderTakeProfit	= orderPrice - bool_length*3;
-
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
@@ -3577,8 +3778,7 @@ void orderbuyselltypeone(int SymPos)
 
 			//挂单1个小时，尽量成交
 			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
-			timeexp = 0;
-
+						
 
 			//orderTakeProfit = 0;
 																
@@ -3591,7 +3791,7 @@ void orderbuyselltypeone(int SymPos)
 				    			 	 		 			 	 		 			 	
 			
 			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
-						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);		
 						
 			if(true == accountcheck())
 			{			
@@ -3602,7 +3802,7 @@ void orderbuyselltypeone(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
 		
@@ -3654,6 +3854,306 @@ void orderbuyselltypeone(int SymPos)
 	}			
 	
 
+	
+
+	buysellpoint = 16;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]>0.45)
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[0])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])								
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
+		
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MinValue3 = 100000;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			{
+				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
+				{
+					MinValue3 = iLow(my_symbol,my_timeperiod,i);
+				}
+				
+			}				
+
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+
+			 if ((orderStopless-orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice + orderStopLevel*orderpoint;
+			 }
+			 if ((orderPrice-orderTakeProfit) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice - orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单1个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+ 			
+
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
+
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}			
+	
+
+	buysellpoint = 18;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[1]>0.45)
+		&& (-5== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])			
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[10])	
+
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
+		
+
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MinValue3 = 100000;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			{
+				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
+				{
+					MinValue3 = iLow(my_symbol,my_timeperiod,i);
+				}
+				
+			}				
+
+
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+			 if ((orderStopless-orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice + orderStopLevel*orderpoint;
+			 }
+			 if ((orderPrice-orderTakeProfit) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice - orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单1个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
+
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
+
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}						
 						
 }
 
@@ -3682,13 +4182,13 @@ void orderbuyselltypetwo(int SymPos)
 
 	int buysellpoint;
 	int subbuysellpoint;
-
+	
 	int i,ticket;
  	int ttick;
 	int    vdigits ;
 	
-	/*五分钟周期寻找买卖点*/
-	timeperiodnum = 1;	
+	/*一分钟周期寻找买卖点*/
+	timeperiodnum = 0;	
 
 	orderStopLevel=0;
 	orderLots = 0;   
@@ -3696,23 +4196,21 @@ void orderbuyselltypetwo(int SymPos)
 	orderTakeProfit = 0;
 	orderPrice = 0;
 	
+		
+	/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
+	//	timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
+	timelocal = TimeCurrent(); 	
+	subbuysellpoint = (TimeDayOfWeek(timelocal))%7;  
+
+	my_symbol =   MySymbol[SymPos];
+	my_timeperiod = timeperiod[timeperiodnum];	
+	
 	
 	//确保寻找买卖点是每个周期计算一次，而不是每个tick计算一次
 	if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent == iBars(my_symbol,my_timeperiod))
 	{
 		return;
 	}
-
-
-	/*原则上采用GMT时间，为了便于人性化处理，做了一个转换*/	
-	//timelocal = TimeCurrent() + globaltimezonediff*60*60-8*60*60; 
-
-	timelocal = TimeCurrent() ;
-	subbuysellpoint = (TimeDayOfWeek(timelocal))%7;  		
-	
-	my_symbol =   MySymbol[SymPos];
-	my_timeperiod = timeperiod[timeperiodnum];	
-
 	
 	boll_up_B = iBands(my_symbol,timeperiod[timeperiodnum+1],iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
 	boll_low_B = iBands(my_symbol,timeperiod[timeperiodnum+1],iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);	
@@ -3725,52 +4223,44 @@ void orderbuyselltypetwo(int SymPos)
 	bool_length =(boll_up_B - boll_low_B )/2;	
 	
 
-
+	//定义买点1
 	buysellpoint = 1;
-
-
-	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点	
-	//趋势回调低点型买点，小周期低点衰竭
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.4)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
-		
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak>0.2)
-		&& (0 < BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])	
-												
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]<0.55)
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[0])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])								
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
-		/*三十分钟强势，五分钟不若失，一分钟bool背驰，空头陷阱*/
 		
-		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-									
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.55)			
-			&&(0.55 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.20 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
 		{
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
-			vbid    = MarketInfo(my_symbol,MODE_BID);			
+			vbid    = MarketInfo(my_symbol,MODE_BID);
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 
 			MaxValue4 = -1;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
 				{
@@ -3779,15 +4269,15 @@ void orderbuyselltypetwo(int SymPos)
 			}						
 
 
-			orderPrice =  vask;			 			
-			orderStopless =vask - bool_length*3; 		
-			orderTakeProfit	= orderPrice + bool_length*3;
-
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
 			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
-
+			
 			/*参数修正*/ 
 			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
 			orderpoint = MarketInfo(my_symbol,MODE_POINT);
@@ -3805,9 +4295,9 @@ void orderbuyselltypetwo(int SymPos)
 			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
-			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;					
-			timeexp = 0;
+			//挂单4个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+					
 
 			//orderTakeProfit = 0;
 																
@@ -3831,13 +4321,15 @@ void orderbuyselltypetwo(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
 					 if(ticket <0)
 					 {
 					 	ttick++;
-						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
 						if(GetLastError()!=134)
 						{
 							 //---- 5 seconds wait
@@ -3858,6 +4350,8 @@ void orderbuyselltypetwo(int SymPos)
 						ThirtyS_Freq++;
 						FiveM_Freq++;
 						ThirtyM_Freq++;	
+
+
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
@@ -3865,6 +4359,7 @@ void orderbuyselltypetwo(int SymPos)
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
 																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
 						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+
 					 }													
 					Sleep(1000);	
 				}
@@ -3882,49 +4377,43 @@ void orderbuyselltypetwo(int SymPos)
 	
 
 	buysellpoint = 3;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[1]<0.55)
+		&& (5== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])			
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[10])	
 
-	//大周期处于多头市场，本周期在下跌背驰阶段买入，趋势交易，目的是为了优化比较好的入场点，和止损点	
-	//趋势回调低点型买点，小周期低点衰竭
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.4)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
-		
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak>0.2)
-		&& (0 < BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])	
-												
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
-		/*三十分钟强势，五分钟不若失，一分钟bool背驰，空头陷阱*/
 		
-		if((-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (-3.5 < BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-									
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.55)			
-			&&(0.55 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.20 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
 		{
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
-			vbid    = MarketInfo(my_symbol,MODE_BID);			
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 
 			MaxValue4 = -1;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
 				{
@@ -3933,9 +4422,10 @@ void orderbuyselltypetwo(int SymPos)
 			}						
 
 
-			orderPrice =  vask;			 			
-			orderStopless =vask - bool_length*3; 		
-			orderTakeProfit	= orderPrice + bool_length*3;
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
 
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
@@ -3959,9 +4449,10 @@ void orderbuyselltypetwo(int SymPos)
 			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
-			//挂单1个小时，尽量成交
-			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;					
-			timeexp = 0;
+			//挂单4个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+		
 
 			//orderTakeProfit = 0;
 																
@@ -3985,13 +4476,15 @@ void orderbuyselltypetwo(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_BUY,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
 					 if(ticket <0)
 					 {
 					 	ttick++;
-						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
 						if(GetLastError()!=134)
 						{
 							 //---- 5 seconds wait
@@ -4019,6 +4512,7 @@ void orderbuyselltypetwo(int SymPos)
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
 																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
 						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+						
 					 }													
 					Sleep(1000);	
 				}
@@ -4036,6 +4530,304 @@ void orderbuyselltypetwo(int SymPos)
 	
 
 
+	buysellpoint = 5;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].CrossStrongWeakL[0]<0.55)
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[0])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[1])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[2])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[3])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[4])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[5])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[6])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[7])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[8])	
+		&& (-3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[9])								
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
+		
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MaxValue4 = -1;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
+			{
+				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
+				{
+					MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
+				}					
+			}						
+
+
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+			 if ((orderPrice - orderStopless) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice - orderStopLevel*orderpoint;
+			 }
+			 if ((orderTakeProfit - orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice + orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单4个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+						
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}			
+	
+
+	buysellpoint = 7;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak<0.2)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].CrossStrongWeakL[1]<0.55)
+		&& (5== BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlag[0])	
+		&& (1== BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[1])			
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[2])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[3])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[4])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[5])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[6])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[7])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[8])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[9])	
+		&& (3> BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[10])	
+
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
+		
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 < BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MaxValue4 = -1;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
+			{
+				if(MaxValue4 < iHigh(my_symbol,my_timeperiod,i))
+				{
+					MaxValue4 = iHigh(my_symbol,my_timeperiod,i);
+				}					
+			}						
+
+
+			//突破新高后下单
+			orderPrice = MaxValue4*2-(vask+MaxValue4*3)/4;			 			
+			orderStopless =vask - bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice + bool_length_upperiod*8;
+
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+			 if ((orderPrice - orderStopless) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice - orderStopLevel*orderpoint;
+			 }
+			 if ((orderTakeProfit - orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice + orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单4个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_BUYSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+						
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}			
+	
 	
 	////////////////////////////////////////////////////////////////////////
 	//多空分界线
@@ -4044,40 +4836,31 @@ void orderbuyselltypetwo(int SymPos)
 	
 
 	buysellpoint = 2;
-
-	//大周期处于空头市场，本周期在上涨背驰阶段卖出，趋势交易，目的是为了优化比较好的入场点，和止损点
-	//趋势回调高点型卖点	
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.6)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
-
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak<0.8)
-		&& (0 > BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])								
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]>0.45)
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[0])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])								
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
-
+		
 		/*五分钟超级强势势，等待再次突破，挂单小止损*/
-		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-
-											
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.45)			
-			&&(0.45<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8>BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
-
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
@@ -4087,24 +4870,25 @@ void orderbuyselltypetwo(int SymPos)
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 
 			MinValue3 = 100000;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
 				{
 					MinValue3 = iLow(my_symbol,my_timeperiod,i);
 				}
 				
-			}		
+			}				
+	
 
-
-			orderPrice = vask;		 			
-			orderStopless =orderPrice + bool_length*3; 		
-			orderTakeProfit	= orderPrice - bool_length*3;
-
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
 			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+
 			
 			/*参数修正*/ 
 			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
@@ -4123,10 +4907,9 @@ void orderbuyselltypetwo(int SymPos)
 			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
-			//挂单1个小时，尽量成交
+			//挂单4个小时，尽量成交
 			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
-			timeexp = 0;
-
+					
 
 			//orderTakeProfit = 0;
 																
@@ -4150,15 +4933,15 @@ void orderbuyselltypetwo(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
 		
-
 					 if(ticket <0)
 					 {
 					 	ttick++;
-						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
 						if(GetLastError()!=134)
 						{
 							 //---- 5 seconds wait
@@ -4186,6 +4969,7 @@ void orderbuyselltypetwo(int SymPos)
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
 																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
 						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+						
 					 }													
 					Sleep(1000);	
 				}
@@ -4203,40 +4987,34 @@ void orderbuyselltypetwo(int SymPos)
 	
 
 	buysellpoint = 4;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[1]>0.45)
+		&& (-5== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[1])			
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[2])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[3])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[4])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[5])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[6])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[7])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[8])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[9])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlagL[10])	
 
-	//大周期处于空头市场，本周期在上涨背驰阶段卖出，趋势交易，目的是为了优化比较好的入场点，和止损点
-	//趋势回调高点型卖点	
-	if((BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.6)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
-
-		&&(BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak<0.8)
-		&& (0 > BoolCrossRecord[SymPos][timeperiodnum+4].CrossFlag[0])								
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
 			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
 		)
 	{
-
+		
 
 		/*五分钟超级强势势，等待再次突破，挂单小止损*/
-		if((4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChangeL)				
-			&& (4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
-			&& (0.5 < BoolCrossRecord[SymPos][timeperiodnum].BoolIndex)	
-			
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[1])	
-
-
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[0])	
-			&& (3.5 > BoolCrossRecord[SymPos][timeperiodnum+2].CrossFlag[1])	
-
-											
-			&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.45)			
-			&&(0.45<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-			&&(0.8<BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeak[0])
-
-
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
 			)			
 					
@@ -4246,20 +5024,19 @@ void orderbuyselltypetwo(int SymPos)
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
 
 			MinValue3 = 100000;
-			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[3]+5);i++)
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
 			{
 				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
 				{
 					MinValue3 = iLow(my_symbol,my_timeperiod,i);
 				}
 				
-			}		
+			}					
 
-
-			orderPrice = vask;		 			
-			orderStopless =orderPrice + bool_length*3; 		
-			orderTakeProfit	= orderPrice - bool_length*3;
-
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
 			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
@@ -4282,10 +5059,9 @@ void orderbuyselltypetwo(int SymPos)
 			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
 
-			//挂单1个小时，尽量成交
+			//挂单4个小时，尽量成交
 			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
-			timeexp = 0;
-
+					
 
 			//orderTakeProfit = 0;
 																
@@ -4309,15 +5085,15 @@ void orderbuyselltypetwo(int SymPos)
 					vask    = MarketInfo(my_symbol,MODE_ASK);	
 					//orderPrice = vask;					
 						
-					ticket = OrderSend(my_symbol,OP_SELL,orderLots,orderPrice,3,0,orderTakeProfit,
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
 								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
 		
-
 					 if(ticket <0)
 					 {
 					 	ttick++;
-						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());						
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
 						if(GetLastError()!=134)
 						{
 							 //---- 5 seconds wait
@@ -4345,6 +5121,7 @@ void orderbuyselltypetwo(int SymPos)
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
 																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
 						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+						
 					 }													
 					Sleep(1000);	
 				}
@@ -4360,7 +5137,316 @@ void orderbuyselltypetwo(int SymPos)
 
 	}			
 	
+
+	
+
+	buysellpoint = 6;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].CrossStrongWeakL[0]>0.45)
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[0])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[1])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[2])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[3])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[4])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[5])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[6])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[7])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[8])	
+		&& (3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[9])								
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
 		
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MinValue3 = 100000;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
+			{
+				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
+				{
+					MinValue3 = iLow(my_symbol,my_timeperiod,i);
+				}
+				
+			}				
+	
+
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+			 if ((orderStopless-orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice + orderStopLevel*orderpoint;
+			 }
+			 if ((orderPrice-orderTakeProfit) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice - orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单4个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+			
+
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+						
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}			
+	
+
+	buysellpoint = 8;
+	//市场结构发生变化的转多初期介入进去，采用小止损、限时、挂单的方式
+	if((BoolCrossRecord[SymPos][timeperiodnum+4].StrongWeak>0.8)
+		&&(BoolCrossRecord[SymPos][timeperiodnum+3].CrossStrongWeakL[1]>0.45)
+		&& (-5== BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlag[0])	
+		&& (-1== BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[1])			
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[2])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[3])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[4])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[5])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[6])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[7])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[8])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[9])	
+		&& (-3< BoolCrossRecord[SymPos][timeperiodnum+3].CrossFlagL[10])	
+
+		&&(opendaycheck(SymPos) == true)
+		&&(tradetimecheck(SymPos) ==true)				
+		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
+			||(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true))
+		)
+	{
+		
+
+		/*五分钟超级强势势，等待再次突破，挂单小止损*/
+		if((-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlagChangeL)				
+			&& (-4 == BoolCrossRecord[SymPos][timeperiodnum+1].CrossFlag[0])	
+			&& (0 > BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])				
+			&& (-0.5 > BoolCrossRecord[SymPos][timeperiodnum+1].BoolIndex)	
+			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
+			)			
+					
+		{
+			
+			vask    = MarketInfo(my_symbol,MODE_ASK);
+			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+
+			MinValue3 = 100000;
+			for (i= 0;i < (iBars(my_symbol,my_timeperiod) -BoolCrossRecord[SymPos][timeperiodnum].CrossBoolPos[5]+5);i++)
+			{
+				if(MinValue3 > iLow(my_symbol,my_timeperiod,i))
+				{
+					MinValue3 = iLow(my_symbol,my_timeperiod,i);
+				}
+				
+			}		
+	
+
+			//突破新高后下单
+			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
+			orderStopless =vask + bool_length_upperiod*2; 		
+			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
+
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+			BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+			orderLots = autocalculateamount(SymPos,buysellpoint,subbuysellpoint);
+
+			
+			/*参数修正*/ 
+			orderStopLevel =MarketInfo(my_symbol,MODE_STOPLEVEL);	
+			orderpoint = MarketInfo(my_symbol,MODE_POINT);
+			orderStopLevel = 1.2*orderStopLevel;
+
+			 if ((orderStopless-orderPrice) < orderStopLevel*orderpoint)
+			 {
+					orderStopless = orderPrice + orderStopLevel*orderpoint;
+			 }
+			 if ((orderPrice-orderTakeProfit) < orderStopLevel*orderpoint)
+			 {
+					orderTakeProfit = orderPrice - orderStopLevel*orderpoint;
+			 }
+			
+			orderPrice = NormalizeDouble(orderPrice,vdigits);		 	
+			orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+			orderTakeProfit = NormalizeDouble(orderTakeProfit,vdigits);
+
+			//挂单4个小时，尽量成交
+			timeexp = TimeCurrent() + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].timeexp;
+			
+		
+
+			//orderTakeProfit = 0;
+																
+			Print(my_symbol+"BoolCrossRecord["+SymPos+"][" +timeperiodnum+"]:"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0]+":" 
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[1]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[2]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[3]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[4]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[5]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[6]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[7]+":"+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[8]+":"
+			+ BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[9]);
+				    			 	 		 			 	 		 			 	
+			
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderSend:" + "orderLots=" + orderLots +"orderPrice ="
+						+orderPrice+"orderStopless="+orderStopless+"orderTakeProfit="+orderTakeProfit);	
+						
+			if(true == accountcheck())
+			{			
+				ttick = 0;
+				ticket = -1;
+				while((ticket<0)&&(ttick<20))
+				{
+					vask    = MarketInfo(my_symbol,MODE_ASK);	
+					//orderPrice = vask;					
+						
+					ticket = OrderSend(my_symbol,OP_SELLSTOP,orderLots,orderPrice,3,orderStopless,orderTakeProfit,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName,
+								   BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber,timeexp,Blue);
+		
+					 if(ticket <0)
+					 {
+					 	ttick++;
+
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" failed with error #",GetLastError());
+						
+						if(GetLastError()!=134)
+						{
+							 //---- 5 seconds wait
+							 Sleep(5000);
+							 //---- refresh price data
+							 RefreshRates();						
+						}
+						else 
+						{
+							Print("There is no enough money!");						
+						}					
+					 }
+					 else
+					 {       
+					 	ttick = 100;     
+						TwentyS_Freq++;
+						OneM_Freq++;
+						ThirtyS_Freq++;
+						FiveM_Freq++;
+						ThirtyM_Freq++;	
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].opentime = TimeCurrent();
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice = orderPrice;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = orderTakeProfit;
+						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = 2.1*(orderPrice-orderStopless)
+																							*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																											 				 
+						Print("OrderSend "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"  successfully");
+						
+					 }													
+					Sleep(1000);	
+				}
+				if((ttick>= 19)	&&(ttick<25))
+				{
+						Print("!!Fatel error encouter please check your platform right now!");					
+				}		
+								
+			}
+
+
+		}
+
+	}						
+						
 }
 
 
@@ -4549,7 +5635,7 @@ void OnTick(void)
 
 ////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
-//该函数作用是追踪止盈
+//该函数作用是追踪止损，直到平保
 void checkbuysellorder()
 {
 	
@@ -4559,7 +5645,8 @@ void checkbuysellorder()
 	string my_symbol;
 	int NowMagicNumber,magicnumber;	
 
-	
+
+	double boll_up_B,boll_low_B,boll_mid_B,bool_length;		
 	double vbid,vask; 
 	double MinValue3 = 100000;
 	double MaxValue4=-1;
@@ -4571,10 +5658,12 @@ void checkbuysellorder()
 	double orderTakeProfit;
 	double orderPrice;	
 	int i;
-   int ticket;
+ 
 	int buysellpoint;
 	int subbuysellpoint;
 
+	int    vdigits ;
+	int res;
 	
 	
 	timeperiodnum = 0;	
@@ -4586,6 +5675,7 @@ void checkbuysellorder()
 	orderPrice = 0;
 	my_timeperiod = timeperiod[timeperiodnum];	
 
+	//定义移动止损和平保
 	for (i = 0; i < OrdersTotal(); i++)
 	{
    		if (OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
@@ -4613,6 +5703,102 @@ void checkbuysellorder()
 						if(OrderTakeProfit()>0.01)
 						{
 
+							//移动止损到平保
+							//确保寻找买卖点是每个一分钟周期计算一次，而不是每个tick计算一次
+							if ( BoolCrossRecord[SymPos][timeperiodnum].ChartEvent != iBars(my_symbol,timeperiod[timeperiodnum]))
+							{
+				 				
+								vbid    = MarketInfo(my_symbol,MODE_BID);		
+								vask    = MarketInfo(my_symbol,MODE_ASK);												
+								vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+					 			
+					 			//买交易
+					 			if((buysellpoint%2)==1)
+					 			{
+
+
+									orderPrice = vask;				 
+									orderStopless = vask - BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing;	 	
+									orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+									//不扩大亏损额度，且平保
+									if((orderStopless<BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice)
+										&&(orderStopless > OrderStopLoss()))
+									{
+
+
+										//orderTakeProfit = 0;
+										//Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless stoptrailling Modify:"
+										//				+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+										
+										res=OrderModify(OrderTicket(),OrderOpenPrice(),
+											   orderStopless,OrderTakeProfit(),0,clrPurple);
+											   
+										 if(false == res)
+										 {
+
+											Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+												+"orderStopless stoptrailling OrderModify. Error code=",GetLastError());									
+										 }
+										 else
+										 {        
+										   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+											//经常性修改，只有在测试期间打开
+											//Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+											//	"orderStopless successfully "+OrderMagicNumber());
+										 }								
+										Sleep(1000);		
+
+									}	
+
+
+
+					 			}
+					 			else
+					 			{
+
+				 
+									orderPrice = vask;				 
+									orderStopless = vask + BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing;	 	
+									orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+									//不扩大亏损额度，且平保
+									if((orderStopless>BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice)
+										&&(orderStopless < OrderStopLoss()))
+									{
+
+
+										//orderTakeProfit = 0;
+										//Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless stoptrailling Modify:"
+										//				+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+										
+										res=OrderModify(OrderTicket(),OrderOpenPrice(),
+											   orderStopless,OrderTakeProfit(),0,clrPurple);
+											   
+										 if(false == res)
+										 {
+
+											Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+												+"orderStopless stoptrailling OrderModify. Error code=",GetLastError());									
+										 }
+										 else
+										 {        
+										   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	 								 
+											Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+												"orderStopless stoptrailling successfully "+OrderMagicNumber());
+										 }								
+										Sleep(1000);		
+
+									}	
+
+
+
+					 			}
+
+								;				
+							
+							}	
 
 							//结构发生反方向变化后无条件重新设置止损值
 							//确保寻找买卖点是每个一分钟周期计算一次，而不是每个tick计算一次
@@ -4623,54 +5809,242 @@ void checkbuysellorder()
 								if((buysellpoint>=0)&&(buysellpoint<=10))
 								{
 									timeperiodnum = 0;	
-									my_timeperiod = timeperiod[timeperiodnum];		
-									vbid    = MarketInfo(my_symbol,MODE_BID);		
-									vask    = MarketInfo(my_symbol,MODE_ASK);	
-																		
-									//买点处理止盈点
+									my_timeperiod = timeperiod[timeperiodnum];			
+									//买点处理止损点
 									if(buysellpoint%2 == 1)
 									{
 
 
-										if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-
+										if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (-5== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (-1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
 										{
 
-											ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
-											  
-											 if(ticket <0)
-											 {
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder failed with error #",GetLastError());
-											 }
-											 else
-											 {            
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder successfully");
-											 }    	
-											Sleep(1000); 	
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vask - bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless > OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross low change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross low change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross low change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
 
 										}
 															
+										if((-1 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (-1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (3<  BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
+										{
+
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vask - bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless > OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross mid change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross mid change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross mid change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
+
+										}
 															
 									}
-									//卖单处理止盈点
+									//卖单处理止损点
 									else
 									{
 
-										if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-
+										if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (5== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
 										{
 
-											ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
-											  
-											 if(ticket <0)
-											 {
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder failed with error #",GetLastError());
-											 }
-											 else
-											 {            
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder successfully");
-											 }    	
-											Sleep(1000); 	
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless < OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross up change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross up change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross up change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
+
+										}
+															
+										if((1 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (-3>  BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
+										{
+
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless < OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross mid change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross mid change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross mid change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
 
 										}
 												
@@ -4685,55 +6059,242 @@ void checkbuysellorder()
 
 
 									timeperiodnum = 1;	
-									my_timeperiod = timeperiod[timeperiodnum];	
-									vbid    = MarketInfo(my_symbol,MODE_BID);		
-									vask    = MarketInfo(my_symbol,MODE_ASK);	
-
-
-									//买点处理止盈点
+									my_timeperiod = timeperiod[timeperiodnum];			
+									//买点处理止损点
 									if(buysellpoint%2 == 1)
 									{
 
 
-										if(4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-
+										if((-5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (-5== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (-1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
 										{
 
-											ticket =OrderClose(OrderTicket(),OrderLots(),vbid,5,Red);
-											  
-											 if(ticket <0)
-											 {
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder failed with error #",GetLastError());
-											 }
-											 else
-											 {            
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder successfully");
-											 }    	
-											Sleep(1000); 	
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vask - bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless > OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross low change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross low change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross low change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
 
 										}
 															
+										if((-1 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (-1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (3<  BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
+										{
+
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vask - bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless > OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross mid change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross mid change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross mid change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
+
+										}
 															
 									}
-									//卖单处理止盈点
+									//卖单处理止损点
 									else
 									{
 
-										if(-4 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
-
+										if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (5== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
 										{
 
-											ticket =OrderClose(OrderTicket(),OrderLots(),vask,5,Red);
-											  
-											 if(ticket <0)
-											 {
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder failed with error #",GetLastError());
-											 }
-											 else
-											 {            
-												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderClose buy checkbuysellorder successfully");
-											 }    	
-											Sleep(1000); 	
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless < OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross up change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross up change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross up change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
+
+										}
+															
+										if((1 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
+											&& (1== BoolCrossRecord[SymPos][timeperiodnum].CrossFlag[0])	
+											&& (-3>  BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[1])			
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[2])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[3])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[4])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[5])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[6])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[7])	
+											&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[8])	
+											
+											)
+										{
+
+											boll_up_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_UPPER,1);   
+											boll_low_B = iBands(my_symbol,my_timeperiod,iBoll_B,2,0,PRICE_CLOSE,MODE_LOWER,1);
+											boll_mid_B = (boll_up_B + boll_low_B )/2;
+											/*point*/
+											bool_length =(boll_up_B - boll_low_B )/2;	
+											vbid    = MarketInfo(my_symbol,MODE_BID);		
+											vask    = MarketInfo(my_symbol,MODE_ASK);												
+											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
+
+											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
+
+											//不扩大亏损额度
+											if(orderStopless < OrderStopLoss())
+											{
+
+
+												//orderTakeProfit = 0;
+												Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless struct cross mid change Modify:"
+																+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+												
+												res=OrderModify(OrderTicket(),OrderOpenPrice(),
+													   orderStopless,OrderTakeProfit(),0,clrPurple);
+													   
+												 if(false == res)
+												 {
+
+													Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+														+"orderStopless cross mid change OrderModify. Error code=",GetLastError());									
+												 }
+												 else
+												 {        
+												   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+													Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+														"orderStopless cross mid change successfully "+OrderMagicNumber());
+												 }								
+												Sleep(1000);		
+
+											}	
 
 										}
 												
@@ -4755,6 +6316,9 @@ void checkbuysellorder()
 
 
 						}
+
+
+
 
 
 					}	
