@@ -1406,10 +1406,10 @@ void InitBuySellPos()
 				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName =SubMagicName[buysellpoint]+IntegerToString(subbuysellpoint)+my_symbol;
 
 				//定义 MagicNumber
-				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber = SymPos*MAINMAGIC + buysellpoint + subbuysellpoint;
+				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber = SymPos*MAINMAGIC + buysellpoint*10 + subbuysellpoint;
 
 				//定义stoptailing为1.2
-				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailtimes = 1.2;
+				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailtimes = 2.1;
 
 				//定义时间周期，五分钟的买卖点
 				if((buysellpoint <= 10)||((buysellpoint <= 20)&&(buysellpoint > 14)))
@@ -1497,6 +1497,7 @@ void InitBuySellPos()
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].takeprofit = OrderTakeProfit();
 
 						BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing = BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailtimes*(OrderOpenPrice()-OrderStopLoss())*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag;																		
+
 						Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"OrderLoad:" + "openprice=" + OrderOpenPrice() +"OrderStopLoss ="
 									+OrderStopLoss()+"OrderTakeProfit="+OrderTakeProfit()+"stoptailing="+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing);	
 					}
@@ -5830,7 +5831,7 @@ void checkbuysellorder()
 								vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 					 			
 					 			//买交易
-					 			if((buysellpoint%2)==1)
+					 			if(OrderType()==OP_BUY)
 					 			{
 
 
@@ -5867,12 +5868,46 @@ void checkbuysellorder()
 										 }								
 										Sleep(1000);		
 
-									}	
+									}
+									//平保
+									else if((orderStopless>OrderOpenPrice())&&((OrderOpenPrice() - OrderStopLoss())>0.001))
+									{
+										//设置
+										orderStopless = OrderOpenPrice();
+										orderStopless = NormalizeDouble(orderStopless,vdigits);	
+										//orderTakeProfit = 0;
+										Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless stoptrailling pingbao Modify:"
+														+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+										
+										res=OrderModify(OrderTicket(),OrderOpenPrice(),
+											   orderStopless,OrderTakeProfit(),0,clrPurple);
+											   
+										 if(false == res)
+										 {
+
+											Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+												+"orderStopless stoptrailling pingbao OrderModify. Error code=",GetLastError());									
+										 }
+										 else
+										 {        
+										   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+											//经常性修改，只有在测试期间打开
+											Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+												"orderStopless successfully pingbao stoptailing ="+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing);
+										 }								
+										Sleep(1000);	
+
+									}
+									else
+									{
+										;
+									}
 
 
 
 					 			}
-					 			else
+					 			else if(OrderType()==OP_SELL)
 					 			{
 
 				 
@@ -5908,12 +5943,49 @@ void checkbuysellorder()
 										Sleep(1000);		
 
 									}	
+									//平保
+									else if((orderStopless<OrderOpenPrice())&&((OrderStopLoss() - OrderOpenPrice())>0.001))
+									{
+										//设置
+										orderStopless = OrderOpenPrice();
+										orderStopless = NormalizeDouble(orderStopless,vdigits);	
+										//orderTakeProfit = 0;
+										Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName + "orderStopless stoptrailling pingbao Modify:"
+														+ "orderLots=" + orderLots +"orderPrice ="+OrderOpenPrice()+"orderStopless="+orderStopless);									
+										
+										res=OrderModify(OrderTicket(),OrderOpenPrice(),
+											   orderStopless,OrderTakeProfit(),0,clrPurple);
+											   
+										 if(false == res)
+										 {
 
+											Print("Error in "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName 
+												+"orderStopless stoptrailling pingbao OrderModify. Error code=",GetLastError());									
+										 }
+										 else
+										 {        
+										   	BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss = orderStopless;	
+
+											//经常性修改，只有在测试期间打开
+											Print("OrderModify "+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName +
+												"orderStopless successfully pingbao stoptailing ="+BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoptailing);
+										 }								
+										Sleep(1000);	
+
+									}
+									else
+									{
+										;
+									}									
 
 
 					 			}
+					 			else
+					 			{
+					 				;
+					 			}
 
-								;				
+											
 							
 							}	
 
@@ -5928,7 +6000,7 @@ void checkbuysellorder()
 									timeperiodnum = 0;	
 									my_timeperiod = timeperiod[timeperiodnum];			
 									//买点处理止损点
-									if(buysellpoint%2 == 1)
+									if(OrderType()==OP_BUY)
 									{
 
 
@@ -6048,7 +6120,7 @@ void checkbuysellorder()
 															
 									}
 									//卖单处理止损点
-									else
+									else if (OrderType()==OP_SELL)
 									{
 
 										if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
@@ -6166,6 +6238,10 @@ void checkbuysellorder()
 										}
 												
 
+									}
+									else
+									{
+										;
 									}
 
 
@@ -6178,7 +6254,7 @@ void checkbuysellorder()
 									timeperiodnum = 1;	
 									my_timeperiod = timeperiod[timeperiodnum];			
 									//买点处理止损点
-									if(buysellpoint%2 == 1)
+									if(OrderType()==OP_BUY)
 									{
 
 
@@ -6298,7 +6374,7 @@ void checkbuysellorder()
 															
 									}
 									//卖单处理止损点
-									else
+									else if (OrderType()==OP_SELL)
 									{
 
 										if((5 == BoolCrossRecord[SymPos][timeperiodnum].CrossFlagChange)
@@ -6416,6 +6492,10 @@ void checkbuysellorder()
 										}
 												
 
+									}
+									else
+									{
+										;
 									}
 
 
@@ -6448,4 +6528,5 @@ void checkbuysellorder()
 
 }
 	
+
 /////////////////////
