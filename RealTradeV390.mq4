@@ -2309,7 +2309,6 @@ void ordercloseall2()
 	return;
 }
 
-
 // 正常交易出现大幅盈利的情况下平掉所有交易，去除近期成交单和设置成无止盈的手工单
 void monitoraccountprofit()
 {
@@ -2341,20 +2340,17 @@ void monitoraccountprofit()
 		Print("1 This turn Own more than "+(symbolNum/3)+" orders witch is "+allordernumbers+" all profit order,Close all");				
 		turnoffflag = true;						
 	}
-
 	
 
 
 	/*订单数量11个，且获利超过300美元，落袋为安*/
-	if(ordersrealprofitall()>(ordersexpectedmaxprofitall()*100/(allordernumbers*allordernumbers+10*allordernumbers+100)))
+	if(ordersrealprofitall()>(ordersexpectedmaxprofitall()*400/(allordernumbers*allordernumbers*allordernumbers+allordernumbers*allordernumbers+10*allordernumbers+400)))
 	{
 		
 		turnoffflag = true;						
 		Print("2 successfully Close All: allordernumbers = " + allordernumbers + "ordersexpectedmaxprofitall = " + ordersexpectedmaxprofitall()
 				+"ordersrealprofitall = "+ordersrealprofitall());		
-	}
-	
-	
+	}	
 	
 	
 	/*关闭所有在监控的货币，去掉止盈的货币和近期刚进入的货币不在监控范围内*/
@@ -4959,7 +4955,7 @@ void orderbuyselltypetwo(int SymPos)
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-
+			vbid    = MarketInfo(my_symbol,MODE_BID);
 			MinValue3 = 100000;
 			for (i= 0;i < (iBars(my_symbol,timeperiod[timeperiodnum+1]) -BoolCrossRecord[SymPos][timeperiodnum+1].CrossBoolPos[5]+5);i++)
 			{
@@ -4973,7 +4969,7 @@ void orderbuyselltypetwo(int SymPos)
 
 			//突破新高后下单
 			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
-			orderStopless =vask + bool_length_upperiod*2; 		
+			orderStopless =vbid + bool_length_upperiod*2; 		
 			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			//保证5倍以上的盈亏比，可行性是由上一级形态所决定的
@@ -5120,6 +5116,7 @@ void orderbuyselltypetwo(int SymPos)
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
+			vbid    = MarketInfo(my_symbol,MODE_BID);			
 
 			MinValue3 = 100000;
 			for (i= 0;i < (iBars(my_symbol,timeperiod[timeperiodnum+1]) -BoolCrossRecord[SymPos][timeperiodnum+1].CrossBoolPos[5]+5);i++)
@@ -5133,7 +5130,7 @@ void orderbuyselltypetwo(int SymPos)
 
 			//突破新高后下单
 			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
-			orderStopless =vask + bool_length_upperiod*2; 		
+			orderStopless =vbid + bool_length_upperiod*2; 		
 			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			//保证5倍以上的盈亏比，可行性是由上一级形态所决定的
@@ -5278,7 +5275,7 @@ void orderbuyselltypetwo(int SymPos)
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-
+			vbid    = MarketInfo(my_symbol,MODE_BID);
 			MinValue3 = 100000;
 			for (i= 0;i < (iBars(my_symbol,timeperiod[timeperiodnum+2]) -BoolCrossRecord[SymPos][timeperiodnum+2].CrossBoolPos[5]+5);i++)
 			{
@@ -5292,7 +5289,7 @@ void orderbuyselltypetwo(int SymPos)
 
 			//突破新高后下单
 			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
-			orderStopless =vask + bool_length_upperiod*2; 		
+			orderStopless =vbid + bool_length_upperiod*2; 		
 			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			//保证5倍以上的盈亏比，可行性是由上一级形态所决定的
@@ -5439,7 +5436,7 @@ void orderbuyselltypetwo(int SymPos)
 			
 			vask    = MarketInfo(my_symbol,MODE_ASK);
 			vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS);
-
+			vbid    = MarketInfo(my_symbol,MODE_BID);
 			MinValue3 = 100000;
 			for (i= 0;i < (iBars(my_symbol,timeperiod[timeperiodnum+2]) -BoolCrossRecord[SymPos][timeperiodnum+2].CrossBoolPos[5]+5);i++)
 			{
@@ -5452,7 +5449,7 @@ void orderbuyselltypetwo(int SymPos)
 
 			//突破新高后下单
 			orderPrice = MinValue3*2-(vask+MinValue3*3)/4;		 			
-			orderStopless =vask + bool_length_upperiod*2; 		
+			orderStopless =vbid + bool_length_upperiod*2; 		
 			orderTakeProfit	= orderPrice - bool_length_upperiod*8;
 
 			//保证5倍以上的盈亏比，可行性是由上一级形态所决定的
@@ -5568,7 +5565,6 @@ void orderbuyselltypetwo(int SymPos)
 }
 
 
-	
 // 每秒调用一次，反复执行的主体函数
 //int start()
 void OnTick(void)
@@ -6027,11 +6023,12 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vask - bool_length*2;	 	
+											orderStopless = vask - bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless > OrderStopLoss())
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless > OrderOpenPrice())&&((OrderOpenPrice() - OrderStopLoss())>-0.001))
 											{
 
 
@@ -6084,11 +6081,12 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vask - bool_length*2;	 	
+											orderStopless = vask - bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless > OrderStopLoss())
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless > OrderOpenPrice())&&((OrderOpenPrice() - OrderStopLoss())>-0.001))
 											{
 
 
@@ -6146,11 +6144,13 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = vbid + bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless < OrderStopLoss())
+
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless < OrderOpenPrice())&&((OrderStopLoss() - OrderOpenPrice())>-0.001))
 											{
 
 
@@ -6203,11 +6203,13 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = vbid + bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless < OrderStopLoss())
+
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless < OrderOpenPrice())&&((OrderStopLoss() - OrderOpenPrice())>-0.001))
 											{
 
 
@@ -6281,11 +6283,12 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vask - bool_length*2;	 	
+											orderStopless = vask - bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless > OrderStopLoss())
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless > OrderOpenPrice())&&((OrderOpenPrice() - OrderStopLoss())>-0.001))
 											{
 
 
@@ -6338,11 +6341,12 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vask - bool_length*2;	 	
+											orderStopless = vask - bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless > OrderStopLoss())
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless > OrderOpenPrice())&&((OrderOpenPrice() - OrderStopLoss())>-0.001))
 											{
 
 
@@ -6400,11 +6404,12 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = vbid + bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless < OrderStopLoss())
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless < OrderOpenPrice())&&((OrderStopLoss() - OrderOpenPrice())>-0.001))
 											{
 
 
@@ -6457,11 +6462,13 @@ void checkbuysellorder()
 											vask    = MarketInfo(my_symbol,MODE_ASK);												
 											vdigits = (int)MarketInfo(my_symbol,MODE_DIGITS); 	
 
-											orderStopless = vbid + bool_length*2;	 	
+											orderStopless = vbid + bool_length*3;	 	
 											orderStopless = NormalizeDouble(orderStopless,vdigits);		 	
 
-											//不扩大亏损额度
-											if(orderStopless < OrderStopLoss())
+
+											//只有在第一次巨幅盈利回调时设置止损值，以后不再设置止损值了
+											//因为亏损已经切断了，剩下的就是让利润奔跑了，以后通过止盈或者monitor方式平仓
+											if((orderStopless < OrderOpenPrice())&&((OrderStopLoss() - OrderOpenPrice())>-0.001))
 											{
 
 
