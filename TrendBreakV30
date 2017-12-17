@@ -2184,9 +2184,21 @@ void InitBuySellPos()
 				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].OneMOpenPos = 	iBars(MySymbol[SymPos],timeperiod[0]);
 
 
-				//定义止损额度，这个值最为关键，计划通过自学习的方式获取，默认设置为2
-				BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoplossleverage = 2;
-
+				//定义时间周期，一分钟的买卖点,顺势交易的回调，回调已经很深，大概率回到正轨，因此止损稍微大一点
+				if ((buysellpoint <= 4)&&(buysellpoint > 0))
+				{
+					//定义止损额度，这个值最为关键，计划通过自学习的方式获取，默认设置为2
+					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoplossleverage = 3;
+				}
+				//定义时间周期，五分钟及以上的买卖点
+				else if((buysellpoint <= 20)&&(buysellpoint > 4))
+				{
+					BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoplossleverage = 2;					
+				}
+				else
+				{
+					;
+				}
 
 				//定义时间周期，一分钟的买卖点
 				if ((buysellpoint <= 8)&&(buysellpoint > 0))
@@ -3803,9 +3815,7 @@ void orderbuyselltypeone(int SymPos)
 	//一分钟小周期回调大概率不破大趋势，并且挂单、小止损、迅速平保，找到顺势回调的好的介入点
 	buysellpoint = 1;
 	//市场结构发生变化的回调结束的时候转多介入进去，采用小止损、限时、挂单的方式
-	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]>0.8)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.45)									
+	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)								
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
@@ -3825,6 +3835,8 @@ void orderbuyselltypeone(int SymPos)
 			&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[9])	
 			&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[10])	
 			&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[11])	
+			&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[12])	
+			&& (-3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[13])				
 			&&((BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[0]<0.2)
 				||(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2))									
 			&&(OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)				
@@ -4001,8 +4013,6 @@ void orderbuyselltypeone(int SymPos)
 
 	//市场结构发生变化的回调结束的时候转多介入进去，采用小止损、限时、挂单的方式
 	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak>0.8)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]>0.8)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak>0.45)
 
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
@@ -4024,6 +4034,7 @@ void orderbuyselltypeone(int SymPos)
 			&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[10])	
 			&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[11])	
 			&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[12])
+			&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[13])
 
 			&&((BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[0]<0.2)
 				||(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak<0.2))
@@ -4992,8 +5003,7 @@ void orderbuyselltypeone(int SymPos)
 	buysellpoint = 2;
 	//市场结构发生变化的回调结束的时候转空介入进去，采用小止损、限时、挂单的方式
 	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]<0.2)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.55)							
+							
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
 		&&((OneMOrderCloseStatus(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].magicnumber)==true)
@@ -5013,6 +5023,8 @@ void orderbuyselltypeone(int SymPos)
 			&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[9])	
 			&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[10])	
 			&& (3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[11])	
+			&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[12])
+			&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[13])
 
 			&&((BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[0]>0.8)
 				||(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8))	
@@ -5191,8 +5203,6 @@ void orderbuyselltypeone(int SymPos)
 	buysellpoint = 4;
 	//市场结构发生变化的回调结束的时候转空介入进去，采用小止损、限时、挂单的方式
 	if((BoolCrossRecord[SymPos][timeperiodnum+3].StrongWeak<0.2)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].CrossStrongWeakL[0]<0.2)
-		&&(BoolCrossRecord[SymPos][timeperiodnum+2].StrongWeak<0.55)	
 
 		&&(opendaycheck(SymPos) == true)
 		&&(tradetimecheck(SymPos) ==true)				
@@ -5214,6 +5224,7 @@ void orderbuyselltypeone(int SymPos)
 			&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[10])	
 			&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[11])	
 			&& (-3< BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[12])	
+			&& (3> BoolCrossRecord[SymPos][timeperiodnum].CrossFlagL[13])
 
 			&&((BoolCrossRecord[SymPos][timeperiodnum+1].CrossStrongWeakL[0]>0.8)
 				||(BoolCrossRecord[SymPos][timeperiodnum+1].StrongWeak>0.8))	
@@ -9631,7 +9642,7 @@ struct stSLBoolCrossRecord
 	int CrossFlagTempPre;	
 	int ChartEvent;
 };
-stSLBoolCrossRecord BoolCrossRecord[50][16];
+stSLBoolCrossRecord SLBoolCrossRecord[50][16];
 
 
 
@@ -9775,7 +9786,6 @@ stSLBuySellvaluate SLBuySellvaluate[50][21];
 
 
 
-
 void SLmain()
 {
 
@@ -9829,8 +9839,6 @@ void SLmain()
 
 
 }
-
-
 
 
 
