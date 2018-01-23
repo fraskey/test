@@ -3,7 +3,7 @@
 //|                   Copyright 2005-2017, Copyright. Personal Keep  |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
-#property copyright   "2005-2018, Xuejiayong."
+#property copyright   "2005-2017, Xuejiayong."
 #property link        "http://www.mql14.com"
 
 
@@ -1790,53 +1790,83 @@ double autocalculateamount(int SymPos,int buysellpoint,int subbuysellpoint)
 	double maxlossamount;
 	double stoplosspercent;
 	double lastamount;
+	
+	double accountbalance = 0;
 
-	//确保能够均分出symbolNum/3份以上，可实现多次交易的目的。
-	devidedamount = (AccountBalance()*myaccountleverage())/((symbolNum/3)*ForexIndex[SymPos].lotsize);
+	accountbalance = AccountBalance();
 
-	//止损百分比
-	stoplosspercent = ((BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice - BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss)
-				*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag)/BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice;	
-
-	maxlossamount = (AccountBalance()*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].maxlose)/(ForexIndex[SymPos].lotsize*stoplosspercent);
-
-
-	//寻找更小的amount
-	if(devidedamount > maxlossamount)
+	if(accountbalance < 300)
 	{
-
-		lastamount = maxlossamount;
+		lastamount = ForexIndex[SymPos].minlot;
 	}
+	else if((accountbalance >= 300)&&(accountbalance < 600))
+	{
+		lastamount = ForexIndex[SymPos].minlot*2;		
+	}
+	else if((accountbalance >= 600)&&(accountbalance < 1000))
+	{
+		lastamount = ForexIndex[SymPos].minlot*3;		
+	}	
+	else if((accountbalance >= 1000)&&(accountbalance < 1500))
+	{
+		lastamount = ForexIndex[SymPos].minlot*4;		
+	}	
+	else if((accountbalance >= 1500)&&(accountbalance < 2000))
+	{
+		lastamount = ForexIndex[SymPos].minlot*5;		
+	}	
+	else if((accountbalance >= 2000)&&(accountbalance < 2600))
+	{
+		lastamount = ForexIndex[SymPos].minlot*6;		
+	}		
 	else
 	{
-		lastamount = devidedamount;
+		//确保能够均分出symbolNum/3份以上，可实现多次交易的目的。
+		devidedamount = (AccountBalance()*myaccountleverage())/((symbolNum/3)*ForexIndex[SymPos].lotsize);
 
+		//止损百分比
+		stoplosspercent = ((BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice - BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].stoploss)
+					*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].buysellflag)/BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].openprice;	
+
+		maxlossamount = (AccountBalance()*BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].maxlose)/(ForexIndex[SymPos].lotsize*stoplosspercent);
+
+
+		//寻找更小的amount
+		if(devidedamount > maxlossamount)
+		{
+
+			lastamount = maxlossamount;
+		}
+		else
+		{
+			lastamount = devidedamount;
+
+		}
+
+		//在可交易手的范围内
+		if(lastamount > ForexIndex[SymPos].maxlot)
+		{
+			lastamount = ForexIndex[SymPos].maxlot;
+		}
+		if(lastamount < ForexIndex[SymPos].minlot)
+		{
+			lastamount = ForexIndex[SymPos].minlot;
+			Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" autocalculateamount AccountBalance No Enough Money,But we still trade!");
+
+		}
+
+		//归一化；
+		lastamount = (int(lastamount/ForexIndex[SymPos].lotstep))*ForexIndex[SymPos].lotstep;
+
+		if(lastamount < ForexIndex[SymPos].minlot)
+		{
+			lastamount = ForexIndex[SymPos].minlot;
+		}
+
+		Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"autocalculateamount:" + "AccountBalance=" 
+					+ AccountBalance() +"stoplosspercent ="+stoplosspercent);
+		Print("devidedamount="+devidedamount+"maxlossamount="+maxlossamount+"lastamount:"+lastamount);	
 	}
-
-	//在可交易手的范围内
-	if(lastamount > ForexIndex[SymPos].maxlot)
-	{
-		lastamount = ForexIndex[SymPos].maxlot;
-	}
-	if(lastamount < ForexIndex[SymPos].minlot)
-	{
-		lastamount = ForexIndex[SymPos].minlot;
-		Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+" autocalculateamount AccountBalance No Enough Money,But we still trade!");
-
-	}
-
-	//归一化；
-	lastamount = (int(lastamount/ForexIndex[SymPos].lotstep))*ForexIndex[SymPos].lotstep;
-
-	if(lastamount < ForexIndex[SymPos].minlot)
-	{
-		lastamount = ForexIndex[SymPos].minlot;
-	}
-
-	Print(BuySellPosRecord[SymPos][buysellpoint][subbuysellpoint].MagicName+"autocalculateamount:" + "AccountBalance=" 
-				+ AccountBalance() +"stoplosspercent ="+stoplosspercent);
-	Print("devidedamount="+devidedamount+"maxlossamount="+maxlossamount+"lastamount:"+lastamount);	
-
 	return lastamount;
 
 }
@@ -17059,4 +17089,6 @@ void checkbuysellorder()
 
 }
 	
+
+
 
